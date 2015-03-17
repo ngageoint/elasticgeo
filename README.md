@@ -8,9 +8,9 @@ GeoTools under [LGPL v 2.1](http://geotools.org/about.html)
 
 GeoServer under [GPL v 2 with later option](http://geoserver.org/license/) 
 
-ElasticGeo [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
+ElasticGeo under [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
 
-ElasticSearch Apache 2.0 
+ElasticSearch under Apache 2.0 
 
 ###Pull Request
 
