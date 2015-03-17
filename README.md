@@ -10,8 +10,6 @@ GeoServer under [GPL v 2 with later option](http://geoserver.org/license/)
 
 ElasticGeo [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
 
-ElasticSearch Apache 2.0 
-
 Isolated modules by US government developers: Public Domain within the US 
 
 ###Pull Request
