@@ -10,8 +10,6 @@ GeoServer under [GPL v 2 with later option](http://geoserver.org/license/)
 
 ElasticGeo [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
 
-Isolated modules by US government developers: Public Domain within the US 
-
 ###Pull Request
 
 If you'd like to contribute to this project, please make a pull request. We'll review the pull request and discuss the changes. All pull request contributions to this project will be released under the appropriate licens conditions discussed below. 
