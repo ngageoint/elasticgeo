@@ -18,5 +18,6 @@ ElasticGeo under [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
 
 ###Documentation
 
-https://github.com/ngageoint/elasticgeo/gs-web-elasticsearch/doc/index.rst
+https://github.com/ngageoint/elasticgeo/blob/master/gs-web-elasticsearch/doc/index.rst
+
 
