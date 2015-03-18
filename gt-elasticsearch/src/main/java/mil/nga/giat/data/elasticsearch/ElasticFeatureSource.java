@@ -147,6 +147,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         }
         final QueryBuilder elasticQuery = filterToElastic.getQueryBuilder();
         final FilterBuilder postFilter = filterToElastic.getFilterBuilder();
+        LOGGER.fine("Elasticsearch query: " + elasticQuery);
         LOGGER.fine("Elasticsearch post filter: " + postFilter);
         searchRequest.setQuery(elasticQuery).setPostFilter(postFilter);
 

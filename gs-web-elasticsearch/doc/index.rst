@@ -19,7 +19,7 @@ Build and install a local copy::
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo && mvn install
 
-    .. warning:: Ensure GeoTools/GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment 
+.. warning:: Ensure GeoTools/GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment 
 
 Build and copy the GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver::
 
@@ -32,7 +32,7 @@ Creating an Elasticsearch data store
 
 Once the Elasticsearch GeoServer extension is installed, ``Elasticsearch index`` will be an available vector data source format when creating a new data store.
 
-.. figure:: images/elastisearch_store.png
+.. figure:: images/elasticsearch_store.png
    :align: center
 
 .. _config_elasticsearch:
@@ -115,10 +115,26 @@ Examples
 
 BBOX and CQL post filter::
 
-BBOX and raw post filter::
+    http://localhost:8080/geoserver/test/wms?service=WMS&version=1.1.0&request=GetMap
+         &layers=test:active&styles=&bbox=-1,-1,10,10&width=279&height=512
+         &srs=EPSG:4326&format=application/openlayers&maxFeatures=1000
+         &cql_filter=standard_ss='IEEE 802.11b'
 
-Query with BBOX post filter::
+BBOX and native post filter::
 
+    http://localhost:8080/geoserver/test/wms?service=WMS&version=1.1.0&request=GetMap
+         &layers=test:active&styles=&bbox=-1,-1,10,10&width=279&height=512
+         &srs=EPSG:4326&format=application/openlayers&maxFeatures=1000
+         &viewparams=f:{"term":{"standard_ss":"IEEE 802.11b"}}
+
+Native query with BBOX post filter::
+
+    http://localhost:8080/geoserver/test/wms?service=WMS&version=1.1.0&request=GetMap
+         &layers=test:active&styles=&bbox=-1,-1,10,10&width=279&height=512
+         &srs=EPSG:4326&format=application/openlayers&maxFeatures=1000
+         &viewparams=q:{"term":{"standard_ss":"IEEE 802.11b"}}
+
+Note that commas in native query and post filter must be escaped with a backslash.
 
 Notes and Known Issues
 ----------------------
