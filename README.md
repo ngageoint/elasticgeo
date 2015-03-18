@@ -16,9 +16,7 @@ GeoServer under [GPL v 2 with later option](http://geoserver.org/license/)
 
 ElasticGeo under [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
 
-###Screenshots
+###Documentation
 
-###Installation
-
-
+https://github.com/ngageoint/elasticgeo/gs-web-elasticsearch/doc/index.rst
 

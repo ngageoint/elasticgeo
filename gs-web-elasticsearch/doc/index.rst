@@ -1,0 +1,134 @@
+Elasticsearch Data Store
+========================
+
+Elasticsearch is a popular distributed search and analytics engine that enables complex search features in near real-time. Default field type mappings support common numerical and date types and allow inner and nested objects in complex, hierarchical documents. Custom field type mappings can be defined for geospatial document fields. The ``geo_point`` type supports point geometries that can be specified through a coordinate string, geohash or coordinate array. The ``geo_shape`` type supports Point, LineString,  Polygon, MultiPoint, MultiLineString, MultiPolygon and GeometryCollection GeoJSON types as well as envelope and circle types. Custom type options allow configuration of the type and precision of spatial index.
+
+This data store allows features from an Elasticsearch index to be published through GeoServer. Hierarchical documents based on inner object types are supported. Both ``geo_point`` and ``geo_shape`` type mappings are supported. Common filter capabilities are supported and custom query and post filter JSON can be passed through to Elasticsearch in WMS and WFS requests. 
+
+Compatibility
+-------------
+
+The GeoTools Elasticsearch data store and associated GeoServer extension has been tested with Elasticsearch version 1.3.2 and 1.4.0 under GeoTools/GeoServer 
+12.x/2.6.x and 13.x/2.7.x.
+
+Installation
+------------
+
+Build and install a local copy::
+
+    $ git clone git@github.com:ngageoint/elasticgeo.git
+    $ cd elasticgeo && mvn install
+
+    .. warning:: Ensure GeoTools/GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment 
+
+Build and copy the GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver::
+
+    $ cd gs-web-elasticsearch
+    $ mvn package -P deploy
+    $ cp target/gs-web-elasticsearch--geoserver.jar GEOSERVER_HOME/WEB_INF/lib
+
+Creating an Elasticsearch data store
+------------------------------------
+
+Once the Elasticsearch GeoServer extension is installed, ``Elasticsearch index`` will be an available vector data source format when creating a new data store.
+
+.. figure:: images/elastisearch_store.png
+   :align: center
+
+.. _config_elasticsearch:
+
+Configuring an Elasticsearch data store
+---------------------------------------
+
+.. figure:: images/elasticsearch_configuration.png
+   :align: center
+
+.. list-table::
+   :widths: 20 80
+
+   * - ``elasticsearch_host``
+     - Host (IP) for connecting to Elasticsearch
+   * - ``elasticsearch_port``
+     - Port for connecting to Elasticsearch 
+   * - ``index_name``
+     - Index name
+   * -``cluster_name``
+     - Cluster name
+   * - ``use_local_node``
+     - Whether to use the node client or transport client to connect to Elasticsearch
+   * - ``store_data``
+     - Whether to store data in the local node, if relevant
+
+Save the configuration to create the data store and then choose from the list of layers, which will be based on the types found in the specified index.
+
+Configuring an Elasticsearch layer
+----------------------------------------
+
+The initial layer configuration panel for an Elasticsearch layer will include an additional pop-up showing a table of available fields.
+
+.. figure:: images/elasticsearch_fieldlist.png
+   :align: center
+
+.. list-table::
+   :widths: 20 80
+
+   * - ``Short Names``
+     - For hierarchical documents with inner fields (e.g. ``parent.child.field_name``), only use the base name 
+       (``field_name``) in the schema. Note, full path will always be included when base name is duplicated across fields.
+   * - ``Use``
+     - Used to select the fields that will make up this layer features
+   * - ``Name``
+     - Name of the field
+   * - ``Type``
+     - Type of the field, as derived from the Elasticsearch schema. For geometry types, you have the option to provide a more specific data type.
+   * - ``Default geometry``
+     - Indicates if the geometry field is the default one. Useful if the documents contain more than one geometry field, as SLDs and spatial filters will hit the default geometry field unless otherwise specified
+   * - ``SRID``
+     - Native spatial reference ID of the geometries. Currently only EPSG:4326 is supported.
+
+To return to the field table after it has been closed, click the "Configure Elasticsearch fields" button below the "Feature Type Details" panel on the layer configuration page.
+
+.. figure:: images/elasticsearch_fieldlist_edit.png
+   :align: center
+
+Usage
+---------
+
+Filtering
+^^^^^^^^^
+
+Filtering capabilities include OpenGIS simple comparisons, temporal comparisons, as well as other common comparisons. Elasticsearch natively supports numerous spatial filter operators, depending on the type:
+
+- ``geo_shape`` types natively support BBOX/Intersects, Within and Disjoint binary spatial operators
+- ``geo_point`` types natively support BBOX and Within binary spatial operators as well as the DWithin distance buffer operator.
+
+Requests involving spatial filter operators not natively supported by Elasticsearch will include an additional filtering operation on the results returned from the query, which may impact performance.
+
+
+Custom ``q`` and ``f`` parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Native Elasticsearch query/filter JSON can be used in WFS/WMS feature requests using the custom ``q`` (query) and ``f`` (post filter) parameters through the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the filter is combined with the filter derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
+
+Examples
+^^^^^^^^
+
+BBOX and CQL post filter::
+
+BBOX and raw post filter::
+
+Query with BBOX post filter::
+
+
+Notes and Known Issues
+----------------------
+
+- ``PropertyIsEqualTo`` and ``PropertyIsNotEqualTo`` map to an Elasticsearch term post filter, which will return documents that contain the supplied term. When searching on an analyzed string field, ensure that the search values are consistent with the analyzer used in the index. For example, values may need to be lowercase when querying fields analyzed with the default analyzer. See the Elasticsearch term filter documentation for more information.
+- ``PropertyIsLike`` maps to either a query string query post filter or a regexp filter, depending on whether the field is analyzed or not. Reserved characters should be escaped as applicable. Note case sensitive and insensitive searches may not be supported for analyzed and not analyzed fields, respectively. See Elasticsearch query string and regexp filter documentation for more information.
+- Limited support for inner objects is available. By default field names will include the full path (e.g. "parent.child.attribute_name"), but this can be changed in the GeoServer layer configuration.
+
+  - When referencing field names with path elements in GeoServer ``cql_filter``, may need to quote the name (e.g. ``cql_filter="parent.child.attribute_name"='value'``)
+  - Arrays of objects are not currently supported (currently only the first element will be used)
+
+- The Elasticsearch ``nested type`` has not been tested
+- Binary expressions and functions are not currently supported in filters
