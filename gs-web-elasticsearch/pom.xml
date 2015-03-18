@@ -8,12 +8,12 @@
   <parent>
     <groupId>mil.nga.giat</groupId>
     <artifactId>elasticgeo</artifactId>
-    <version>2.6-SNAPSHOT</version>
+    <version>2.7-SNAPSHOT</version>
   </parent>
   <groupId>mil.nga.giat</groupId>
   <artifactId>gs-web-elasticsearch</artifactId>
   <packaging>jar</packaging>
-  <version>2.6-SNAPSHOT</version>  
+  <version>2.7-SNAPSHOT</version>  
   <name>GeoServer Elasticsearch Module</name>
   <build>
     <resources>
@@ -39,9 +39,6 @@
         <configuration>
           <source>1.7</source>
           <target>1.7</target>
-	  <excludes>
-	    <exclude>**/ElasticFeatureTypeCallback.java</exclude>
-	  </excludes>
         </configuration>
       </plugin>
     </plugins>

@@ -195,12 +195,6 @@ public abstract class ElasticConfigurationPage extends Panel {
         ElasticLayerConfiguration elasticLayerConfiguration = (ElasticLayerConfiguration) ri.getMetadata()
                 .get(ElasticLayerConfiguration.KEY);
         try {
-            // this is here for pre-2.7.x compatibility (handled in FeatureTypeCallback implementation from 2.7.x)
-            if (elasticLayerConfiguration != null) {
-                ElasticDataStore dataStore = (ElasticDataStore) ((DataStoreInfo) ri.getStore()).getDataStore(new NullProgressListener());
-                dataStore.setElasticConfigurations(elasticLayerConfiguration);
-            }
-
             ArrayList<ElasticAttribute> result = new ArrayList<ElasticAttribute>();
             Map<String, ElasticAttribute> tempMap = new HashMap<String, ElasticAttribute>();
             if (elasticLayerConfiguration != null) {
