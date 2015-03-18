@@ -1,6 +1,6 @@
 #ElasticGeo
 
-ElasticGeo provides a GeoTools data store that allows geospatial features from an ElasticSearch index to be published via OGC services using GeoServer.  
+ElasticGeo provides a GeoTools data store that allows geospatial features from an Elasticsearch index to be published via OGC services using GeoServer.  
 
 ###Pull Request
 
@@ -11,6 +11,8 @@ Software source code previously released under an open source license and then m
 ###Project relies upon:
 
 GeoTools under [LGPL v 2.1](http://geotools.org/about.html)
+
+Elasticsearch under [Apache License v 2.0](https://github.com/elastic/elasticsearch/blob/master/LICENSE.txt) 
 
 GeoServer under [GPL v 2 with later option](http://geoserver.org/license/) 
 
