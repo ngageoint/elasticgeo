@@ -146,5 +146,9 @@ Notes and Known Issues
   - When referencing field names with path elements in GeoServer ``cql_filter``, may need to quote the name (e.g. ``cql_filter="parent.child.attribute_name"='value'``)
   - Arrays of objects are not currently supported (currently only the first element will be used)
 
-- The Elasticsearch ``nested type`` has not been tested
+- Limited support for dates is available. Plugin will attempt to format dates in the Elasticsearch post filter based on the format in the type mapping. Currently only formats that can be parsed by `Joda-Time` (e.g. ``yyyMMdd``) are supported. Elasticsearch named formats (e.g. ``basic_date``) are not currently supported.
+
+.. _Joda-Time: http://www.joda.org/joda-time/
+
+- The Elasticsearch ``nested`` type has not been tested
 - Binary expressions and functions are not currently supported in filters
