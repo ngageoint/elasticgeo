@@ -1,14 +1,14 @@
 Elasticsearch Data Store
 ========================
 
-Elasticsearch is a popular distributed search and analytics engine that enables complex search features in near real-time. Default field type mappings support common numerical and date types and allow inner and nested objects in complex, hierarchical documents. Custom field type mappings can be defined for geospatial document fields. The ``geo_point`` type supports point geometries that can be specified through a coordinate string, geohash or coordinate array. The ``geo_shape`` type supports Point, LineString,  Polygon, MultiPoint, MultiLineString, MultiPolygon and GeometryCollection GeoJSON types as well as envelope and circle types. Custom type options allow configuration of the type and precision of spatial index.
+Elasticsearch is a popular distributed search and analytics engine that enables complex search features in near real-time. Default field type mappings support string, numeric, boolean and date types and allow complex, hierarchical documents. Custom field type mappings can be defined for geospatial document fields. The ``geo_point`` type supports point geometries that can be specified through a coordinate string, geohash or coordinate array. The ``geo_shape`` type supports Point, LineString,  Polygon, MultiPoint, MultiLineString, MultiPolygon and GeometryCollection GeoJSON types as well as envelope and circle types. Custom options allow configuration of the type and precision of the spatial index.
 
-This data store allows features from an Elasticsearch index to be published through GeoServer. Hierarchical documents based on inner object types are supported. Both ``geo_point`` and ``geo_shape`` type mappings are supported. Common filter capabilities are supported and custom query and post filter JSON can be passed through to Elasticsearch in WMS and WFS requests. 
+This data store allows features from an Elasticsearch index to be published through GeoServer. Both ``geo_point`` and ``geo_shape`` type mappings are supported. OGC filters are converted to Elasticsearch post filters and can be combined with native Elasticsearch queries and post filters in WMS and WFS requests. 
 
 Compatibility
 -------------
 
-The GeoTools Elasticsearch data store and associated GeoServer extension has been tested with Elasticsearch version 1.3.2 and 1.4.0 under GeoTools/GeoServer 
+The GeoTools Elasticsearch data store and associated GeoServer extension have been tested with Elasticsearch version 1.3.2 and 1.4.0 under GeoTools/GeoServer 
 12.x/2.6.x and 13.x/2.7.x.
 
 Installation
@@ -97,10 +97,10 @@ Usage
 Filtering
 ^^^^^^^^^
 
-Filtering capabilities include OpenGIS simple comparisons, temporal comparisons, as well as other common comparisons. Elasticsearch natively supports numerous spatial filter operators, depending on the type:
+Filtering capabilities include OpenGIS simple comparisons, temporal comparisons, as well as other common filter comparisons. Elasticsearch natively supports numerous spatial filter operators, depending on the type:
 
 - ``geo_shape`` types natively support BBOX/Intersects, Within and Disjoint binary spatial operators
-- ``geo_point`` types natively support BBOX and Within binary spatial operators as well as the DWithin distance buffer operator.
+- ``geo_point`` types natively support BBOX and Within binary spatial operators, as well as the DWithin and Beyond distance buffer operators
 
 Requests involving spatial filter operators not natively supported by Elasticsearch will include an additional filtering operation on the results returned from the query, which may impact performance.
 
@@ -108,7 +108,7 @@ Requests involving spatial filter operators not natively supported by Elasticsea
 Custom ``q`` and ``f`` parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Native Elasticsearch query/filter JSON can be used in WFS/WMS feature requests using the custom ``q`` (query) and ``f`` (post filter) parameters through the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the filter is combined with the filter derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
+Native Elasticsearch queries and filters can be included in WFS/WMS feature requests using the custom ``q`` (query) and ``f`` (post filter) parameters through the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the filter is combined with the filter derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
 
 Examples
 ^^^^^^^^
@@ -143,12 +143,8 @@ Notes and Known Issues
 - ``PropertyIsLike`` maps to either a query string query post filter or a regexp filter, depending on whether the field is analyzed or not. Reserved characters should be escaped as applicable. Note case sensitive and insensitive searches may not be supported for analyzed and not analyzed fields, respectively. See Elasticsearch query string and regexp filter documentation for more information.
 - Limited support for inner objects is available. By default field names will include the full path (e.g. "parent.child.attribute_name"), but this can be changed in the GeoServer layer configuration.
 
-  - When referencing field names with path elements in GeoServer ``cql_filter``, may need to quote the name (e.g. ``cql_filter="parent.child.attribute_name"='value'``)
-  - Arrays of objects are not currently supported (currently only the first element will be used)
+  - When referencing fields with path elements in GeoServer ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.attribute_name"='value'``)
+  - Arrays of objects are not currently supported (only the first element will be used)
 
-- Limited support for dates is available. Plugin will attempt to format dates in the Elasticsearch post filter based on the format in the type mapping. Currently only formats that can be parsed by `Joda-Time` (e.g. ``yyyMMdd``) are supported. Elasticsearch named formats (e.g. ``basic_date``) are not currently supported.
-
-.. _Joda-Time: http://www.joda.org/joda-time/
-
+- Date conversions are handled using the date format in the associated type mapping, if present, or ``date_optional_time`` otherwise. Note that UTC timezone is used for both parsing and printing of dates.
 - The Elasticsearch ``nested`` type has not been tested
-- Binary expressions and functions are not currently supported in filters

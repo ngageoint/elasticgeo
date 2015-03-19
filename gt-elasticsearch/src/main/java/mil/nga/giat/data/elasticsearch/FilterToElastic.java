@@ -30,6 +30,8 @@ import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FOR
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.jackson.core.JsonFactory;
 import org.elasticsearch.common.jackson.core.JsonParser;
+import org.elasticsearch.common.joda.FormatDateTimeFormatter;
+import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.joda.time.format.DateTimeFormat;
 import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
 import org.elasticsearch.common.joda.time.format.ISODateTimeFormat;
@@ -131,7 +133,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     /** Standard java logger */
     protected static Logger LOGGER = org.geotools.util.logging.Logging.getLogger(FilterToElastic.class);
 
-    public static DateTimeFormatter DEFAULT_DATE_FORMATTER = ISODateTimeFormat.dateTime().withZoneUTC();
+    public static DateTimeFormatter DEFAULT_DATE_FORMATTER = Joda.forPattern("date_optional_time").printer();
 
     /** filter factory */
     protected static FilterFactory filterFactory = CommonFactoryFinder.getFilterFactory(null);
@@ -793,7 +795,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             typeContext = attType.getType().getBinding();
             final String format = (String) attType.getUserData().get(DATE_FORMAT);
             if (format != null) {
-                dateFormatter = DateTimeFormat.forPattern(format).withZoneUTC();
+                dateFormatter = Joda.forPattern(format).printer();
             }
         }
 

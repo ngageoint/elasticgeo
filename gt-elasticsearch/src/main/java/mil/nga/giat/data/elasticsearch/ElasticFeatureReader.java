@@ -11,9 +11,8 @@ import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.FULL_NAM
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.base.Joiner;
-import org.elasticsearch.common.joda.time.format.DateTimeFormat;
+import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
-import org.elasticsearch.common.joda.time.format.ISODateTimeFormat;
 import org.elasticsearch.search.SearchHit;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.store.ContentState;
@@ -92,11 +91,13 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                 final Geometry geometry = geometryUtil.createGeometry(value);
                 builder.set(name, geometry);
             } else if (value != null && Date.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                DateTimeFormatter dateFormatter = ISODateTimeFormat.dateOptionalTimeParser().withZoneUTC();
-                final String format = (String) descriptor.getUserData().get(DATE_FORMAT);
-                if (format != null) {
-                    dateFormatter = DateTimeFormat.forPattern(format).withZoneUTC();
+                final String format;
+                if (descriptor.getUserData().get(DATE_FORMAT) != null) {
+                    format = (String) descriptor.getUserData().get(DATE_FORMAT);
+                } else {
+                    format = "date_optional_time";
                 }
+                final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
                 Date date = dateFormatter.parseDateTime((String) value).toDate();
                 builder.set(name, date);
             } else {

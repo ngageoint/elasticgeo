@@ -123,14 +123,6 @@ public class FilterToElasticTest {
         typeBuilder.add("floatAttr", Float.class);
         typeBuilder.add("dateAttr", Date.class);
 
-        AttributeDescriptor dateAtt = null;
-        AttributeTypeBuilder dateAttBuilder = new AttributeTypeBuilder();
-        dateAttBuilder.setName("dateAttr2");
-        dateAttBuilder.setBinding(Date.class);
-        dateAtt = dateAttBuilder.buildDescriptor("dateAttr2", dateAttBuilder.buildType());
-        dateAtt.getUserData().put(DATE_FORMAT, "yyyy-MM-dd");
-        typeBuilder.add(dateAtt);
-
         AttributeDescriptor geoPointAtt = null;
         AttributeTypeBuilder geoPointAttBuilder = new AttributeTypeBuilder();
         geoPointAttBuilder.setName("geo_point");
@@ -171,6 +163,22 @@ public class FilterToElasticTest {
     private void setFilterBuilder() {
         builder = new FilterToElastic();
         builder.setFeatureType(featureType);
+    }
+
+    private void addDateWithFormatToFeatureType(String format) {
+        SimpleFeatureTypeBuilder typeBuilder = new SimpleFeatureTypeBuilder();
+        typeBuilder.init(featureType);
+
+        AttributeDescriptor dateAtt = null;
+        AttributeTypeBuilder dateAttBuilder = new AttributeTypeBuilder();
+        dateAttBuilder.setName("dateAttrWithFormat");
+        dateAttBuilder.setBinding(Date.class);
+        dateAtt = dateAttBuilder.buildDescriptor("dateAttrWithFormat", dateAttBuilder.buildType());
+        dateAtt.getUserData().put(DATE_FORMAT, format);
+        typeBuilder.add(dateAtt);
+
+        featureType = typeBuilder.buildFeatureType();
+        setFilterBuilder();
     }
 
     @Test
@@ -574,12 +582,28 @@ public class FilterToElasticTest {
 
     @Test
     public void testTemporalInstanceLiteralExplicitFormat() throws ParseException {
+        addDateWithFormatToFeatureType("yyyy-MM-dd");
         dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
-        After filter = ff.after(ff.property("dateAttr2"), ff.literal(temporalInstant));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr2").gt("1970-07-19");
+        After filter = ff.after(ff.property("dateAttrWithFormat"), ff.literal(temporalInstant));
+        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttrWithFormat").gt("1970-07-19");
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.getFilterBuilder().toString().equals(expected.toString()));
+    }
+
+    @Test
+    public void testTemporalInstanceLiteralBasicDateTimeFormat() throws ParseException {
+        addDateWithFormatToFeatureType("basic_date_time");
+        dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
+        Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
+        After filter = ff.after(ff.property("dateAttrWithFormat"), ff.literal(temporalInstant));
+        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttrWithFormat").gt("19700719T020203.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));

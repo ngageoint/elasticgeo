@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.joda.time.format.DateTimeFormat;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
@@ -288,7 +289,7 @@ public class ElasticDataStore extends ContentDataStore {
                 final String format = (String) map.get("format");
                 if (format != null) {
                     try {
-                        DateTimeFormat.forPattern(format);
+                        Joda.forPattern(format);
                         elasticAttribute.setDateFormat(format);                        
                     } catch (Exception e) {
                         LOGGER.fine("Unable to parse date format ('" + format + "') for " + propertyKey);
