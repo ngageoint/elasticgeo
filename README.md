@@ -12,11 +12,11 @@ Software source code previously released under an open source license and then m
 
 GeoTools under [LGPL v 2.1](http://geotools.org/about.html)
 
-Elasticsearch under [Apache License v 2.0](https://github.com/elastic/elasticsearch/blob/master/LICENSE.txt) 
-
 GeoServer under [GPL v 2 with later option](http://geoserver.org/license/) 
 
 ElasticGeo under [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
+
+Elasticsearch under [Apache License v 2.0](https://github.com/elastic/elasticsearch/blob/master/LICENSE.txt) 
 
 ###Documentation
 
