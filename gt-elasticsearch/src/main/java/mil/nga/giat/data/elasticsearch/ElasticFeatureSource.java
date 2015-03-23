@@ -26,6 +26,8 @@ import org.opengis.filter.sort.SortBy;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -35,6 +37,7 @@ import java.util.logging.Logger;
  * by the associated data store.
  *
  */
+@SuppressWarnings("unchecked")
 public class ElasticFeatureSource extends ContentFeatureSource {
 
     private final static Logger LOGGER = Logger.getLogger(ElasticFeatureSource.class.getName());
@@ -134,6 +137,25 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                 .prepareSearch(dataStore.getIndexName())
                 .setTypes(getName().toString())
                 .setSearchType(searchType);
+
+        // add fields
+        final List<ElasticAttribute> attributes;
+        attributes = dataStore.getElasticAttributes(entry.getTypeName());
+        List<String> sourceIncludes = new ArrayList<>();
+        for (final ElasticAttribute attribute : attributes) {
+            if (attribute.isUse() && attribute.isStored()) {
+                searchRequest.addField(attribute.getName());
+            } else if (attribute.isUse()) {
+                sourceIncludes.add(attribute.getName());
+            }
+        }
+        if (sourceIncludes.size() == 1) {
+            searchRequest.setFetchSource(sourceIncludes.get(0), null);
+        } else if (!sourceIncludes.isEmpty()) {
+            final String[] includes;
+            includes = sourceIncludes.toArray(new String[sourceIncludes.size()]);
+            searchRequest.setFetchSource(includes, null);
+        }
 
         // add query and post filter
         final FilterToElastic filterToElastic;

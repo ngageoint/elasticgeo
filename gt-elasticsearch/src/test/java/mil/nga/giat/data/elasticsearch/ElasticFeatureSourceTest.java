@@ -21,11 +21,13 @@ import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.data.store.ContentFeatureCollection;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeature;
@@ -177,44 +179,41 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         while (iterator.hasNext()) {
             SimpleFeature f = iterator.next();
             boolean found = false;
-            if (!(f.getAttribute("speed_is") instanceof String)) {
-                int v = (Integer) f.getAttribute("speed_is");
-                found = (v >= 0 && v <= 150);
-            } else {
-                String speeds = (String) f.getAttribute("speed_is");
-                for (Object s : speeds.split(";")) {
-                    int si = Integer.parseInt(s.toString());
-                    if (si >= 0 && si <= 150) {
+            if (f.getAttribute("speed_is") instanceof List) {
+                for (Object obj : (List<?>) f.getAttribute("speed_is")) {
+                    int v = (Integer) obj;
+                    if (v >= 0 && v <= 150) {
                         found = true;
                         break;
                     }
                 }
+            } else {
+                int v = (Integer) f.getAttribute("speed_is");
+                found = (v >= 0 && v <= 150);
             }
             assertTrue(found);
         }
         between = ff.between(ff.property("speed_is"), ff.literal(160), ff.literal(300));
         features = featureSource.getFeatures(between);
         assertEquals(5, features.size());
-        // TODO: Numeric multi-values not being stored in feature with 12.x. Check 13.x.
-//        iterator = features.features();
-//        while (iterator.hasNext()) {
-//            SimpleFeature f = iterator.next();
-//            boolean found = false;
-//            if (!(f.getAttribute("speed_is") instanceof String)) {
-//                int v = (Integer) f.getAttribute("speed_is");
-//                found = (v >= 160 && v <= 300);
-//            } else {
-//                String speeds = (String) f.getAttribute("speed_is");
-//                for (Object s : speeds.split(";")) {
-//                    int si = Integer.parseInt(s.toString());
-//                    if (si >= 160 && si <= 300) {
-//                        found = true;
-//                        break;
-//                    }
-//                }
-//            }
-//            assertTrue(found);
-//        }
+        iterator = features.features();
+        while (iterator.hasNext()) {
+            SimpleFeature f = iterator.next();
+            boolean found = false;
+            if (f.getAttribute("speed_is") instanceof List) {
+                for (Object obj : (List<?>) f.getAttribute("speed_is")) {
+                    int v = (Integer) obj;
+                    if (v >= 160 && v <= 300) {
+                        found = true;
+                        break;
+                    }
+                }
+            } else {
+                int v = (Integer) f.getAttribute("speed_is");
+                found = (v >= 160 && v <= 300);
+            }
+            assertTrue(found);
+        }
     }
 
     @Test
@@ -408,6 +407,41 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
 
         SimpleFeatureCollection features = featureSource.getFeatures(f);
         assertCovered(features, 2, 5, 6);
+    }
+    
+    @Test
+    public void testOnlyStoredFields() throws Exception {
+        init();
+        for (final ElasticAttribute attribute : dataStore.getElasticAttributes("active") ){
+            if (!attribute.isStored()) {
+                attribute.setUse(false);
+            }
+        }
+        assertEquals(11, featureSource.getCount(Query.ALL));
+        SimpleFeatureIterator features = featureSource.getFeatures().features();
+        for (int i=0; i<11; i++) {
+            assertTrue(features.hasNext());
+            features.next();
+        }
+    }
+    
+    @Test
+    public void testOnlySourceFields() throws Exception {
+        init();
+        for (final ElasticAttribute attribute : dataStore.getElasticAttributes("active") ){
+            if (attribute.isStored()) {
+                attribute.setUse(false);
+            }
+        }
+        featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(layerName);
+        
+        assertEquals(11, featureSource.getCount(Query.ALL));
+        
+        SimpleFeatureIterator features = featureSource.getFeatures().features();
+        for (int i=0; i<11; i++) {
+            assertTrue(features.hasNext());
+            features.next();
+        }
     }
 
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {

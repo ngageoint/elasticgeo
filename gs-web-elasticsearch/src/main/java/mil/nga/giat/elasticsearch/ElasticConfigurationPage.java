@@ -17,15 +17,18 @@ import mil.nga.giat.data.elasticsearch.ElasticAttribute;
 import mil.nga.giat.data.elasticsearch.ElasticDataStore;
 import mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration;
 
+import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.markup.html.form.AjaxButton;
 import org.apache.wicket.ajax.markup.html.form.AjaxCheckBox;
+import org.apache.wicket.behavior.AttributeAppender;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.CheckBox;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
+import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.panel.Fragment;
 import org.apache.wicket.markup.html.panel.Panel;
@@ -67,6 +70,8 @@ public abstract class ElasticConfigurationPage extends Panel {
     private static final Logger LOGGER = Logging.getLogger(ElasticConfigurationPage.class);
 
     private FeedbackPanel feedbackPanel;
+    
+    private final String useAllMarkupId;
 
     private static final List GEOMETRY_TYPES = Arrays.asList(Geometry.class,
             GeometryCollection.class, Point.class, MultiPoint.class, LineString.class,
@@ -95,6 +100,28 @@ public abstract class ElasticConfigurationPage extends Panel {
         final GeoServerTablePanel<ElasticAttribute> elasticAttributePanel = getElasticAttributePanel(attProvider);
         elastic_form.add(elasticAttributePanel);
 
+        // select all check box
+        boolean selectAll = true;
+        for (final ElasticAttribute attribute : attributes) {
+            if (attribute.isUse() == null || !attribute.isUse()) {
+                selectAll = false;
+            }
+        }
+        AjaxCheckBox useAllCheckBox = new AjaxCheckBox("useAll", Model.of(selectAll)) {
+            @Override
+            protected void onUpdate(AjaxRequestTarget target) {
+                final boolean use = (Boolean) this.getDefaultModelObject();
+                for (final ElasticAttribute attribute : attProvider.getItems()) {
+                    attribute.setUse(use);
+                }
+                target.addComponent(elasticAttributePanel);
+            }
+        };
+        useAllCheckBox.setOutputMarkupId(true);
+        elastic_form.add(useAllCheckBox);
+        useAllMarkupId = useAllCheckBox.getMarkupId();
+        
+        // use short name check box
         final Boolean useShortName;
         if (!attributes.isEmpty() && attributes.get(0).getUseShortName() != null) {
             useShortName = attributes.get(0).getUseShortName();
@@ -108,7 +135,6 @@ public abstract class ElasticConfigurationPage extends Panel {
                 for (final ElasticAttribute attribute : attProvider.getItems()) {
                     attribute.setUseShortName(useShortName);
                 }
-                attProvider.reload(useShortName);
                 target.addComponent(elasticAttributePanel);
             }
         };
@@ -249,8 +275,11 @@ public abstract class ElasticConfigurationPage extends Panel {
                             GEOMETRY_TYPES, new GeometryTypeRenderer()));
                     return f;
                 } else if (property == ElasticAttributeProvider.USE) {
+                    CheckBox checkBox = new CheckBox("use", new PropertyModel<Boolean>(itemModel, "use"));
+                    final String onclick = "document.getElementById(\"" + useAllMarkupId + "\").checked = false;";
+                    checkBox.add(new AttributeAppender("onclick", new Model<String>(onclick), ";"));
                     Fragment f = new Fragment(id, "checkboxUse", ElasticConfigurationPage.this);
-                    f.add(new CheckBox("use", new PropertyModel<Boolean>(itemModel, "use")));
+                    f.add(checkBox);
                     return f;
                 } else if (property == ElasticAttributeProvider.DEFAULT_GEOMETRY) {
                     if (isGeometry) {
@@ -272,8 +301,44 @@ public abstract class ElasticConfigurationPage extends Panel {
                         Fragment f = new Fragment(id, "empty", ElasticConfigurationPage.this);
                         return f;
                     }
+                } else if (property == ElasticAttributeProvider.DATE_FORMAT) {
+                    if (att.getDateFormat() != null) {
+                        Fragment f = new Fragment(id, "label", ElasticConfigurationPage.this);
+                        f.add(new Label("label", String.valueOf(att.getDateFormat())));
+                        return f;
+                    } else {
+                        Fragment f = new Fragment(id, "empty", ElasticConfigurationPage.this);
+                        return f;
+                    }
+                } else if (property == ElasticAttributeProvider.ANALYZED) {
+                    if (att.getAnalyzed() != null && att.getAnalyzed()) {
+                        Fragment f = new Fragment(id, "label", ElasticConfigurationPage.this);
+                        f.add(new Label("label", "x"));
+                        return f;
+                    } else {
+                        Fragment f = new Fragment(id, "empty", ElasticConfigurationPage.this);
+                        return f;
+                    }
+                } else if (property == ElasticAttributeProvider.STORED) {
+                    if (att.isStored()) {
+                        Fragment f = new Fragment(id, "label", ElasticConfigurationPage.this);
+                        f.add(new Label("label", "x"));
+                        return f;
+                    } else {
+                        Fragment f = new Fragment(id, "empty", ElasticConfigurationPage.this);
+                        return f;
+                    }
                 }
                 return null;
+            }
+
+            @Override
+            protected void onPopulateItem(Property<ElasticAttribute> property, ListItem item) {
+                if (property == ElasticAttributeProvider.STORED) {
+                    item.add(new AttributeModifier("style",true,Model.of("text-align:center")));
+                } else if (property == ElasticAttributeProvider.ANALYZED) {
+                    item.add(new AttributeModifier("style",true,Model.of("text-align:center")));
+                }
             }
         };
         atts.setOutputMarkupId(true);

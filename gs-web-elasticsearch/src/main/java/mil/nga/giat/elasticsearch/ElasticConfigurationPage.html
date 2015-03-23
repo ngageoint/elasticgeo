@@ -5,8 +5,10 @@
 <body>
 	<wicket:panel>
 		<form wicket:id="es_form">	
-		    <input type="checkbox" wicket:id="useShortName"/>
-		    <wicket:message key="useShortName">Use Short Field Name (if applicable)</wicket:message>
+            <input type="checkbox" wicket:id="useAll"/>
+            <wicket:message key="useAll">Use All</wicket:message>
+            <input type="checkbox" wicket:id="useShortName"/>
+		    <wicket:message key="useShortName">Short Names</wicket:message>
 			<div>
 				<div wicket:id="esAttributes"></div>
 				<div wicket:id="es_feedback">[Feedback Panel]</div>
@@ -26,13 +28,13 @@
 	<wicket:fragment wicket:id="checkboxUse">
 		<input type="checkbox" wicket:id="use"></input>
 	</wicket:fragment>
-	
+    
 	<wicket:fragment wicket:id="empty"></wicket:fragment>
 
 	<wicket:fragment wicket:id="geometry">
 		<select wicket:id="geometry"></select>
 	</wicket:fragment>
-			
+    
 	<wicket:fragment wicket:id="label">
 		<span wicket:id="label"></span>
 	</wicket:fragment>

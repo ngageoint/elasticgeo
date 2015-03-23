@@ -72,19 +72,27 @@ The initial layer configuration panel for an Elasticsearch layer will include an
 .. list-table::
    :widths: 20 80
 
+   * - ``Use All``
+     - Use all fields in the layer feature type
    * - ``Short Names``
      - For hierarchical documents with inner fields (e.g. ``parent.child.field_name``), only use the base name 
-       (``field_name``) in the schema. Note, full path will always be included when base name is duplicated across fields.
+       (``field_name``) in the schema. Note, full path will always be included when the base name is duplicated across fields.
    * - ``Use``
-     - Used to select the fields that will make up this layer features
+     - Used to select the fields that will make up the layer feature type
    * - ``Name``
      - Name of the field
    * - ``Type``
      - Type of the field, as derived from the Elasticsearch schema. For geometry types, you have the option to provide a more specific data type.
-   * - ``Default geometry``
+   * - ``Default Geometry``
      - Indicates if the geometry field is the default one. Useful if the documents contain more than one geometry field, as SLDs and spatial filters will hit the default geometry field unless otherwise specified
+   * - ``Stored``
+     - Indicates whether the field is stored in the index
+   * - ``Analyzed``
+     - Indicates whether the field is analyzed
    * - ``SRID``
      - Native spatial reference ID of the geometries. Currently only EPSG:4326 is supported.
+   * - ``Date Format``
+     - Date format used for parsing field values and printing filter elements
 
 To return to the field table after it has been closed, click the "Configure Elasticsearch fields" button below the "Feature Type Details" panel on the layer configuration page.
 
@@ -139,12 +147,12 @@ Note that commas in native query and post filter must be escaped with a backslas
 Notes and Known Issues
 ----------------------
 
-- ``PropertyIsEqualTo`` and ``PropertyIsNotEqualTo`` map to an Elasticsearch term post filter, which will return documents that contain the supplied term. When searching on an analyzed string field, ensure that the search values are consistent with the analyzer used in the index. For example, values may need to be lowercase when querying fields analyzed with the default analyzer. See the Elasticsearch term filter documentation for more information.
+- ``PropertyIsEqualTo`` maps to an Elasticsearch term post filter, which will return documents that contain the supplied term. When searching on an analyzed string field, ensure that the search values are consistent with the analyzer used in the index. For example, values may need to be lowercase when querying fields analyzed with the default analyzer. See the Elasticsearch term filter documentation for more information.
 - ``PropertyIsLike`` maps to either a query string query post filter or a regexp filter, depending on whether the field is analyzed or not. Reserved characters should be escaped as applicable. Note case sensitive and insensitive searches may not be supported for analyzed and not analyzed fields, respectively. See Elasticsearch query string and regexp filter documentation for more information.
-- Limited support for inner objects is available. By default field names will include the full path (e.g. "parent.child.attribute_name"), but this can be changed in the GeoServer layer configuration.
+- Date conversions are handled using the date format from the associated type mapping, or ``date_optional_time`` if not found. Note that UTC timezone is used for both parsing and printing of dates.
+- The Elasticsearch ``object`` type is supported. By default, field names will include the full path to the field (e.g. "parent.child.field_name"), but this can be changed in the GeoServer layer configuration.
 
-  - When referencing fields with path elements in GeoServer ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.attribute_name"='value'``)
-  - Arrays of objects are not currently supported (only the first element will be used)
+  - When referencing fields with path elements using ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.field_name"='value'``)
 
-- Date conversions are handled using the date format in the associated type mapping, if present, or ``date_optional_time`` otherwise. Note that UTC timezone is used for both parsing and printing of dates.
-- The Elasticsearch ``nested`` type has not been tested
+- The Elasticsearch ``nested`` type is not supported
+- Circle geometries are not currently supported

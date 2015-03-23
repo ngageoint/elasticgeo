@@ -14,13 +14,13 @@ import org.elasticsearch.common.base.Joiner;
 import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHitField;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.store.ContentState;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
-import org.opengis.feature.type.GeometryDescriptor;
 
 import java.util.Date;
 import java.util.Iterator;
@@ -41,14 +41,14 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
 
     private Iterator<SearchHit> searchHitIterator;
 
-    private ElasticGeometryUtil geometryUtil;
+    private ElasticParserUtil parserUtil;
 
     public ElasticFeatureReader(ContentState contentState, SearchResponse response) {
         state = contentState;
         featureType = state.getFeatureType();
         searchHitIterator = response.getHits().iterator();
         builder = new SimpleFeatureBuilder(featureType);
-        geometryUtil = new ElasticGeometryUtil();
+        parserUtil = new ElasticParserUtil();
     }
 
     @Override
@@ -58,10 +58,6 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
 
     @Override
     public SimpleFeature next() {
-        return readFeature();
-    }
-
-    private SimpleFeature readFeature() {
         if (!searchHitIterator.hasNext()) {
             return null;
         }
@@ -69,39 +65,38 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
         final SimpleFeatureType type = getFeatureType();
         final Map<String, Object> source = hit.getSource();
 
-        final GeometryDescriptor geometryDescriptor;
-        geometryDescriptor = featureType.getGeometryDescriptor();
-        final String geometryName;
-        if (geometryDescriptor != null) {
-            geometryName = geometryDescriptor.getName().getLocalPart();
-        } else {
-            geometryName = null;
-        }
-
         for (final AttributeDescriptor descriptor : type.getAttributeDescriptors()) {
             final String name = descriptor.getType().getName().getLocalPart();
             final String sourceName = (String) descriptor.getUserData().get(FULL_NAME);
-            final boolean isGeometry = name.equals(geometryName);
-            Object value = readProperty(source, sourceName, isGeometry);
-            if (value == null && source.containsKey("properties")) {
-                // added to support ogr2ogr output
-                value = readProperty(source, "properties." + name, isGeometry);
+
+            final SearchHitField field = hit.field(sourceName);
+            List<Object> values = null;
+            if (field != null) {
+                // hit field
+                values = field.values();
             }
-            if (value != null && Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                final Geometry geometry = geometryUtil.createGeometry(value);
-                builder.set(name, geometry);
-            } else if (value != null && Date.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                final String format;
-                if (descriptor.getUserData().get(DATE_FORMAT) != null) {
-                    format = (String) descriptor.getUserData().get(DATE_FORMAT);
-                } else {
-                    format = "date_optional_time";
+            if ((values == null || values.isEmpty()) && source != null) {
+                // read field from source
+                values = parserUtil.readField(source, sourceName);
+                if (values.isEmpty() &&  source.containsKey("properties")) {
+                    // retry with "properties" prefix (OGR-compatibility)
+                    values = parserUtil.readField(source, "properties." + name);
                 }
+            }
+            if (values == null || values.isEmpty()) {
+            } else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
+                builder.set(name, parserUtil.createGeometry(values.get(0)));
+            } else if (Date.class.isAssignableFrom(descriptor.getType().getBinding())) {
+                final String format = (String) descriptor.getUserData().get(DATE_FORMAT);
                 final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
-                Date date = dateFormatter.parseDateTime((String) value).toDate();
+                Date date = dateFormatter.parseDateTime((String) values.get(0)).toDate();
                 builder.set(name, date);
+            } else if (values.size() == 1){
+                builder.set(name, values.get(0));
+            } else if (String.class.isAssignableFrom(descriptor.getType().getBinding())) {
+                builder.set(name, Joiner.on(';').join(values));
             } else {
-                builder.set(name, value);
+                builder.set(name, values);
             }
         }
 
@@ -120,29 +115,6 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     public void close() {
         builder = null;
         searchHitIterator = null;
-    }
-
-    private Object readProperty(Map<String, Object> source, String propertyName, boolean isGeometry) {
-        Object value = null;
-        final String[] keys = propertyName.split("\\.");
-        for (int i=0; i<keys.length; i++) {
-            Object entry = source.get(keys[i]);
-            if (!isGeometry && entry instanceof List && !((List<?>) entry).isEmpty()) {
-                final List<?> list = (List<?>) entry;
-                if (Map.class.isAssignableFrom(list.get(0).getClass())) {
-                    // TODO: Add support for nested object arrays
-                    entry = list.get(0);
-                } else {
-                    entry = Joiner.on(';').join((List<?>) entry);
-                }
-            }
-            if (i<keys.length-1 && entry != null && Map.class.isAssignableFrom(entry.getClass())) {
-                source = (Map) entry;
-            } else {
-                value = entry;
-            }
-        }
-        return value;
     }
 
 }

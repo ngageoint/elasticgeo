@@ -202,6 +202,7 @@ public abstract class ElasticTestSupport {
         config.setLayerName(this.layerName);
         List<ElasticAttribute> layerAttributes = new ArrayList<>();
         for (ElasticAttribute attribute : attributes) {
+            attribute.setUse(true);
             if (geometryField.equals(attribute.getName())) {
                 ElasticAttribute copy = new ElasticAttribute(attribute);
                 copy.setDefaultGeometry(true);

@@ -43,12 +43,15 @@ public class ElasticAttribute implements Serializable {
 
     private Boolean analyzed;
 
+    private boolean stored;
+
     public ElasticAttribute(String name) {
         super();
         this.name = name;
         this.use = true;
         this.defaultGeometry = false;
         this.useShortName = false;
+        this.stored = false;
     }
 
     public ElasticAttribute(ElasticAttribute other) {
@@ -62,6 +65,7 @@ public class ElasticAttribute implements Serializable {
         this.useShortName = other.useShortName;
         this.geometryType = other.geometryType;
         this.analyzed = other.analyzed;
+        this.stored = other.stored;
     }
 
     public String getName() {
@@ -144,6 +148,14 @@ public class ElasticAttribute implements Serializable {
         this.analyzed = analyzed;
     }
 
+    public boolean isStored() {
+        return stored;
+    }
+
+    public void setStored(boolean stored) {
+        this.stored = stored;
+    }
+
     public String getDisplayName() {
         final String displayName;
         if (useShortName) {
@@ -159,12 +171,14 @@ public class ElasticAttribute implements Serializable {
         return "ElasticAttribute [name=" + name + ", type=" + type + ", use=" + use
                 + ", defaultGeometry=" + defaultGeometry + ", srid=" + srid
                 + ", dateFormat=" + dateFormat + ", useShortName=" + useShortName + ""
-                + ", geometryType=" + geometryType + ", analyzed=" + analyzed + "]";
+                + ", geometryType=" + geometryType + ", analyzed=" + analyzed
+                + ", stored=" + stored + "]";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, use, defaultGeometry, srid, dateFormat, useShortName, geometryType, analyzed);
+        return Objects.hash(name, type, use, defaultGeometry, srid, dateFormat,
+                useShortName, geometryType, analyzed, stored);
     }
 
     @Override
@@ -183,6 +197,7 @@ public class ElasticAttribute implements Serializable {
             equal &= Objects.equals(useShortName, other.useShortName);
             equal &= Objects.equals(geometryType, other.geometryType);
             equal &= Objects.equals(analyzed, other.analyzed);
+            equal &= Objects.equals(stored, other.stored);
         }
         return equal;
     }

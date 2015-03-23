@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.joda.Joda;
-import org.elasticsearch.common.joda.time.format.DateTimeFormat;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
@@ -286,15 +285,19 @@ public class ElasticDataStore extends ContentDataStore {
                 binding = Boolean.class;
                 break;
             case "date":
-                final String format = (String) map.get("format");
+                String format = (String) map.get("format");
                 if (format != null) {
                     try {
                         Joda.forPattern(format);
-                        elasticAttribute.setDateFormat(format);                        
                     } catch (Exception e) {
                         LOGGER.fine("Unable to parse date format ('" + format + "') for " + propertyKey);
+                        format = null;
                     }
                 }
+                if (format == null) {
+                    format = "date_optional_time";
+                }
+                elasticAttribute.setDateFormat(format);
                 binding = Date.class;
                 break;
             default:
@@ -302,6 +305,13 @@ public class ElasticDataStore extends ContentDataStore {
                 break;
             }
             if (binding != null) {
+                final boolean stored;
+                if (map.get("store") != null) {
+                    stored = (Boolean) map.get("store");
+                } else {
+                    stored = false;
+                }
+                elasticAttribute.setStored(stored);
                 elasticAttribute.setType(binding);
                 elasticAttributes.add(elasticAttribute);
             }

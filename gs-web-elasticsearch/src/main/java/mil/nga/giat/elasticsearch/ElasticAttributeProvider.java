@@ -24,8 +24,6 @@ public class ElasticAttributeProvider extends GeoServerDataProvider<ElasticAttri
 
     private List<ElasticAttribute> attributes = new ArrayList<ElasticAttribute>();
     
-    private Boolean useShortName = false;
-
     /**
      * Name of field
      */
@@ -63,10 +61,28 @@ public class ElasticAttributeProvider extends GeoServerDataProvider<ElasticAttri
             "srid");
 
     /**
-     * Store if the field is in use in datastore
+     * Use field in datastore
      */
     protected static final Property<ElasticAttribute> USE = new BeanProperty<ElasticAttribute>("use",
             "use");
+
+    /**
+     * Store if the field is in use in datastore
+     */
+    protected static final Property<ElasticAttribute> DATE_FORMAT = new BeanProperty<ElasticAttribute>("dateFormat",
+            "dateFormat");
+
+    /**
+     * If field is analyzed
+     */
+    protected static final Property<ElasticAttribute> ANALYZED = new BeanProperty<ElasticAttribute>("analyzed",
+            "analyzed");
+
+    /**
+     * If field is stored
+     */
+    protected static final Property<ElasticAttribute> STORED = new BeanProperty<ElasticAttribute>("stored",
+            "stored");
 
     /**
      * Build attribute provider
@@ -79,20 +95,12 @@ public class ElasticAttributeProvider extends GeoServerDataProvider<ElasticAttri
 
     @Override
     protected List<org.geoserver.web.wicket.GeoServerDataProvider.Property<ElasticAttribute>> getProperties() {
-        return Arrays.asList(USE, NAME, TYPE, DEFAULT_GEOMETRY, SRID);
+        return Arrays.asList(USE, NAME, TYPE, DEFAULT_GEOMETRY, STORED, ANALYZED, SRID, DATE_FORMAT);
     }
 
     @Override
     protected List<ElasticAttribute> getItems() {
         return attributes;
-    }
-    
-    protected void reload(Boolean useShortName) {
-        this.useShortName = useShortName;
-    }
-    
-    public Boolean getUseShortName() {
-        return useShortName;
     }
 
 }
