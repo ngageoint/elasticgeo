@@ -1,0 +1,19 @@
+sudo: false
+language: java
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+env:
+  matrix:
+    - GEOTOOLS_VERSION='12.2'   GEOSERVER_VERSION='2.6.2' ELASTICSEARCH_VERSION='1.3.2'
+    - GEOTOOLS_VERSION='12.2'   GEOSERVER_VERSION='2.6.2' ELASTICSEARCH_VERSION='1.4.4'
+    - GEOTOOLS_VERSION='13.0'   GEOSERVER_VERSION='2.7.0' ELASTICSEARCH_VERSION='1.3.2'
+    - GEOTOOLS_VERSION='13.0'   GEOSERVER_VERSION='2.7.0' ELASTICSEARCH_VERSION='1.4.4'
+cache:
+  directories:
+  - $HOME/.m2
+install: "mvn -q install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}"
+script: "mvn -q verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}"
+after_success:
+  - mvn coveralls:report  -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}
+

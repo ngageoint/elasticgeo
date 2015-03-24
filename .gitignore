@@ -2,3 +2,7 @@
 **.settings/
 **.project
 **.classpath
+*.prefs
+*.log
+*.iml
+**idea/
