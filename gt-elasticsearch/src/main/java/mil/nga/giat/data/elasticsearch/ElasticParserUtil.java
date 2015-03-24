@@ -205,7 +205,13 @@ public class ElasticParserUtil {
         if (!keys.isEmpty()) {
             readField(source.get(keys.get(0)), keys.subList(1, keys.size()), values);
         }
-        return values;
+        final List<Object> result;
+        if (!values.isEmpty()) {
+            result = values;
+        } else {
+            result = null;
+        }
+        return result;
     }
 
     private void readField(Object entry, List<String> keys, List<Object> values) {

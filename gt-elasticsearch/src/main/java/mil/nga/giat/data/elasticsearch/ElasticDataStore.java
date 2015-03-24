@@ -194,7 +194,11 @@ public class ElasticDataStore extends ContentDataStore {
                 mapping = (Map<String, Object>) mapping.get(layerName);
             }
 
-            walk(mapping, "");
+            // include _id and _score
+            add("_id", "string", mapping);
+            add("_score", "float", mapping);
+
+            walk(mapping, "", false);
 
             // add default geometry and short name and count duplicate short names
             final Map<String,Integer> counts = new HashMap<>();
@@ -226,20 +230,21 @@ public class ElasticDataStore extends ContentDataStore {
         return elasticAttributes;
     }
 
-    private void walk(Map<String,Object> map, String propertyKey) {
+    private void walk(Map<String,Object> map, String propertyKey, boolean startType) {
         for (final Map.Entry<String, Object> entry : map.entrySet()) {
             final String key = entry.getKey();
             final Object value = entry.getValue();
             if (!key.equals("_timestamp") && Map.class.isAssignableFrom(value.getClass())) {
-                String newPropertyKey;
-                if (propertyKey.isEmpty() && !key.equals("properties")) {
-                    newPropertyKey = entry.getKey();
-                } else if (!key.equals("properties")) {
-                    newPropertyKey = propertyKey + "." + key;
-                } else {
+                final String newPropertyKey;
+                if (!startType && key.equals("properties")) {
                     newPropertyKey = propertyKey;
+                } else if (propertyKey.isEmpty()) {
+                    newPropertyKey = entry.getKey();
+                } else {
+                    newPropertyKey = propertyKey + "." + key;
                 }
-                walk((Map) value, newPropertyKey);
+                startType = !startType && key.equals("properties");
+                walk((Map) value, newPropertyKey, startType);
             } else if (key.equals("type")) {
                 add(propertyKey, (String) value, map);
             } else if (key.equals("_timestamp")) {
