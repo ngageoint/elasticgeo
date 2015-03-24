@@ -1,5 +1,15 @@
 #ElasticGeo
 
+<a href="https://travis-ci.org/ngageoint/elasticgeo">
+	<img alt="Travis-CI test status" 
+	     src="https://travis-ci.org/ngageoint/elasticgeo.svg?branch=master"/>
+</a>
+<br/>
+<a href='https://coveralls.io/r/ngageoint/?branch=master'>
+  <img src='https://coveralls.io/repos/ngageoint/elasticgeo/badge.png?branch=master'
+       alt='Coverage Status' />
+</a>
+
 ElasticGeo provides a GeoTools data store that allows geospatial features from an Elasticsearch index to be published via OGC services using GeoServer.  
 
 ###Pull Request
