@@ -8,7 +8,7 @@
   </parent>
   <groupId>mil.nga.giat</groupId>
   <artifactId>gt-elasticsearch</artifactId>
-  <version>13-SNAPSHOT</version>
+  <version>${geotools.version}</version>
   <packaging>jar</packaging>
   <name>GeoTools Elasticsearch Module</name>
   <build>
