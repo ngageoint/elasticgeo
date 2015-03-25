@@ -116,7 +116,7 @@ Requests involving spatial filter operators not natively supported by Elasticsea
 Custom ``q`` and ``f`` parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Native Elasticsearch queries and filters can be included in WFS/WMS feature requests using the custom ``q`` (query) and ``f`` (post filter) parameters through the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the filter is combined with the filter derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
+Native Elasticsearch queries and post filters can be included in WFS/WMS feature requests using the custom ``q`` (query) and ``f`` (post filter) parameters through the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the filter is combined with the filter derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
 
 Examples
 ^^^^^^^^
@@ -154,5 +154,5 @@ Notes and Known Issues
 
   - When referencing fields with path elements using ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.field_name"='value'``)
 
-- The Elasticsearch ``nested`` type is not supported
+- Elasticsearch nested filters are not curently supported. Include a native Elasticsearch post filter (``f`` view parameter) to filter fields indexed with the Elasticearch ``nested`` type.
 - Circle geometries are not currently supported
