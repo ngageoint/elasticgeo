@@ -52,7 +52,7 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, "9300");
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, String.valueOf(port));
         map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();

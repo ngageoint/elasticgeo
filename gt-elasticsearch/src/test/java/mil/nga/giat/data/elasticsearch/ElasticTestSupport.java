@@ -44,15 +44,20 @@ import mil.nga.giat.data.elasticsearch.ElasticDataStoreFactory;
 import mil.nga.giat.data.elasticsearch.ElasticFeatureSource;
 import mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration;
 
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.geotools.temporal.object.DefaultInstant;
 import org.geotools.temporal.object.DefaultPeriod;
 import org.geotools.temporal.object.DefaultPosition;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import static org.junit.Assert.assertTrue;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
 
@@ -101,7 +106,6 @@ public abstract class ElasticTestSupport {
         InputStream inputStream = ClassLoader.getSystemResourceAsStream(PROPERTIES_FILE);
         properties.load(inputStream);
         host = properties.getProperty("elasticsearch_host");
-        port = Integer.valueOf(properties.getProperty("elasticsearch_port"));
         indexName = properties.getProperty("index_name");
         clusterName = properties.getProperty("cluster_name");
 
@@ -109,14 +113,18 @@ public abstract class ElasticTestSupport {
             connect();
         }
 
-        Map<String,Serializable> params = createConnectionParams();
-        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
-        dataStore = (ElasticDataStore) factory.createDataStore(params);
+        if (port != null) {
+            Map<String,Serializable> params = createConnectionParams();
+            ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+            dataStore = (ElasticDataStore) factory.createDataStore(params);
+        }
     }
 
     @AfterClass
     public static void suiteTearDown() {
-        dataStore.dispose();
+        if (dataStore != null) {
+            dataStore.dispose();
+        }
         //TODO: Need to close only after all tests in all suites have run
         //        node.close();
     }
@@ -124,13 +132,29 @@ public abstract class ElasticTestSupport {
     private static void connect() throws Exception {
         Path path = Files.createTempDirectory("gt_es_test");
 
-        LOGGER.info("Creating local Elasticsearch index for tests (path.home=" + path + ")");
+        LOGGER.info("Creating local test Elasticsearch cluster (path.home=" + path + ")");
         Settings build = ImmutableSettings.builder()
                 .put("path.home", path)
                 .put("path.data", path + File.separator + "data")
                 .build();
         node = nodeBuilder().settings(build).node();
         Client client = node.client();
+        
+        // get transport port
+        ClusterStateResponse state;
+        state = client.admin().cluster().prepareState().setNodes(true).execute().actionGet();
+        ImmutableOpenMap<String, DiscoveryNode> dataNodes = state.getState().getNodes().dataNodes();
+        String key = dataNodes.keys().iterator().next().value;
+        TransportAddress address = dataNodes.get(key).getAddress();
+        Matcher matcher = Pattern.compile(".*?:(93..).*").matcher(address.toString());
+        if (matcher.matches()) {
+            port = Integer.valueOf(matcher.group(1));
+        } else {
+            String m;
+            m = "Elasticsearch initialization failed "
+                    + "(unable to parse port from local node transport_address)";
+            throw new RuntimeException(m);
+        }
         
         // create index and add mappings
         CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
@@ -195,6 +219,7 @@ public abstract class ElasticTestSupport {
     }
 
     protected void init(String layerName, String geometryField) throws Exception {
+        assertTrue("Elasticsearch test cluster is not initialized", port != null);
         this.layerName = layerName;
         attributes = dataStore.getElasticAttributes(this.layerName);
         ElasticLayerConfiguration config = new ElasticLayerConfiguration(

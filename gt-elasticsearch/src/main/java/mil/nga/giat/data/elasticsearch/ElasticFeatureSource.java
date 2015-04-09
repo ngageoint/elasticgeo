@@ -9,6 +9,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.FilteringFeatureReader;
@@ -192,7 +193,9 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                 }
             }
         }
-        searchRequest.addSort("_uid", naturalSortOrder);
+        if (elasticQuery.toString().equals(QueryBuilders.matchAllQuery().toString())) {
+            searchRequest.addSort("_uid", naturalSortOrder);
+        }
 
         // pagination
         searchRequest.setSize(getSize(query));

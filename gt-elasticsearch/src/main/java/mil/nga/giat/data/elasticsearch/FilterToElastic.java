@@ -1242,6 +1242,16 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             parameters = null;
         }
         if (parameters != null) {
+            boolean nativeOnly = false;
+            for (final Map.Entry<String, String> entry : parameters.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase("native-only")) {
+                    nativeOnly = Boolean.valueOf(entry.getValue());
+                }
+            }
+            if (nativeOnly) {
+                LOGGER.fine("Ignoring GeoServer filter (Elasticsearch native query/post filter only)");
+                filterBuilder = FilterBuilders.matchAllFilter();
+            }
             for (final Map.Entry<String, String> entry : parameters.entrySet()) {
                 if (entry.getKey().equalsIgnoreCase("q")) {
                     final String value = entry.getValue();
@@ -1249,7 +1259,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 }
                 if (entry.getKey().equalsIgnoreCase("f")) {
                     final String value = entry.getValue();
-                    if (filterBuilder.toString().equals(FilterBuilders.matchAllFilter().toString())) {
+                    if (nativeOnly || filterBuilder.toString().equals(FilterBuilders.matchAllFilter().toString())) {
                         filterBuilder = FilterBuilders.wrapperFilter(value);
                     } else {
                         filterBuilder = FilterBuilders.andFilter(filterBuilder, 

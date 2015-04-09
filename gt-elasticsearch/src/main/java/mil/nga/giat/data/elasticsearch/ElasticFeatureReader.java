@@ -64,8 +64,6 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
         final SearchHit hit = searchHitIterator.next();
         final SimpleFeatureType type = getFeatureType();
         final Map<String, Object> source = hit.getSource();
-        final String id = hit.getId();
-        final float score = hit.getScore();
 
         for (final AttributeDescriptor descriptor : type.getAttributeDescriptors()) {
             final String name = descriptor.getType().getName().getLocalPart();
@@ -83,9 +81,11 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             }
 
             if (values == null && name.equals("_id")) {
-                builder.set(name, id);
+                builder.set(name, hit.getId());
+            } else if (values == null && name.equals("_type")) {
+                builder.set(name,  hit.getType());
             } else if (values == null && name.equals("_score")) {
-                builder.set(name, score);
+                builder.set(name, hit.getScore());
             } else if (values == null) {
                 // skip missing attribute
             } else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
