@@ -194,10 +194,10 @@ public class ElasticDataStore extends ContentDataStore {
                 mapping = (Map<String, Object>) mapping.get(layerName);
             }
 
-            // include _id and _score
             add("_id", "string", mapping);
             add("_type", "string", mapping);
             add("_score", "float", mapping);
+            add("_relative_score", "float", mapping);
 
             walk(mapping, "", false);
 

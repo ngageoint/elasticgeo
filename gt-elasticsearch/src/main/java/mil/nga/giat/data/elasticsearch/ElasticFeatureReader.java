@@ -36,6 +36,8 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     private final ContentState state;
 
     private final SimpleFeatureType featureType;
+    
+    private final float maxScore;
 
     private SimpleFeatureBuilder builder;
 
@@ -49,6 +51,7 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
         searchHitIterator = response.getHits().iterator();
         builder = new SimpleFeatureBuilder(featureType);
         parserUtil = new ElasticParserUtil();
+        maxScore = response.getHits().getMaxScore();
     }
 
     @Override
@@ -64,6 +67,16 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
         final SearchHit hit = searchHitIterator.next();
         final SimpleFeatureType type = getFeatureType();
         final Map<String, Object> source = hit.getSource();
+        
+        final Float score;
+        final Float relativeScore;
+        if (!Float.isNaN(hit.getScore())) {
+            score = hit.getScore();
+            relativeScore = score/maxScore;
+        } else {
+            score = null;
+            relativeScore = null;
+        }
 
         for (final AttributeDescriptor descriptor : type.getAttributeDescriptors()) {
             final String name = descriptor.getType().getName().getLocalPart();
@@ -85,7 +98,9 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             } else if (values == null && name.equals("_type")) {
                 builder.set(name,  hit.getType());
             } else if (values == null && name.equals("_score")) {
-                builder.set(name, hit.getScore());
+                builder.set(name, score);
+            } else if (values == null && name.equals("_relative_score")) {
+                builder.set(name, relativeScore);
             } else if (values == null) {
                 // skip missing attribute
             } else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
