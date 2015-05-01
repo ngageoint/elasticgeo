@@ -27,10 +27,13 @@ import org.opengis.filter.sort.SortBy;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -105,6 +108,12 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                 hits = Math.max(0, Math.min(totalHits-from, size));
             }
         } catch (InterruptedException | ExecutionException e) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                StringWriter stringWriter = new StringWriter();
+                PrintWriter printWriter = new PrintWriter(stringWriter);
+                e.printStackTrace(printWriter);
+                LOGGER.fine(stringWriter.toString());
+            }
             throw new IOException("Error executing count search");
         }
 
@@ -124,6 +133,12 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                 reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>(reader, query.getFilter());
             }
         } catch (InterruptedException | ExecutionException e) {
+            if (LOGGER.isLoggable(Level.FINE)) {
+                StringWriter stringWriter = new StringWriter();
+                PrintWriter printWriter = new PrintWriter(stringWriter);
+                e.printStackTrace(printWriter);
+                LOGGER.fine(stringWriter.toString());
+            }
             throw new IOException("Error executing query search");
         }
         return reader;
@@ -170,8 +185,6 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         }
         final QueryBuilder elasticQuery = filterToElastic.getQueryBuilder();
         final FilterBuilder postFilter = filterToElastic.getFilterBuilder();
-        LOGGER.fine("Elasticsearch query: " + elasticQuery);
-        LOGGER.fine("Elasticsearch post filter: " + postFilter);
         searchRequest.setQuery(elasticQuery).setPostFilter(postFilter);
 
         // sort
@@ -200,6 +213,8 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         // pagination
         searchRequest.setSize(getSize(query));
         searchRequest.setFrom(getStartIndex(query));
+        
+        LOGGER.fine(searchRequest.toString());
 
         return searchRequest;
     }
