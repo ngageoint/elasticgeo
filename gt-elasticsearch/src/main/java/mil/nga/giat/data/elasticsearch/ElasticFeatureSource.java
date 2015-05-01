@@ -135,7 +135,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         // setup request
         final SearchRequestBuilder searchRequest;
         searchRequest = dataStore.getClient()
-                .prepareSearch(dataStore.getIndexName())
+                .prepareSearch(dataStore.getSearchIndices())
                 .setTypes(getName().toString())
                 .setSearchType(searchType);
 

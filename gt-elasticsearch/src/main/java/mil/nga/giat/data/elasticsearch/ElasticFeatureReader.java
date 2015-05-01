@@ -95,6 +95,8 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
 
             if (values == null && name.equals("_id")) {
                 builder.set(name, hit.getId());
+            } else if (values == null && name.equals("_index")) {
+                builder.set(name, hit.getIndex());
             } else if (values == null && name.equals("_type")) {
                 builder.set(name,  hit.getType());
             } else if (values == null && name.equals("_score")) {

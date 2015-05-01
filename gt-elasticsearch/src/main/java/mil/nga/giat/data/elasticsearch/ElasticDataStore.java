@@ -62,6 +62,8 @@ public class ElasticDataStore extends ContentDataStore {
 
     private final String indexName;
 
+    private final String searchIndices;
+
     private final Node node;
 
     private final Client client;
@@ -75,12 +77,18 @@ public class ElasticDataStore extends ContentDataStore {
     private Map<String, ElasticLayerConfiguration> elasticConfigurations = new ConcurrentHashMap<>();
 
     public ElasticDataStore(String searchHost, Integer hostPort, 
-            String indexName, String clusterName,
+            String indexName, String searchIndices, String clusterName,
             boolean localNode, boolean storeData) {
 
         LOGGER.fine("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
 
         this.indexName = indexName;
+        
+        if (searchIndices != null) {
+            this.searchIndices = searchIndices;
+        } else {
+            this.searchIndices = indexName;
+        }
 
         if (localNode) {
             final NodeBuilder nodeBuilder;
@@ -195,6 +203,7 @@ public class ElasticDataStore extends ContentDataStore {
             }
 
             add("_id", "string", mapping);
+            add("_index", "string", mapping);
             add("_type", "string", mapping);
             add("_score", "float", mapping);
             add("_relative_score", "float", mapping);
@@ -337,6 +346,10 @@ public class ElasticDataStore extends ContentDataStore {
 
     public String getIndexName() {
         return indexName;
+    }
+
+    public String getSearchIndices() {
+        return searchIndices;
     }
 
     public Client getClient() {
