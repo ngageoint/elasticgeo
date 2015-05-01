@@ -41,4 +41,15 @@ public class ElasticDataStoreTest extends ElasticTestSupport {
         assertTrue(new HashSet<String>(Arrays.asList(typeNames)).contains(("active")));
     }
 
+    @Test
+    public void testDefaultSearchIndices() throws IOException {
+        Map<String,Serializable> params = createConnectionParams();
+
+        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+        DataStore dataStore = factory.createDataStore(params);
+        String indexName = ((ElasticDataStore) dataStore).getIndexName();
+        String searchIndices = ((ElasticDataStore) dataStore).getSearchIndices();
+        assertTrue(searchIndices.equals(indexName));
+    }
+
 }
