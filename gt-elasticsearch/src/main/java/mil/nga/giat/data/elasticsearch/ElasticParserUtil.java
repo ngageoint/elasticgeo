@@ -108,30 +108,30 @@ public class ElasticParserUtil {
         final Geometry geometry;
         switch (String.valueOf(properties.get("type")).toUpperCase()) {
         case "POINT": {
-            final List<Number> posList;
+            final List posList;
             posList = (List) properties.get("coordinates");
             final Coordinate coordinate = createCoordinate(posList);
             geometry = geometryFactory.createPoint(coordinate);
             break;
         } case "LINESTRING": {
-            final List<List<Number>> posList;
+            final List<List> posList;
             posList = (List) properties.get("coordinates");
             final Coordinate[] coordinates = createCoordinates(posList);
             geometry = geometryFactory.createLineString(coordinates);
             break;
         } case "POLYGON": {
-            final List<List<List<Number>>> posList;
+            final List<List<List>> posList;
             posList = (List) properties.get("coordinates");
             geometry = createPolygon(posList);
             break;
         } case "MULTIPOINT": {
-            final List<List<Number>> posList;
+            final List<List> posList;
             posList = (List) properties.get("coordinates");
             final Coordinate[] coordinates = createCoordinates(posList);
             geometry = geometryFactory.createMultiPoint(coordinates);
             break;
         } case "MULTILINESTRING": {
-            final List<List<List<Number>>> posList;
+            final List<List<List>> posList;
             posList = (List) properties.get("coordinates");
             final LineString[] lineStrings = new LineString[posList.size()];
             for (int i=0; i<posList.size(); i++) {
@@ -141,7 +141,7 @@ public class ElasticParserUtil {
             geometry = geometryFactory.createMultiLineString(lineStrings);
             break;
         } case "MULTIPOLYGON": {
-            final List<List<List<List<Number>>>> posList;
+            final List<List<List<List>>> posList;
             posList = (List) properties.get("coordinates");
             final Polygon[] polygons = new Polygon[posList.size()];
             for (int i=0; i<posList.size(); i++) {
@@ -159,7 +159,7 @@ public class ElasticParserUtil {
             geometry = geometryFactory.createGeometryCollection(geometries);
             break;
         } case "ENVELOPE": {
-            final List<List<Number>> posList;
+            final List<List> posList;
             posList = (List) properties.get("coordinates");
             final Coordinate[] coords = createCoordinates(posList);
             final Envelope envelope = new Envelope(coords[0], coords[1]);
@@ -179,7 +179,7 @@ public class ElasticParserUtil {
         return geometry;
     }
 
-    private Polygon createPolygon(final List<List<List<Number>>> posList) {
+    private Polygon createPolygon(final List<List<List>> posList) {
         final Coordinate[] shellCoordinates = createCoordinates(posList.get(0));
         final LinearRing shell = geometryFactory.createLinearRing(shellCoordinates);
         final LinearRing[] holes = new LinearRing[posList.size()-1];
@@ -189,7 +189,8 @@ public class ElasticParserUtil {
         }
         return geometryFactory.createPolygon(shell, holes);
     }
-    private Coordinate[] createCoordinates(final List<List<Number>> posList) {
+    
+    private Coordinate[] createCoordinates(final List<List> posList) {
         final Coordinate[] coordinates = new Coordinate[posList.size()];
         for (int i=0; i<posList.size(); i++) {
             coordinates[i] = createCoordinate(posList.get(i));
@@ -197,9 +198,16 @@ public class ElasticParserUtil {
         return coordinates;
     }
 
-    private Coordinate createCoordinate(final List<Number> posList) {
-        final double x = posList.get(0).doubleValue();
-        final double y = posList.get(1).doubleValue();
+    private Coordinate createCoordinate(final List posList) {
+        final double x;
+        final double y;
+        if (Number.class.isAssignableFrom(posList.get(0).getClass())) {
+            x = ((Number) posList.get(0)).doubleValue();
+            y = ((Number) posList.get(1)).doubleValue();
+        } else {
+            x = Double.valueOf(posList.get(0).toString());
+            y = Double.valueOf(posList.get(1).toString());
+        }
         return new Coordinate(x,y);
     }
 
