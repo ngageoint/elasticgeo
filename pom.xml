@@ -20,9 +20,9 @@
   </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <geotools.version>13-SNAPSHOT</geotools.version>
+    <geotools.version>13.1</geotools.version>
     <geoserver.version>2.7-SNAPSHOT</geoserver.version>
-    <elasticsearch.version>1.3.2</elasticsearch.version>
+    <elasticsearch.version>1.5.2</elasticsearch.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
     <elasticgeo.version>2.7-SNAPSHOT</elasticgeo.version>
   </properties>
