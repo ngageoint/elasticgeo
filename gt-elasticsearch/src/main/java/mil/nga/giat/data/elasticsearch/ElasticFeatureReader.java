@@ -29,14 +29,13 @@ import java.util.Map;
 
 /**
  * FeatureReader access to the Elasticsearch index.
- *
  */
 public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, SimpleFeature> {
 
     private final ContentState state;
 
     private final SimpleFeatureType featureType;
-    
+
     private final float maxScore;
 
     private SimpleFeatureBuilder builder;
@@ -67,12 +66,12 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
         final SearchHit hit = searchHitIterator.next();
         final SimpleFeatureType type = getFeatureType();
         final Map<String, Object> source = hit.getSource();
-        
+
         final Float score;
         final Float relativeScore;
         if (!Float.isNaN(hit.getScore())) {
             score = hit.getScore();
-            relativeScore = score/maxScore;
+            relativeScore = score / maxScore;
         } else {
             score = null;
             relativeScore = null;
@@ -98,7 +97,7 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             } else if (values == null && name.equals("_index")) {
                 builder.set(name, hit.getIndex());
             } else if (values == null && name.equals("_type")) {
-                builder.set(name,  hit.getType());
+                builder.set(name, hit.getType());
             } else if (values == null && name.equals("_score")) {
                 builder.set(name, score);
             } else if (values == null && name.equals("_relative_score")) {
@@ -108,11 +107,18 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             } else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
                 builder.set(name, parserUtil.createGeometry(values.get(0)));
             } else if (Date.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                final String format = (String) descriptor.getUserData().get(DATE_FORMAT);
-                final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
-                Date date = dateFormatter.parseDateTime((String) values.get(0)).toDate();
-                builder.set(name, date);
-            } else if (values.size() == 1){
+                Object dataVel = values.get(0);
+                if (dataVel instanceof Double || dataVel instanceof Long) {
+                    builder.set(name, new Date(Math.round((Double) dataVel)));
+                } else if (dataVel instanceof Integer) {
+                    builder.set(name, new Date((Integer) dataVel));
+                } else {
+                    final String format = (String) descriptor.getUserData().get(DATE_FORMAT);
+                    final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
+                    Date date = dateFormatter.parseDateTime((String) dataVel).toDate();
+                    builder.set(name, date);
+                }
+            } else if (values.size() == 1) {
                 builder.set(name, values.get(0));
             } else if (String.class.isAssignableFrom(descriptor.getType().getBinding())) {
                 builder.set(name, Joiner.on(';').join(values));

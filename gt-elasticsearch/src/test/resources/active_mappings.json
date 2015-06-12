@@ -1,4 +1,4 @@
-{  
+{
     "active" : {
         "properties" : {
           "geo" : {
@@ -22,6 +22,9 @@
           "installed_tdt" : {
             "type" : "date",
             "format" : "dateOptionalTime"
+          },
+          "installed_td" : {
+            "type" : "date"
           },
           "modem_b" : {
             "type" : "boolean",

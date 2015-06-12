@@ -31,6 +31,33 @@ import org.opengis.temporal.Period;
 public class ElasticTemporalTest extends ElasticTestSupport {
 
     @Test
+    public void testCompareDateFilterLong() throws Exception {
+        init();
+        Date testDate = new Date(1005912798000l);
+        FilterFactory ff = dataStore.getFilterFactory();
+
+        Filter f = ff.lessOrEqual(ff.property("installed_td"), ff.literal(testDate));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(4, features.size());
+        SimpleFeatureIterator it = features.features();
+        while (it.hasNext()) {
+            Date date = (Date) it.next().getAttribute("installed_td");
+            assertTrue(date.before(testDate) || date.equals(testDate));
+        }
+        it.close();
+
+        f = ff.greaterOrEqual(ff.property("installed_td"), ff.literal(testDate));
+        features = featureSource.getFeatures(f);
+        assertEquals(7, features.size());
+        it = features.features();
+        while (it.hasNext()) {
+            Date date = (Date) it.next().getAttribute("installed_td");
+            assertTrue(date.after(testDate) || date.equals(testDate));
+        }
+        it.close();
+    }
+
+    @Test
     public void testCompareDateFilter() throws Exception {
         init();
         Date testDate = DATE_FORMAT.parse("2009-06-28 00:00:00");
