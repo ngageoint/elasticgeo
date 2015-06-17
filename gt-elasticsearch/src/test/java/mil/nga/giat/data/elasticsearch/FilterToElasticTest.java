@@ -519,7 +519,7 @@ public class FilterToElasticTest {
     @Test
     public void testCql() throws CQLException, FilterToElasticException {
         Filter filter = ECQL.toFilter("\"object.field\"='value'");
-        TermFilterBuilder expected = FilterBuilders.termFilter("object.field", "value");
+        NestedFilterBuilder expected = FilterBuilders.nestedFilter("object", FilterBuilders.termFilter("object.field", "value"));
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
