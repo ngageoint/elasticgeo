@@ -113,7 +113,7 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                 } else if (dataVal instanceof Integer) {
                     builder.set(name, new Date((Integer) dataVal));
                 } else if (dataVal instanceof Long) {
-                    builder.set(name, new Date(Math.round((long) dataVal)));
+                    builder.set(name, new Date((long) dataVal));
                 } else {
                     final String format = (String) descriptor.getUserData().get(DATE_FORMAT);
                     final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
