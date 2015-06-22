@@ -44,6 +44,8 @@ public class ElasticAttribute implements Serializable {
     private Boolean analyzed;
 
     private boolean stored;
+    
+    private boolean nested;
 
     public ElasticAttribute(String name) {
         super();
@@ -52,6 +54,7 @@ public class ElasticAttribute implements Serializable {
         this.defaultGeometry = false;
         this.useShortName = false;
         this.stored = false;
+        this.nested = false;
     }
 
     public ElasticAttribute(ElasticAttribute other) {
@@ -66,6 +69,7 @@ public class ElasticAttribute implements Serializable {
         this.geometryType = other.geometryType;
         this.analyzed = other.analyzed;
         this.stored = other.stored;
+        this.nested = other.nested;
     }
 
     public String getName() {
@@ -156,6 +160,14 @@ public class ElasticAttribute implements Serializable {
         this.stored = stored;
     }
 
+    public boolean isNested() {
+        return nested;
+    }
+
+    public void setNested(boolean nested) {
+        this.nested = nested;
+    }
+
     public String getDisplayName() {
         final String displayName;
         if (useShortName) {
@@ -172,13 +184,13 @@ public class ElasticAttribute implements Serializable {
                 + ", defaultGeometry=" + defaultGeometry + ", srid=" + srid
                 + ", dateFormat=" + dateFormat + ", useShortName=" + useShortName + ""
                 + ", geometryType=" + geometryType + ", analyzed=" + analyzed
-                + ", stored=" + stored + "]";
+                + ", stored=" + stored + ", nested=" + nested + "]";
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, type, use, defaultGeometry, srid, dateFormat,
-                useShortName, geometryType, analyzed, stored);
+                useShortName, geometryType, analyzed, stored, nested);
     }
 
     @Override
@@ -198,6 +210,7 @@ public class ElasticAttribute implements Serializable {
             equal &= Objects.equals(geometryType, other.geometryType);
             equal &= Objects.equals(analyzed, other.analyzed);
             equal &= Objects.equals(stored, other.stored);
+            equal &= Objects.equals(nested, other.nested);
         }
         return equal;
     }

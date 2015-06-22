@@ -40,6 +40,11 @@ public class ElasticLayerConfiguration implements Serializable {
     public static final String ANALYZED = "analyzed";
     
     /**
+     * Key used in the feature type user data to indicate whether the field is nested.
+     */
+    public static final String NESTED = "nested";
+
+    /**
      * Key to identify the Elasticsearch layer configuration.
      */
     public static final String KEY = "ElasticLayerConfiguration";

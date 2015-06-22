@@ -17,11 +17,11 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import mil.nga.giat.data.elasticsearch.FilterToElastic;
-import mil.nga.giat.data.elasticsearch.FilterToElasticException;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.GEOMETRY_TYPE;
+import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
 
 import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.common.geo.ShapeRelation;
@@ -29,23 +29,7 @@ import org.elasticsearch.common.geo.builders.LineStringBuilder;
 import org.elasticsearch.common.geo.builders.PolygonBuilder;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.AndFilterBuilder;
-import org.elasticsearch.index.query.ExistsFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.GeoBoundingBoxFilterBuilder;
-import org.elasticsearch.index.query.GeoDistanceFilterBuilder;
-import org.elasticsearch.index.query.GeoPolygonFilterBuilder;
-import org.elasticsearch.index.query.GeoShapeFilterBuilder;
-import org.elasticsearch.index.query.IdsFilterBuilder;
-import org.elasticsearch.index.query.IdsQueryBuilder;
-import org.elasticsearch.index.query.MatchAllFilterBuilder;
-import org.elasticsearch.index.query.MissingFilterBuilder;
-import org.elasticsearch.index.query.NotFilterBuilder;
-import org.elasticsearch.index.query.OrFilterBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryFilterBuilder;
-import org.elasticsearch.index.query.RangeFilterBuilder;
-import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.index.query.*;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
@@ -146,6 +130,14 @@ public class FilterToElasticTest {
         analyzedAtt = analyzedAttBuilder.buildDescriptor("analyzed", analyzedAttBuilder.buildType());
         analyzedAtt.getUserData().put(ANALYZED, true);
         typeBuilder.add(analyzedAtt);
+
+        AttributeDescriptor netsedAtt = null;
+        AttributeTypeBuilder nestedAttBuilder = new AttributeTypeBuilder();
+        nestedAttBuilder.setName("nested.hej");
+        nestedAttBuilder.setBinding(String.class);
+        netsedAtt = nestedAttBuilder.buildDescriptor("nested.hej", nestedAttBuilder.buildType());
+        netsedAtt.getUserData().put(NESTED, true);
+        typeBuilder.add(netsedAtt);
 
         featureType = typeBuilder.buildFeatureType();
         setFilterBuilder();
@@ -253,6 +245,16 @@ public class FilterToElasticTest {
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
         assertTrue(builder.getFilterBuilder().toString().equals(expected.toString()));
+    }
+
+    @Test
+    public void testNestedPropertyIsEqualToString() {
+        PropertyIsEqualTo filter = ff.equals(ff.property("nested.hej"), ff.literal("value"));
+        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", FilterBuilders.termFilter("nested.hej", "value"));
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertEquals(expected.toString(),builder.getFilterBuilder().toString());
     }
 
     @Test
@@ -386,6 +388,17 @@ public class FilterToElasticTest {
     }
 
     @Test
+    public void testNullBinarySpatialOperatorFilter() {
+        boolean success = false;
+        try {
+            builder.visit((BBOX) null, null);
+        } catch (NullPointerException e) {
+            success = true;
+        }
+        assertTrue(success);
+    }
+
+    @Test
     public void testPropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("analyzed"), "hello");
         QueryFilterBuilder expected = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("analyzed"));
@@ -428,6 +441,17 @@ public class FilterToElasticTest {
     @Test
     public void testGeoShapeIntersectsFilter() throws CQLException {
         Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
+        LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
+        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.getFilterBuilder().toString().equals(expected.toString()));
+    }
+
+    @Test
+    public void testGeoShapeIntersectsFilterReversed() throws CQLException {
+        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(LINESTRING(0 0,1 1), \"geom\")");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
         GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
 
@@ -500,7 +524,7 @@ public class FilterToElasticTest {
     }
 
     @Test
-    public void compoundFilter() throws CQLException, FilterToElasticException {
+    public void compoundFilter() throws CQLException {
         Filter filter = ECQL.toFilter("time > \"1970-01-01\" and INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
         RangeFilterBuilder expected1 = FilterBuilders.rangeFilter("time").gt("1970-01-01");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
@@ -513,7 +537,7 @@ public class FilterToElasticTest {
     }
 
     @Test
-    public void testCql() throws CQLException, FilterToElasticException {
+    public void testCql() throws CQLException {
         Filter filter = ECQL.toFilter("\"object.field\"='value'");
         TermFilterBuilder expected = FilterBuilders.termFilter("object.field", "value");
 

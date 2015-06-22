@@ -8,18 +8,19 @@ This data store allows features from an Elasticsearch index to be published thro
 Compatibility
 -------------
 
-The GeoTools Elasticsearch data store and associated GeoServer extension have been tested with Elasticsearch version 1.3.2 and 1.4.0 under GeoTools/GeoServer 
-12.x/2.6.x and 13.x/2.7.x.
+* Java JDK (>=1.7)
+* GeoServer >= 2.6
+* Elasticsearch version 1.3 or greater. 1.3.2, 1.4.4 and 1.5.2 have been tested.
 
 Installation
 ------------
+
+.. warning:: Ensure GeoTools/GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment 
 
 Build and install a local copy::
 
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo && mvn install
-
-.. warning:: Ensure GeoTools/GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment 
 
 Build and copy the GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver::
 
@@ -150,9 +151,9 @@ Notes and Known Issues
 - ``PropertyIsEqualTo`` maps to an Elasticsearch term post filter, which will return documents that contain the supplied term. When searching on an analyzed string field, ensure that the search values are consistent with the analyzer used in the index. For example, values may need to be lowercase when querying fields analyzed with the default analyzer. See the Elasticsearch term filter documentation for more information.
 - ``PropertyIsLike`` maps to either a query string query post filter or a regexp filter, depending on whether the field is analyzed or not. Reserved characters should be escaped as applicable. Note case sensitive and insensitive searches may not be supported for analyzed and not analyzed fields, respectively. See Elasticsearch query string and regexp filter documentation for more information.
 - Date conversions are handled using the date format from the associated type mapping, or ``date_optional_time`` if not found. Note that UTC timezone is used for both parsing and printing of dates.
-- The Elasticsearch ``object`` type is supported. By default, field names will include the full path to the field (e.g. "parent.child.field_name"), but this can be changed in the GeoServer layer configuration.
+- Filtering on Elasticsearch ``object`` types is supported. By default, field names will include the full path to the field (e.g. "parent.child.field_name"), but this can be changed in the GeoServer layer configuration.
 
   - When referencing fields with path elements using ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.field_name"='value'``)
 
-- Elasticsearch nested filters are not curently supported. Include a native Elasticsearch post filter (``f`` view parameter) to filter fields indexed with the Elasticearch ``nested`` type.
+- Filtering on Elasticsearch ``nested`` types is supported only for non-geospatial fields.
 - Circle geometries are not currently supported
