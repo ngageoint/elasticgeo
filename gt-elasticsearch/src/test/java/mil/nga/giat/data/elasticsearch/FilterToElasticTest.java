@@ -17,7 +17,6 @@ import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import mil.nga.giat.data.elasticsearch.FilterToElastic;
-import mil.nga.giat.data.elasticsearch.FilterToElasticException;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
@@ -389,6 +388,17 @@ public class FilterToElasticTest {
     }
 
     @Test
+    public void testNullBinarySpatialOperatorFilter() {
+        boolean success = false;
+        try {
+            builder.visit((BBOX) null, null);
+        } catch (NullPointerException e) {
+            success = true;
+        }
+        assertTrue(success);
+    }
+
+    @Test
     public void testPropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("analyzed"), "hello");
         QueryFilterBuilder expected = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("analyzed"));
@@ -431,6 +441,17 @@ public class FilterToElasticTest {
     @Test
     public void testGeoShapeIntersectsFilter() throws CQLException {
         Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
+        LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
+        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.getFilterBuilder().toString().equals(expected.toString()));
+    }
+
+    @Test
+    public void testGeoShapeIntersectsFilterReversed() throws CQLException {
+        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(LINESTRING(0 0,1 1), \"geom\")");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
         GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
 
@@ -503,7 +524,7 @@ public class FilterToElasticTest {
     }
 
     @Test
-    public void compoundFilter() throws CQLException, FilterToElasticException {
+    public void compoundFilter() throws CQLException {
         Filter filter = ECQL.toFilter("time > \"1970-01-01\" and INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
         RangeFilterBuilder expected1 = FilterBuilders.rangeFilter("time").gt("1970-01-01");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
@@ -516,7 +537,7 @@ public class FilterToElasticTest {
     }
 
     @Test
-    public void testCql() throws CQLException, FilterToElasticException {
+    public void testCql() throws CQLException {
         Filter filter = ECQL.toFilter("\"object.field\"='value'");
         TermFilterBuilder expected = FilterBuilders.termFilter("object.field", "value");
 
