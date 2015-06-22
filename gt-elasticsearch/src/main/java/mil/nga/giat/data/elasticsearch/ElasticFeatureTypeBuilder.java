@@ -11,6 +11,7 @@ import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.FULL_NAME;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.GEOMETRY_TYPE;
+import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
@@ -84,6 +85,7 @@ public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
                     if (att != null) {
                         att.getUserData().put(FULL_NAME, attribute.getName());
                         att.getUserData().put(ANALYZED, attribute.getAnalyzed());
+                        att.getUserData().put(NESTED, attribute.isNested());
                         add(att);
                     }
                 }

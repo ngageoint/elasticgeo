@@ -202,13 +202,13 @@ public class ElasticDataStore extends ContentDataStore {
                 mapping = (Map<String, Object>) mapping.get(layerName);
             }
 
-            add("_id", "string", mapping);
-            add("_index", "string", mapping);
-            add("_type", "string", mapping);
-            add("_score", "float", mapping);
-            add("_relative_score", "float", mapping);
+            add("_id", "string", mapping, false);
+            add("_index", "string", mapping, false);
+            add("_type", "string", mapping, false);
+            add("_score", "float", mapping, false);
+            add("_relative_score", "float", mapping, false);
 
-            walk(mapping, "", false);
+            walk(mapping, "", false, false);
 
             // add default geometry and short name and count duplicate short names
             final Map<String,Integer> counts = new HashMap<>();
@@ -240,7 +240,7 @@ public class ElasticDataStore extends ContentDataStore {
         return elasticAttributes;
     }
 
-    private void walk(Map<String,Object> map, String propertyKey, boolean startType) {
+    private void walk(Map<String,Object> map, String propertyKey, boolean startType, boolean nested) {
         for (final Map.Entry<String, Object> entry : map.entrySet()) {
             final String key = entry.getKey();
             final Object value = entry.getValue();
@@ -254,16 +254,19 @@ public class ElasticDataStore extends ContentDataStore {
                     newPropertyKey = propertyKey + "." + key;
                 }
                 startType = !startType && key.equals("properties");
-                walk((Map) value, newPropertyKey, startType);
-            } else if (key.equals("type")) {
-                add(propertyKey, (String) value, map);
+                if (!nested && map.containsKey("type")) {
+                    nested = ((String) map.get("type")).equals("nested");
+                }
+                walk((Map) value, newPropertyKey, startType, nested);
+            } else if (key.equals("type") && !((String) value).equals("nested")) {
+                add(propertyKey, (String) value, map, nested);
             } else if (key.equals("_timestamp")) {
-                add("_timestamp", "date", map);
+                add("_timestamp", "date", map, nested);
             }
         }
     }
 
-    private void add(String propertyKey, String propertyType, Map<String,Object> map) {
+    private void add(String propertyKey, String propertyType, Map<String,Object> map, boolean nested) {
         if (propertyKey != null) {
             final ElasticAttribute elasticAttribute = new ElasticAttribute(propertyKey);
             final Class<?> binding;
@@ -328,6 +331,7 @@ public class ElasticDataStore extends ContentDataStore {
                 }
                 elasticAttribute.setStored(stored);
                 elasticAttribute.setType(binding);
+                elasticAttribute.setNested(nested);
                 elasticAttributes.add(elasticAttribute);
             }
         }

@@ -154,5 +154,5 @@ Notes and Known Issues
 
   - When referencing fields with path elements using ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.field_name"='value'``)
 
-- Elasticsearch nested filters are not curently supported. Include a native Elasticsearch post filter (``f`` view parameter) to filter fields indexed with the Elasticearch ``nested`` type.
+- Elasticsearch nested filters are supported only for non-geospatial fields.
 - Circle geometries are not currently supported

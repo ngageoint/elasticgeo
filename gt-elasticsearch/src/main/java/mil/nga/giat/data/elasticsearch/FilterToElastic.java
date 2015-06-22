@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
+import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
 
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.jackson.core.JsonFactory;
@@ -318,9 +319,13 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         Expression upperbounds = (Expression) filter.getUpperBoundary();
 
         Class context;
+        boolean nested = false;
         AttributeDescriptor attType = (AttributeDescriptor)expr.evaluate(featureType);
         if (attType != null) {
             context = attType.getType().getBinding();
+            if (attType.getUserData().containsKey(NESTED)) {
+                nested = (Boolean) attType.getUserData().get(NESTED);
+            }
         } else {
             //assume it's a string?
             context = String.class;
@@ -333,6 +338,10 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         upperbounds.accept(this, context);
         final Object upper = field;
         filterBuilder = FilterBuilders.rangeFilter(key).gte(lower).lte(upper);
+        if(nested) {
+            String path = extractNestedPath(key);
+            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
+        }
 
         return extraData;
     }
@@ -361,11 +370,13 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         final String key = (String) field;
 
         AttributeDescriptor attType = (AttributeDescriptor) att.evaluate(featureType);
-        final boolean analyzed;
-        if (attType.getUserData().containsKey(ANALYZED)) {
+        boolean analyzed = false;
+        boolean nested = false;
+        if (attType != null && attType.getUserData().containsKey(ANALYZED)) {
             analyzed = (Boolean) attType.getUserData().get(ANALYZED);
-        } else {
-            analyzed = false;
+        }
+        if (attType != null && attType.getUserData().containsKey(NESTED)) {
+            nested = (Boolean) attType.getUserData().get(NESTED);
         }
         if (analyzed) {
             // use query string query post filter for analyzed fields
@@ -375,6 +386,10 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             // default to regexp filter
             String pattern = convertToRegex(esc, multi, single, matchCase, literal);
             filterBuilder = FilterBuilders.regexpFilter(key, pattern);
+        }
+        if (nested) {
+            String path = extractNestedPath(key);
+            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
         }
 
         return extraData;
@@ -534,12 +549,16 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         Expression left = filter.getExpression1();
         Expression right = filter.getExpression2();
         Class leftContext = null, rightContext = null;
+        boolean nested = false;
         if (left instanceof PropertyName) {
             // It's a propertyname, we should get the class and pass it in
             // as context to the tree walker.
             AttributeDescriptor attType = (AttributeDescriptor)left.evaluate(featureType);
             if (attType != null) {
                 rightContext = attType.getType().getBinding();
+                if (attType.getUserData().containsKey(NESTED)) {
+                    nested = (Boolean) attType.getUserData().get(NESTED);
+                }
             }
         }
         else if (left instanceof Function) {
@@ -611,8 +630,9 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             } else if (type.equals("<=")) {
                 filterBuilder = FilterBuilders.rangeFilter(key).lte(field);
             }
-            if(key.contains(".")) {
-                filterBuilder = FilterBuilders.nestedFilter(key.substring(0,key.indexOf('.')),filterBuilder);
+            if (nested) {
+                String path = extractNestedPath(key);
+                filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
             }
         }
         else {
@@ -794,11 +814,15 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         Class typeContext = null;
         AttributeDescriptor attType = (AttributeDescriptor)property.evaluate(featureType);
         dateFormatter = DEFAULT_DATE_FORMATTER;
+        boolean nested = false;
         if (attType != null) {
             typeContext = attType.getType().getBinding();
             final String format = (String) attType.getUserData().get(DATE_FORMAT);
             if (format != null) {
                 dateFormatter = Joda.forPattern(format).printer();
+            }
+            if (attType.getUserData().containsKey(NESTED)) {
+                nested = (Boolean) attType.getUserData().get(NESTED);
             }
         }
 
@@ -830,12 +854,13 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             throw new IllegalArgumentException("Time period must be first argument of Filter");
         }
 
+        String key = "";
         if (filter instanceof After || filter instanceof Before) {
             String op = filter instanceof After ? " > " : " < ";
 
             if (period != null) {
                 property.accept(this, extraData);
-                final String key = (String) field;
+                key = (String) field;
 
                 visitBegin(period, extraData);
                 final Object begin = field;
@@ -850,7 +875,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             }
             else {
                 property.accept(this, extraData);
-                final String key = (String) field;
+                key = (String) field;
                 temporal.accept(this, typeContext);
 
                 if (op.equals(" < ") || swapped) {
@@ -863,7 +888,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         else if (filter instanceof Begins || filter instanceof Ends || 
                 filter instanceof BegunBy || filter instanceof EndedBy ) {
             property.accept(this, extraData);
-            final String key = (String) field;
+            key = (String) field;
 
             if (filter instanceof Begins || filter instanceof BegunBy) {
                 visitBegin(period, extraData);
@@ -875,7 +900,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
         else if (filter instanceof During || filter instanceof TContains){
             property.accept(this, extraData);
-            final String key = (String) field;
+            key = (String) field;
 
             visitBegin(period, extraData);
             final Object lower = field;
@@ -884,9 +909,14 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
         else if (filter instanceof TEquals) {
             property.accept(this, extraData);
-            final String key = (String) field;
+            key = (String) field;
             temporal.accept(this, typeContext);
             filterBuilder = FilterBuilders.termFilter(key, field);
+        }
+        
+        if (nested) {
+            String path = extractNestedPath(key);
+            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
         }
 
         return extraData;
@@ -1321,9 +1351,14 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
 
         return result.toString();
-
     }
-
+    
+    private static String extractNestedPath(String field) {
+        final String[] parts = field.split("\\.");
+        final String base = parts[parts.length-1];
+        return field.replace("." + base, "");
+    }
+    
     public FilterBuilder getFilterBuilder() {
         return filterBuilder;
     }

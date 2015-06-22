@@ -22,6 +22,7 @@ import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.GEOMETRY_TYPE;
+import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
 
 import org.apache.commons.codec.binary.Base64;
 import org.elasticsearch.common.geo.ShapeRelation;
@@ -130,6 +131,14 @@ public class FilterToElasticTest {
         analyzedAtt = analyzedAttBuilder.buildDescriptor("analyzed", analyzedAttBuilder.buildType());
         analyzedAtt.getUserData().put(ANALYZED, true);
         typeBuilder.add(analyzedAtt);
+
+        AttributeDescriptor netsedAtt = null;
+        AttributeTypeBuilder nestedAttBuilder = new AttributeTypeBuilder();
+        nestedAttBuilder.setName("nested.hej");
+        nestedAttBuilder.setBinding(String.class);
+        netsedAtt = nestedAttBuilder.buildDescriptor("nested.hej", nestedAttBuilder.buildType());
+        netsedAtt.getUserData().put(NESTED, true);
+        typeBuilder.add(netsedAtt);
 
         featureType = typeBuilder.buildFeatureType();
         setFilterBuilder();
@@ -246,17 +255,7 @@ public class FilterToElasticTest {
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(builder.getFilterBuilder().toString(),expected.toString());
-    }
-
-    @Test
-    public void testNestedPropertyIsGreaterThanDouble() {
-        PropertyIsEqualTo filter = ff.equals(ff.property("nested.hej"), ff.literal(1.0d));
-        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", FilterBuilders.termFilter("nested.hej", 1.0d));
-
-        builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(builder.getFilterBuilder().toString(),expected.toString());
+        assertEquals(expected.toString(),builder.getFilterBuilder().toString());
     }
 
     @Test
@@ -519,7 +518,7 @@ public class FilterToElasticTest {
     @Test
     public void testCql() throws CQLException, FilterToElasticException {
         Filter filter = ECQL.toFilter("\"object.field\"='value'");
-        NestedFilterBuilder expected = FilterBuilders.nestedFilter("object", FilterBuilders.termFilter("object.field", "value"));
+        TermFilterBuilder expected = FilterBuilders.termFilter("object.field", "value");
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));

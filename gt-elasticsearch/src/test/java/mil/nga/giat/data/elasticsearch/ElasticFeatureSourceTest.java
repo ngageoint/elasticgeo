@@ -444,6 +444,51 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         }
     }
 
+    @Test
+    public void testGetFeaturesWithIsGreaterThanFilterOnObjectType() throws Exception {
+        init();
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsGreaterThan f = ff.greater(ff.property("object.hejda"), ff.literal(10));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(6, features.size());
+    }
+
+    @Test
+    public void testGetFeaturesWithIsGreaterThanFilterOnNestedType() throws Exception {
+        init();
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsGreaterThan f = ff.greater(ff.property("nested.hej"), ff.literal(10));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(8, features.size());
+    }
+
+    @Test
+    public void testGetFeaturesWithIsBetweenFilterOnObjectType() throws Exception {
+        init();
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsBetween f = ff.between(ff.property("object.hejda"), ff.literal(5), ff.literal(15));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(5, features.size());
+    }
+
+    @Test
+    public void testGetFeaturesWithIsBetweenFilterOnNestedType() throws Exception {
+        init();
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsBetween f = ff.between(ff.property("nested.hej"), ff.literal(5), ff.literal(15));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(10, features.size());
+    }
+
+    @Test
+    public void testGetFeaturesWithIsGreaterThanFilterOnNestedChildType() throws Exception {
+        init();
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(8, features.size());
+    }
+
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {
         assertEquals(ids.length, features.size());
 
