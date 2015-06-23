@@ -38,7 +38,12 @@ public class ElasticLayerConfiguration implements Serializable {
      * Key used in the feature type user data to indicate whether the field is analyzed.
      */
     public static final String ANALYZED = "analyzed";
-    
+
+    /**
+     * Key used in the feature type user data to indicate whether the field is analyzed.
+     */
+    public static final String OUTPUT_MASKED = "masked";
+
     /**
      * Key to identify the Elasticsearch layer configuration.
      */

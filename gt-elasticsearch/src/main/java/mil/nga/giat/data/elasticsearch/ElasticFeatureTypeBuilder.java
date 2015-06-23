@@ -7,10 +7,6 @@ package mil.nga.giat.data.elasticsearch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.FULL_NAME;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.GEOMETRY_TYPE;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
@@ -21,10 +17,11 @@ import org.opengis.feature.type.Name;
 
 import com.vividsolutions.jts.geom.Geometry;
 
+import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.*;
+
 /**
- * Builds a feature type based on the attributes defined in the 
+ * Builds a feature type based on the attributes defined in the
  * {@link ElasticLayerConfiguration}.
- *
  */
 public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
 
@@ -60,7 +57,7 @@ public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
                                 attributeBuilder.setBinding(attribute.getType());
                                 att = attributeBuilder.buildDescriptor(attributeName,
                                         attributeBuilder.buildGeometryType());
-                                
+
                                 final ElasticGeometryType geometryType = attribute.getGeometryType();
                                 att.getUserData().put(GEOMETRY_TYPE, geometryType);
                                 if (attribute.isDefaultGeometry() != null
@@ -75,7 +72,7 @@ public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
                     } else {
                         attributeBuilder.setName(attributeName);
                         attributeBuilder.setBinding(attribute.getType());
-                        att = attributeBuilder.buildDescriptor(attributeName, 
+                        att = attributeBuilder.buildDescriptor(attributeName,
                                 attributeBuilder.buildType());
                     }
                     if (att != null && attribute.getDateFormat() != null) {
@@ -84,6 +81,7 @@ public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
                     if (att != null) {
                         att.getUserData().put(FULL_NAME, attribute.getName());
                         att.getUserData().put(ANALYZED, attribute.getAnalyzed());
+                        att.getUserData().put(OUTPUT_MASKED, attribute.isMasked());
                         add(att);
                     }
                 }

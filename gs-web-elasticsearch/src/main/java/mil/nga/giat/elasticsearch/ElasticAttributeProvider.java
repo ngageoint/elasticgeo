@@ -85,6 +85,12 @@ public class ElasticAttributeProvider extends GeoServerDataProvider<ElasticAttri
             "stored");
 
     /**
+     * If field is stored
+     */
+    protected static final Property<ElasticAttribute> MASKED = new BeanProperty<ElasticAttribute>("masked",
+            "masked");
+
+    /**
      * Build attribute provider
      * 
      * @param attributes list to use as source for provider
@@ -95,7 +101,7 @@ public class ElasticAttributeProvider extends GeoServerDataProvider<ElasticAttri
 
     @Override
     protected List<org.geoserver.web.wicket.GeoServerDataProvider.Property<ElasticAttribute>> getProperties() {
-        return Arrays.asList(USE, NAME, TYPE, DEFAULT_GEOMETRY, STORED, ANALYZED, SRID, DATE_FORMAT);
+        return Arrays.asList(USE, NAME, TYPE, DEFAULT_GEOMETRY, STORED, ANALYZED, SRID, DATE_FORMAT, MASKED);
     }
 
     @Override

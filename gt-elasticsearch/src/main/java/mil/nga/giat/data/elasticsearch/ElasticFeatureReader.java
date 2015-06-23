@@ -92,6 +92,9 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                 values = parserUtil.readField(source, sourceName);
             }
 
+            if ((boolean) type.getDescriptor(name).getUserData().get(ElasticLayerConfiguration.OUTPUT_MASKED)) {
+                values = null;
+            }
             if (values == null && name.equals("_id")) {
                 builder.set(name, hit.getId());
             } else if (values == null && name.equals("_index")) {

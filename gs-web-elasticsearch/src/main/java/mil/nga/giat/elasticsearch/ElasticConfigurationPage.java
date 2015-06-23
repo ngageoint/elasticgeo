@@ -328,6 +328,14 @@ public abstract class ElasticConfigurationPage extends Panel {
                         Fragment f = new Fragment(id, "empty", ElasticConfigurationPage.this);
                         return f;
                     }
+                } else if (property == ElasticAttributeProvider.MASKED) {
+                    Fragment f = new Fragment(id, "checkboxMasked",
+                            ElasticConfigurationPage.this);
+                    CheckBox checkBox = new CheckBox("masked", new PropertyModel<Boolean>(itemModel,
+                            "masked"));
+                    f.add(checkBox);
+                    return f;
+
                 }
                 return null;
             }

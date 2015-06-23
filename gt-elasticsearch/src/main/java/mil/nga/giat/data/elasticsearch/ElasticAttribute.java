@@ -16,12 +16,23 @@ import java.util.Objects;
  */
 public class ElasticAttribute implements Serializable {
 
+
+
     public enum ElasticGeometryType {
         GEO_POINT,
-        GEO_SHAPE
+        GEO_SHAPE;
+    }
+    private static final long serialVersionUID = 8839579461838862328L;
+
+    public boolean isMasked() {
+        return masked;
     }
 
-    private static final long serialVersionUID = 8839579461838862328L;
+    public void setMasked(boolean masked) {
+        this.masked = masked;
+    }
+
+    private boolean masked;
 
     private String name;
 
@@ -52,6 +63,7 @@ public class ElasticAttribute implements Serializable {
         this.defaultGeometry = false;
         this.useShortName = false;
         this.stored = false;
+        this.masked = false;
     }
 
     public ElasticAttribute(ElasticAttribute other) {
@@ -66,6 +78,7 @@ public class ElasticAttribute implements Serializable {
         this.geometryType = other.geometryType;
         this.analyzed = other.analyzed;
         this.stored = other.stored;
+        this.masked = other.masked;
     }
 
     public String getName() {
@@ -172,6 +185,7 @@ public class ElasticAttribute implements Serializable {
                 + ", defaultGeometry=" + defaultGeometry + ", srid=" + srid
                 + ", dateFormat=" + dateFormat + ", useShortName=" + useShortName + ""
                 + ", geometryType=" + geometryType + ", analyzed=" + analyzed
+                + ", masked=" + masked
                 + ", stored=" + stored + "]";
     }
 
@@ -198,6 +212,7 @@ public class ElasticAttribute implements Serializable {
             equal &= Objects.equals(geometryType, other.geometryType);
             equal &= Objects.equals(analyzed, other.analyzed);
             equal &= Objects.equals(stored, other.stored);
+            equal &= Objects.equals(masked, other.masked);
         }
         return equal;
     }
