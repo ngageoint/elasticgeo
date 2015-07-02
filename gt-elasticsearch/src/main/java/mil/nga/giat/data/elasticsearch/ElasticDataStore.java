@@ -255,10 +255,10 @@ public class ElasticDataStore extends ContentDataStore {
                 }
                 startType = !startType && key.equals("properties");
                 if (!nested && map.containsKey("type")) {
-                    nested = ((String) map.get("type")).equals("nested");
+                    nested = map.get("type").equals("nested");
                 }
                 walk((Map) value, newPropertyKey, startType, nested);
-            } else if (key.equals("type") && !((String) value).equals("nested")) {
+            } else if (key.equals("type") && !value.equals("nested")) {
                 add(propertyKey, (String) value, map, nested);
             } else if (key.equals("_timestamp")) {
                 add("_timestamp", "date", map, nested);
