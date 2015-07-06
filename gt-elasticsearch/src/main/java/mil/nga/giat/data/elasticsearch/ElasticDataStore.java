@@ -80,7 +80,7 @@ public class ElasticDataStore extends ContentDataStore {
             String indexName, String searchIndices, String clusterName,
             boolean localNode, boolean storeData) {
 
-        LOGGER.fine("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
+        LOGGER.info("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
 
         this.indexName = indexName;
         
@@ -121,7 +121,7 @@ public class ElasticDataStore extends ContentDataStore {
                 .cluster()
                 .state(clusterStateRequest)
                 .actionGet().getState();
-        LOGGER.fine("obtained cluster state");
+        LOGGER.info(String.format("obtained cluster state %s", state));
 
         IndexMetaData metadata = state.metaData().index(indexName);
         if (metadata != null) {
