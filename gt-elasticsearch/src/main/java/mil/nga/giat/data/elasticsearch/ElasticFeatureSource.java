@@ -19,7 +19,6 @@ import org.geotools.data.store.ContentFeatureSource;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.Name;
 
 import static org.opengis.filter.sort.SortOrder.ASCENDING;
 
@@ -31,7 +30,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,7 +50,6 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     public ElasticFeatureSource(ContentEntry entry, Query query) throws IOException {
         super(entry, query);
-        ((ElasticDataStore) super.getDataStore()).addConfiguration(entry.getName().getLocalPart());
     }
 
     /**
@@ -144,19 +141,21 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         return reader;
     }
 
-    private SearchRequestBuilder prepareSearchRequest(Query query, SearchType searchType) throws IOException {
+    private SearchRequestBuilder prepareSearchRequest(Query query, 
+            SearchType searchType) throws IOException {
         final ElasticDataStore dataStore = getDataStore();
+        final String docType = dataStore.getDocType(entry.getName());
 
         // setup request
         final SearchRequestBuilder searchRequest;
         searchRequest = dataStore.getClient()
                 .prepareSearch(dataStore.getSearchIndices())
-                .setTypes(getName().toString())
+                .setTypes(docType)
                 .setSearchType(searchType);
 
         // add fields
         final List<ElasticAttribute> attributes;
-        attributes = dataStore.getElasticAttributes(entry.getTypeName());
+        attributes = dataStore.getElasticAttributes(entry.getName());
         List<String> sourceIncludes = new ArrayList<>();
         for (final ElasticAttribute attribute : attributes) {
             if (attribute.isUse() && attribute.isStored()) {
@@ -242,16 +241,19 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     @Override
     protected SimpleFeatureType buildFeatureType() throws IOException {
-        final Name name = entry.getName();
-        final Map<String, ElasticLayerConfiguration> layerConfigurations;
-        layerConfigurations = getDataStore().getElasticConfigurations();
-        final ElasticLayerConfiguration layerConfiguration;
-        layerConfiguration = layerConfigurations.get(entry.getTypeName());
-
+        ElasticDataStore ds = getDataStore();
+        ElasticLayerConfiguration layerConfig;
+        layerConfig = ds.getLayerConfigurations().get(entry.getTypeName());
+        final List<ElasticAttribute> attributes;
+        if (layerConfig != null) {
+            attributes = layerConfig.getAttributes();
+        } else {
+            attributes = null;
+        }
+        
         final ElasticFeatureTypeBuilder typeBuilder;
-        typeBuilder = new ElasticFeatureTypeBuilder(layerConfiguration, name);
-        final SimpleFeatureType featureType = typeBuilder.buildFeatureType();
-        return featureType;
+        typeBuilder = new ElasticFeatureTypeBuilder(attributes, entry.getName());
+        return typeBuilder.buildFeatureType();
     }
 
     @Override

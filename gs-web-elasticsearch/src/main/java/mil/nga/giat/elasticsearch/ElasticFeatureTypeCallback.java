@@ -5,9 +5,11 @@
 package mil.nga.giat.elasticsearch;
 
 import java.io.IOException;
-import javax.security.auth.callback.Callback;
+
 import mil.nga.giat.data.elasticsearch.ElasticDataStore;
 import mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration;
+import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.KEY;
+
 import org.geoserver.catalog.FeatureTypeInfo;
 import org.geoserver.catalog.FeatureTypeCallback;
 import org.geotools.data.DataAccess;
@@ -39,13 +41,15 @@ public class ElasticFeatureTypeCallback implements FeatureTypeCallback {
     public boolean initialize(FeatureTypeInfo info,
             DataAccess<? extends FeatureType, ? extends Feature> dataAccess, Name temporaryName)
                     throws IOException {
-        ElasticLayerConfiguration configuration = (ElasticLayerConfiguration) info.getMetadata().get(
-                ElasticLayerConfiguration.KEY);
-        if (configuration != null) {
-            ElasticDataStore dataStore = (ElasticDataStore) dataAccess;
-            dataStore.setElasticConfigurations(configuration);
+
+        ElasticLayerConfiguration layerConfig;
+        layerConfig = (ElasticLayerConfiguration) info.getMetadata().get(KEY);
+        if (layerConfig == null) {
+            layerConfig = new ElasticLayerConfiguration(info.getName());
         }
-        // we never use the temp name
+
+        ((ElasticDataStore) dataAccess).setLayerConfiguration(layerConfig);
+
         return false;
     }
 
@@ -53,10 +57,12 @@ public class ElasticFeatureTypeCallback implements FeatureTypeCallback {
     public void dispose(FeatureTypeInfo info,
             DataAccess<? extends FeatureType, ? extends Feature> dataAccess, Name temporaryName)
                     throws IOException {
-        ElasticLayerConfiguration configuration = (ElasticLayerConfiguration) info.getMetadata().get(
-                ElasticLayerConfiguration.KEY);
-        ElasticDataStore dataStore = (ElasticDataStore) dataAccess;
-        dataStore.getElasticConfigurations().remove(configuration.getLayerName());
+        ElasticLayerConfiguration layerConfig;
+        layerConfig = (ElasticLayerConfiguration) info.getMetadata().get(KEY);
+        if (layerConfig != null) {
+            layerConfig.getAttributes().remove(info.getName());
+            ((ElasticDataStore) dataAccess).getDocTypes().remove(info.getQualifiedName());
+        }
     }
 
     @Override

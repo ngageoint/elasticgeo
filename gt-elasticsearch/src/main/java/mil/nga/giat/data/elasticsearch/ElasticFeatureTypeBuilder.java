@@ -4,6 +4,7 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,18 +32,18 @@ public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
 
     private final static Logger LOGGER = Logger.getLogger(ElasticFeatureTypeBuilder.class.getName());
 
-    private ElasticLayerConfiguration layerConfiguration;
+    private List<ElasticAttribute> attributes;
 
-    public ElasticFeatureTypeBuilder(ElasticLayerConfiguration layerConfiguration, Name name) {
+    public ElasticFeatureTypeBuilder(List<ElasticAttribute> attributes, Name name) {
         setName(name);
-        this.layerConfiguration = layerConfiguration;
+        this.attributes = attributes;
     }
 
     @Override
     public SimpleFeatureType buildFeatureType() {
-        if (layerConfiguration != null) {
+        if (attributes != null) {
             String defaultGeometryName = null;
-            for (ElasticAttribute attribute : layerConfiguration.getAttributes()) {
+            for (ElasticAttribute attribute : attributes) {
                 if (attribute.isUse()) {
                     final String attributeName;
                     if (attribute.getUseShortName()) {

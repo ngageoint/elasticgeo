@@ -46,8 +46,10 @@ import org.geoserver.web.GeoServerApplication;
 import org.geoserver.web.wicket.GeoServerDataProvider.Property;
 import org.geoserver.web.wicket.GeoServerTablePanel;
 import org.geoserver.web.wicket.ParamResourceModel;
+import org.geotools.feature.NameImpl;
 import org.geotools.util.NullProgressListener;
 import org.geotools.util.logging.Logging;
+import org.opengis.feature.type.Name;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
@@ -93,11 +95,12 @@ public abstract class ElasticConfigurationPage extends Panel {
         final Form elastic_form = new Form("es_form", new CompoundPropertyModel(this));
         add(elastic_form);
 
-        List<ElasticAttribute> attributes = fillElasticAttributes(ri)
-                .getAttributes();
+        List<ElasticAttribute> attributes;
+        attributes = fillElasticAttributes(ri).getAttributes();
         final ElasticAttributeProvider attProvider = new ElasticAttributeProvider(attributes);
 
-        final GeoServerTablePanel<ElasticAttribute> elasticAttributePanel = getElasticAttributePanel(attProvider);
+        final GeoServerTablePanel<ElasticAttribute> elasticAttributePanel;
+        elasticAttributePanel = getElasticAttributePanel(attProvider);
         elastic_form.add(elasticAttributePanel);
 
         // select all check box
@@ -171,11 +174,10 @@ public abstract class ElasticConfigurationPage extends Panel {
     protected void onSave(AjaxRequestTarget target) {
         try {
             ResourceInfo ri = (ResourceInfo) getDefaultModel().getObject();
-            ElasticLayerConfiguration layerConfiguration = fillElasticAttributes(ri);
-
+            ElasticLayerConfiguration layerConfig = fillElasticAttributes(ri);
             Boolean geomSet = false;
             // Validate configuration
-            for (ElasticAttribute att : layerConfiguration.getAttributes()) {
+            for (ElasticAttribute att : layerConfig.getAttributes()) {
                 if (Geometry.class.isAssignableFrom(att.getType()) && att.isUse()) {
                     geomSet = true;
                 }
@@ -186,26 +188,18 @@ public abstract class ElasticConfigurationPage extends Panel {
             }
 
             Catalog catalog = ((GeoServerApplication) this.getPage().getApplication()).getCatalog();
-            LayerInfo layerInfo = catalog.getLayerByName(ri.getQualifiedName());
             FeatureTypeInfo typeInfo;
-            Boolean isNew = true;
-            if (layerInfo == null) {
-                // New
-                DataStoreInfo dsInfo = catalog.getStore(ri.getStore().getId(), DataStoreInfo.class);
-                ElasticDataStore ds = (ElasticDataStore) dsInfo.getDataStore(null);
-                CatalogBuilder builder = new CatalogBuilder(catalog);
-                builder.setStore(dsInfo);
-                ds.setElasticConfigurations(layerConfiguration);
-                typeInfo = builder.buildFeatureType(ds.getFeatureSource(ri.getQualifiedName()));
-                typeInfo.getMetadata().put(ElasticLayerConfiguration.KEY, layerConfiguration);
-                layerInfo = builder.buildLayer(typeInfo);
-            } else {
-                // Update
-                isNew = false;
-                typeInfo = (FeatureTypeInfo) layerInfo.getResource();
-                typeInfo.getMetadata().put(ElasticLayerConfiguration.KEY, layerConfiguration);
-            }
-            done(target, layerInfo, isNew);
+            DataStoreInfo dsInfo = catalog.getStore(ri.getStore().getId(), DataStoreInfo.class);
+            ElasticDataStore ds = (ElasticDataStore) dsInfo.getDataStore(null);
+            CatalogBuilder builder = new CatalogBuilder(catalog);
+            builder.setStore(dsInfo);
+            typeInfo = builder.buildFeatureType(ds.getFeatureSource(ri.getQualifiedName()));
+            typeInfo.setName(ri.getName());
+            typeInfo.getMetadata().put(ElasticLayerConfiguration.KEY, layerConfig);
+            LayerInfo layerInfo = builder.buildLayer(typeInfo);
+            layerInfo.setName(ri.getName());
+
+            done(target, layerInfo, layerConfig);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
             error(new ParamResourceModel("creationFailure", this, e).getString());
@@ -218,38 +212,48 @@ public abstract class ElasticConfigurationPage extends Panel {
      * configurations
      */
     private ElasticLayerConfiguration fillElasticAttributes(ResourceInfo ri) {
-        ElasticLayerConfiguration elasticLayerConfiguration = (ElasticLayerConfiguration) ri.getMetadata()
+
+        ElasticLayerConfiguration layerConfig = (ElasticLayerConfiguration) ri.getMetadata()
                 .get(ElasticLayerConfiguration.KEY);
+
+        if (layerConfig == null) {
+            layerConfig = new ElasticLayerConfiguration(ri.getName());
+            ri.getMetadata().put(ElasticLayerConfiguration.KEY, layerConfig);
+        }
+
         try {
+            ElasticDataStore dataStore = (ElasticDataStore) ((DataStoreInfo) ri.getStore())
+                    .getDataStore(new NullProgressListener());
+
             ArrayList<ElasticAttribute> result = new ArrayList<ElasticAttribute>();
             Map<String, ElasticAttribute> tempMap = new HashMap<String, ElasticAttribute>();
-            if (elasticLayerConfiguration != null) {
-                for (ElasticAttribute att : elasticLayerConfiguration.getAttributes()) {
+            final List<ElasticAttribute> attributes;
+            if (layerConfig.getAttributes() != null) {
+                attributes = layerConfig.getAttributes();
+                for (ElasticAttribute att : attributes) {
                     tempMap.put(att.getName(), att);
                 }
             } else {
-                tempMap.clear();
-                elasticLayerConfiguration = new ElasticLayerConfiguration(new ArrayList<ElasticAttribute>());
-                elasticLayerConfiguration.setLayerName(ri.getName());
-                ri.getMetadata().put(ElasticLayerConfiguration.KEY, elasticLayerConfiguration);
+                attributes = new ArrayList<>();
+                layerConfig.getAttributes().addAll(attributes);
             }
-            ElasticDataStore dataStore = (ElasticDataStore) ((DataStoreInfo) ri.getStore())
-                    .getDataStore(new NullProgressListener());
-            List<ElasticAttribute> attributes = dataStore
-                    .getElasticAttributes(elasticLayerConfiguration.getLayerName());
-            for (ElasticAttribute at : attributes) {
+
+            final String docType = layerConfig.getDocType();
+            final Name layerName = new NameImpl(layerConfig.getLayerName());
+            dataStore.getDocTypes().put(layerName, docType);
+            for (ElasticAttribute at : dataStore.getElasticAttributes(layerName)) {
                 if (tempMap.containsKey(at.getName())) {
                     ElasticAttribute prev = tempMap.get(at.getName());
                     at = prev;
                 }
                 result.add(at);
             }
-            elasticLayerConfiguration.getAttributes().clear();
-            elasticLayerConfiguration.getAttributes().addAll(result);
+            layerConfig.getAttributes().clear();
+            layerConfig.getAttributes().addAll(result);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
         }
-        return elasticLayerConfiguration;
+        return layerConfig;
     }
 
     /*
@@ -347,7 +351,6 @@ public abstract class ElasticConfigurationPage extends Panel {
         atts.setPageable(false);
         atts.setOutputMarkupId(true);
         return atts;
-
     }
 
     /*
@@ -370,14 +373,14 @@ public abstract class ElasticConfigurationPage extends Panel {
      * This method is called after modal executes its operation
      * 
      * @param target ajax response target
-     * @param layerInfo contains attribute configuration
-     * @param isNew used to communicate to parent if the attributes configuration if for new or for
-     *        existing layer
+     * @param layerInfo GeoServer layer configuration
+     * @param layerConfig Elasticsearch layer configuration
      * 
      * @see {@link #onSave}
      * @see {@link #onCancel}
      * 
      */
-    abstract void done(AjaxRequestTarget target, LayerInfo layerInfo, Boolean isNew);
+    abstract void done(AjaxRequestTarget target, LayerInfo layerInfo, 
+            ElasticLayerConfiguration layerConfig);
 
 }
