@@ -6,12 +6,8 @@ package mil.nga.giat.data.elasticsearch;
 
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
-import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.ClusterAdminClient;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.ClusterState;
@@ -28,13 +24,13 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
 import org.geotools.data.store.ContentDataStore;
 import org.geotools.data.store.ContentEntry;
 import org.geotools.data.store.ContentFeatureSource;
+import org.geotools.util.logging.Logging;
 import org.geotools.feature.NameImpl;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -63,7 +59,7 @@ import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
  */
 public class ElasticDataStore extends ContentDataStore {
 
-    private final static Logger LOGGER = Logger.getLogger(ElasticDataStoreFactory.class.getName());
+    private final static Logger LOGGER = Logging.getLogger(ElasticDataStoreFactory.class);
 
     private final String indexName;
 
@@ -131,12 +127,12 @@ public class ElasticDataStore extends ContentDataStore {
                 .local(isLocal)
                 .indices(indexName);
 
+        LOGGER.fine("querying cluster state");
         final ClusterState state;
         state = client.admin()
                 .cluster()
                 .state(clusterStateRequest)
                 .actionGet().getState();
-        LOGGER.fine("obtained cluster state");
 
         IndexMetaData metadata = state.metaData().index(indexName);
         if (metadata != null) {
@@ -366,12 +362,12 @@ public class ElasticDataStore extends ContentDataStore {
 
     @Override
     public void dispose() {
+        LOGGER.fine("disposing");
         this.client.close();
         if (this.node != null) {
             this.node.close();
         }
         super.dispose();
-        LOGGER.fine("disposed");
     }
 
     public String getIndexName() {

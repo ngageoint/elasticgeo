@@ -23,7 +23,7 @@ public class ElasticAttribute implements Serializable {
 
     private static final long serialVersionUID = 8839579461838862328L;
 
-    private String name;
+    private final String name;
 
     private String shortName;
 
@@ -74,10 +74,6 @@ public class ElasticAttribute implements Serializable {
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getShortName() {
@@ -176,15 +172,6 @@ public class ElasticAttribute implements Serializable {
             displayName = name;
         }
         return displayName;
-    }
-
-    @Override
-    public String toString() {
-        return "ElasticAttribute [name=" + name + ", type=" + type + ", use=" + use
-                + ", defaultGeometry=" + defaultGeometry + ", srid=" + srid
-                + ", dateFormat=" + dateFormat + ", useShortName=" + useShortName + ""
-                + ", geometryType=" + geometryType + ", analyzed=" + analyzed
-                + ", stored=" + stored + ", nested=" + nested + "]";
     }
 
     @Override

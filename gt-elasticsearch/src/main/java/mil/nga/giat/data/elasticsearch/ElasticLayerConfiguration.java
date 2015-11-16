@@ -63,7 +63,7 @@ public class ElasticLayerConfiguration implements Serializable {
     
     public ElasticLayerConfiguration(ElasticLayerConfiguration other) {
         this(other.docType);
-        this.layerName = other.layerName;
+        setLayerName(other.layerName);
         for (final ElasticAttribute attribute : other.attributes) {
             attributes.add(new ElasticAttribute(attribute));
         }
@@ -83,13 +83,6 @@ public class ElasticLayerConfiguration implements Serializable {
 
     public List<ElasticAttribute> getAttributes() {
         return attributes;
-    }
-
-    @Override
-    public String toString() {
-        return "ElasticLayerConfiguration[docType=" + docType 
-                + ", layerName=" + layerName
-                + ", attributes=" + attributes + "]";
     }
 
 }

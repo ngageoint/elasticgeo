@@ -47,7 +47,7 @@
     <dependency>
       <groupId>mil.nga.giat</groupId>
       <artifactId>gt-elasticsearch</artifactId>
-      <version>${geotools.version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>

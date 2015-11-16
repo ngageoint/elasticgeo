@@ -335,13 +335,14 @@ class FilterToElasticHelper {
      * @return
      */
     private boolean isWorld(Literal geometry) {
+        boolean result = false;
         if(geometry != null) {
             Geometry g = geometry.evaluate(null, Geometry.class);
             if(g != null) {
-                return JTS.toGeometry(WORLD).equalsTopo(g.union());
+                result = JTS.toGeometry(WORLD).equalsTopo(g.union());
             }
         }
-        return false;
+        return result;
     }
 
     /**
@@ -350,11 +351,12 @@ class FilterToElasticHelper {
      * @return
      */
     private boolean isEmpty(Literal geometry) {
+        boolean result = false;
         if(geometry != null) {
             Geometry g = geometry.evaluate(null, Geometry.class);
-            return g == null || g.isEmpty();
+            result = g == null || g.isEmpty();
         }
-        return false;
+        return result;
     }
 
 }

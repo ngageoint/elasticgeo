@@ -17,6 +17,7 @@ import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.referencing.CRS;
+import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.Name;
@@ -30,7 +31,7 @@ import com.vividsolutions.jts.geom.Geometry;
  */
 public class ElasticFeatureTypeBuilder extends SimpleFeatureTypeBuilder {
 
-    private final static Logger LOGGER = Logger.getLogger(ElasticFeatureTypeBuilder.class.getName());
+    private final static Logger LOGGER = Logging.getLogger(ElasticFeatureTypeBuilder.class);
 
     private List<ElasticAttribute> attributes;
 

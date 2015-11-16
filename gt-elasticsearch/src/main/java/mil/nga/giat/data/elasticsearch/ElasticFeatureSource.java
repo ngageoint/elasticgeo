@@ -17,6 +17,7 @@ import org.geotools.data.Query;
 import org.geotools.data.store.ContentEntry;
 import org.geotools.data.store.ContentFeatureSource;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
@@ -26,12 +27,9 @@ import org.opengis.filter.sort.SortBy;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -42,7 +40,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("unchecked")
 public class ElasticFeatureSource extends ContentFeatureSource {
 
-    private final static Logger LOGGER = Logger.getLogger(ElasticFeatureSource.class.getName());
+    private final static Logger LOGGER = Logging.getLogger(ElasticFeatureSource.class);
 
     private final static int DEFAULT_MAX_FEATURES = 10000;
     
@@ -64,6 +62,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
      */
     @Override
     protected ReferencedEnvelope getBoundsInternal(Query query) throws IOException {
+        LOGGER.fine("getBoundsInternal");
         final CoordinateReferenceSystem crs;
         crs = getSchema().getCoordinateReferenceSystem();
         final ReferencedEnvelope bounds;
@@ -84,6 +83,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     @Override
     protected int getCountInternal(Query query) throws IOException {
+        LOGGER.fine("getCountInternal");
         int hits;
         try {
             final SearchRequestBuilder searchRequest;
@@ -105,13 +105,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                 hits = Math.max(0, Math.min(totalHits-from, size));
             }
         } catch (InterruptedException | ExecutionException e) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                StringWriter stringWriter = new StringWriter();
-                PrintWriter printWriter = new PrintWriter(stringWriter);
-                e.printStackTrace(printWriter);
-                LOGGER.fine(stringWriter.toString());
-            }
-            throw new IOException("Error executing count search");
+            throw new IOException("Error executing count search", e);
         }
 
         return hits;
@@ -120,7 +114,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
     @Override
     protected FeatureReader<SimpleFeatureType, SimpleFeature> getReaderInternal(Query query)
             throws IOException {
-
+        LOGGER.fine("getReaderInternal");
         FeatureReader<SimpleFeatureType, SimpleFeature> reader = null;
         try {
             final SearchRequestBuilder searchRequest;
@@ -130,13 +124,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                 reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>(reader, query.getFilter());
             }
         } catch (InterruptedException | ExecutionException e) {
-            if (LOGGER.isLoggable(Level.FINE)) {
-                StringWriter stringWriter = new StringWriter();
-                PrintWriter printWriter = new PrintWriter(stringWriter);
-                e.printStackTrace(printWriter);
-                LOGGER.fine(stringWriter.toString());
-            }
-            throw new IOException("Error executing query search");
+            throw new IOException("Error executing query search", e);
         }
         return reader;
     }
@@ -147,6 +135,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         final String docType = dataStore.getDocType(entry.getName());
 
         // setup request
+        LOGGER.fine("Preparing " + docType + " (" + entry.getName() + ") "  + searchType + " query");
         final SearchRequestBuilder searchRequest;
         searchRequest = dataStore.getClient()
                 .prepareSearch(dataStore.getSearchIndices())

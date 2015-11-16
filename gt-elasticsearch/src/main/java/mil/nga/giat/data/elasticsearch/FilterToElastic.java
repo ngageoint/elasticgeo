@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
@@ -45,9 +44,9 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
 import org.geotools.filter.FilterCapabilities;
 import org.geotools.geojson.geom.GeometryJSON;
-import org.geotools.jdbc.JoinPropertyName;
 import org.geotools.util.ConverterFactory;
 import org.geotools.util.Converters;
+import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.And;
@@ -129,7 +128,7 @@ import com.vividsolutions.jts.geom.LinearRing;
 public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
     /** Standard java logger */
-    protected static Logger LOGGER = org.geotools.util.logging.Logging.getLogger(FilterToElastic.class);
+    protected static Logger LOGGER = Logging.getLogger(FilterToElastic.class);
 
     public static DateTimeFormatter DEFAULT_DATE_FORMATTER = Joda.forPattern("date_optional_time").printer();
 
@@ -154,7 +153,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     
     protected Boolean fullySupported;
 
-    private FilterToElasticHelper helper;
+    protected FilterToElasticHelper helper;
 
     private DateTimeFormatter dateFormatter;
 
@@ -345,10 +344,9 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         char esc = filter.getEscape().charAt(0);
         char multi = filter.getWildCard().charAt(0);
         char single = filter.getSingleChar().charAt(0);
-        boolean matchCase = filter.isMatchingCase();
-        if (matchCase) {
+        boolean matchCase = false;
+        if (filter.isMatchingCase()) {
             LOGGER.fine("Case sensitive search not supported");
-            matchCase = false;
         }
 
         String literal = filter.getLiteral();
@@ -552,16 +550,18 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 }
             }
         }
-
+        
         if (right instanceof PropertyName) {
             AttributeDescriptor attType = (AttributeDescriptor)right.evaluate(featureType);
             if (attType != null) {
                 leftContext = attType.getType().getBinding();
+                if (attType.getUserData().containsKey(NESTED)) {
+                    nested = (Boolean) attType.getUserData().get(NESTED);
+                }
             }
         }
 
         //case sensitivity
-        boolean matchCase = true;
         if ( !filter.isMatchingCase() ) {
             //we only do for = and !=
             if ( filter instanceof PropertyIsEqualTo || 
@@ -576,11 +576,17 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
 
         String type = (String) extraData;
-
-        left.accept(this, leftContext);
-        final String key = (String) field;
-
-        right.accept(this, rightContext);
+        
+        final String key;
+        if (left instanceof PropertyName) {
+            left.accept(this, null);
+            key = (String) field;
+            right.accept(this, rightContext);            
+        } else {
+            right.accept(this, null);
+            key = (String) field;
+            left.accept(this, leftContext);            
+        }
 
         if (type.equals("=")) {
             filterBuilder = FilterBuilders.termFilter(key, field);
@@ -686,12 +692,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         if (filter == null)
             throw new NullPointerException(
                     "Filter to be encoded cannot be null");
-        if (!(filter instanceof BinarySpatialOperator))
-            throw new IllegalArgumentException(
-                    "This filter is not a binary spatial operator, "
-                            + "can't do SDO relate against it: "
-                            + filter.getClass());
-
 
         // extract the property name and the geometry literal
         BinarySpatialOperator op = (BinarySpatialOperator) filter;
@@ -906,36 +906,20 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     public Object visit(PropertyName expression, Object extraData) {
         LOGGER.finer("exporting PropertyName");
 
+        SimpleFeatureType featureType = this.featureType;
+        
         Class target = null;
         if(extraData instanceof Class) {
             target = (Class) extraData;
         }
 
-        SimpleFeatureType featureType = this.featureType;
-
-        //check for join
-        String prefix = "";
-        if (expression instanceof JoinPropertyName) {
-            //encode the prefix
-            prefix =((JoinPropertyName)expression).getAlias();
-            prefix += ".";
-        }
-
         //first evaluate expression against feature type get the attribute, 
-        //  this handles xpath
-        AttributeDescriptor attribute = null;
-        try {
-            attribute = (AttributeDescriptor) expression.evaluate(featureType);
-        }
-        catch( Exception e ) {
-            //just log and fall back on just encoding propertyName straight up
-            String msg = "Error occured mapping " + expression + " to feature type";
-            LOGGER.log( Level.WARNING, msg, e );
-        }
+        AttributeDescriptor attType = (AttributeDescriptor) expression.evaluate(featureType);
+
         String encodedField; 
-        if ( attribute != null ) {
-            encodedField = attribute.getLocalName();
-            if(target != null && target.isAssignableFrom(attribute.getType().getBinding())) {
+        if ( attType != null ) {
+            encodedField = attType.getLocalName();
+            if(target != null && target.isAssignableFrom(attType.getType().getBinding())) {
                 // no need for casting, it's already the right type
                 target = null;
             }
@@ -944,22 +928,14 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             encodedField = expression.getPropertyName();
         }
 
-        if (extraData == Double.class) {
-            field = Double.valueOf(encodedField);
-        } else if (extraData == Long.class) {
-            field = Long.valueOf(encodedField);
-        } else if (extraData == Integer.class) {
-            field = Integer.valueOf(encodedField);
-        } else if (extraData == Float.class) {
-            field = Float.valueOf(encodedField);
-        } else if (extraData == Boolean.class) {
-            field = Boolean.valueOf(encodedField);
-        } else {
-            field = prefix + encodedField;
+        if (target != null) {
+            LOGGER.fine("PropertyName type casting not implemented");
         }
+        field = encodedField;
+
         return extraData;
     }
-
+    
     /**
      * Export the contents of a Literal Expresion
      *
@@ -993,7 +969,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 // behaviour (for writing out dates and the like using the BDMS custom functions)
                 writeLiteral(literal);
             }
-
         } catch (IOException e) {
             throw new FilterToElasticException("IO problems writing literal", e);
         }
@@ -1076,27 +1051,16 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     }
 
     public Object visit(Add expression, Object extraData) {
-        return visit((BinaryExpression)expression, "+", extraData);
+        throw new UnsupportedOperationException("Add expressions not supported");
     }
     public Object visit(Divide expression, Object extraData) {
-        return visit((BinaryExpression)expression, "/", extraData);
+        throw new UnsupportedOperationException("Divide expressions not supported");
     }
     public Object visit(Multiply expression, Object extraData) {
-        return visit((BinaryExpression)expression, "*", extraData);
+        throw new UnsupportedOperationException("Multiply expressions not supported");
     }
     public Object visit(Subtract expression, Object extraData) {
-        return visit((BinaryExpression)expression, "-", extraData);
-    }
-
-    /**
-     * Writes the FilterBuilder for the Math Expression.
-     *
-     * @param expression the Math phrase to be written.
-     * @param operator The operator of the expression.
-     *
-     */
-    protected Object visit(BinaryExpression expression, String operator, Object extraData) {
-        throw new UnsupportedOperationException("Binary math expressions not supported");
+        throw new UnsupportedOperationException("Subtract expressions not supported");
     }
 
     public Object visit(NilExpression expression, Object extraData) {

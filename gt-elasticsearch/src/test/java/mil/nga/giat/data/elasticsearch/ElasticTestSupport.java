@@ -17,7 +17,6 @@
 
 package mil.nga.giat.data.elasticsearch;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -54,8 +53,7 @@ import org.geotools.feature.NameImpl;
 import org.geotools.temporal.object.DefaultInstant;
 import org.geotools.temporal.object.DefaultPeriod;
 import org.geotools.temporal.object.DefaultPosition;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
@@ -100,7 +98,7 @@ public abstract class ElasticTestSupport {
     private static Node node;
     
     @BeforeClass
-    public static void suiteSetup() throws Exception {
+    public static synchronized void suiteSetup() throws Exception {
         Properties properties = new Properties();
         InputStream inputStream = ClassLoader.getSystemResourceAsStream(PROPERTIES_FILE);
         properties.load(inputStream);
@@ -110,17 +108,14 @@ public abstract class ElasticTestSupport {
         if (node == null || node.isClosed()) {
             connect();
         }
-    }
-    
-    @Before
-    public void before() throws IOException {
+        
         Map<String,Serializable> params = createConnectionParams();
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         dataStore = (ElasticDataStore) factory.createDataStore(params);        
     }
     
-    @After
-    public void tearDown() {
+    @AfterClass
+    public static synchronized void suiteTearDown() throws Exception {
         dataStore.dispose();
         //node.close();
     }
