@@ -234,7 +234,8 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 	}
 
 	private boolean useSort(Query query) {
-		return query.getSortBy() != null && query.getSortBy().length > 0;
+		return (query.getSortBy() != null && query.getSortBy().length > 0) ||
+				query.getStartIndex()!=null;
 	}
 
 	private int getSize(Query query) {
