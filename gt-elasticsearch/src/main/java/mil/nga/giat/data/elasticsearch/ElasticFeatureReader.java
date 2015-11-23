@@ -45,13 +45,22 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     private ElasticParserUtil parserUtil;
 
     public ElasticFeatureReader(ContentState contentState, SearchResponse response) {
-        state = contentState;
-        featureType = state.getFeatureType();
-        searchHitIterator = response.getHits().iterator();
-        builder = new SimpleFeatureBuilder(featureType);
-        parserUtil = new ElasticParserUtil();
-        maxScore = response.getHits().getMaxScore();
+    	this.state = contentState;
+    	this.featureType = state.getFeatureType();
+    	this.searchHitIterator = response.getHits().iterator();
+    	this.builder = new SimpleFeatureBuilder(featureType);
+    	this.parserUtil = new ElasticParserUtil();
+    	this.maxScore = response.getHits().getMaxScore();
     }
+    
+    public ElasticFeatureReader(ContentState contentState, Iterator<SearchHit> searchHitIterator, float maxScore) {
+    	this.state = contentState;
+        this.featureType = state.getFeatureType();
+        this.searchHitIterator = searchHitIterator;
+        this.builder = new SimpleFeatureBuilder(featureType);
+        this.parserUtil = new ElasticParserUtil();
+        this.maxScore = maxScore;
+    }    
 
     @Override
     public SimpleFeatureType getFeatureType() {

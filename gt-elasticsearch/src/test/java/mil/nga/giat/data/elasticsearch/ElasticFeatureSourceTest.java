@@ -17,7 +17,10 @@
 
 package mil.nga.giat.data.elasticsearch;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -491,6 +494,30 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         SimpleFeatureCollection features = featureSource.getFeatures(f);
         assertEquals(8, features.size());
     }
+    
+    @Test
+    public void testScrollSizesDoesntChangesOutputSize() throws Exception {
+        init();
+        Long intialScrollSize = dataStore.getScrollSize();
+        dataStore.setScrollSize(3l);
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(8, features.size());
+        dataStore.setScrollSize(intialScrollSize);       
+    }  
+    
+    @Test
+    public void testScrollTimeDoesntChangesOutputSize() throws Exception {
+        init();
+        Integer initialScrollTime = dataStore.getScrollTimeSeconds();
+        dataStore.setScrollTime(initialScrollTime * 10);
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(8, features.size());
+        dataStore.setScrollTime(initialScrollTime);       
+    }      
 
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {
         assertEquals(ids.length, features.size());
@@ -502,6 +529,6 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
             s.remove(Integer.parseInt(f.getAttribute("id").toString()));
         }
         assertTrue(s.isEmpty());
-    }
+    }      
 
 }

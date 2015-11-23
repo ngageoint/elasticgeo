@@ -4,40 +4,7 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
-import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
-
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.common.collect.ImmutableList;
-import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.joda.Joda;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.settings.ImmutableSettings.Builder;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.node.Node;
-import org.geotools.data.FeatureReader;
-import org.geotools.data.Query;
-import org.geotools.data.Transaction;
-import org.geotools.data.store.ContentDataStore;
-import org.geotools.data.store.ContentEntry;
-import org.geotools.data.store.ContentFeatureSource;
-import org.geotools.util.logging.Logging;
-import org.geotools.feature.NameImpl;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.Name;
-
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.Point;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +17,40 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.client.Requests;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.common.collect.ImmutableList;
+import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.joda.Joda;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.ImmutableSettings.Builder;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.node.Node;
+import org.geotools.data.FeatureReader;
+import org.geotools.data.Query;
+import org.geotools.data.Transaction;
+import org.geotools.data.store.ContentDataStore;
+import org.geotools.data.store.ContentEntry;
+import org.geotools.data.store.ContentFeatureSource;
+import org.geotools.feature.NameImpl;
+import org.geotools.util.logging.Logging;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.Name;
+
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.Point;
+
+import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
 /**
  * A data store for an Elasticsearch index containing geo_point or geo_shape
@@ -64,7 +64,7 @@ public class ElasticDataStore extends ContentDataStore {
     private final String indexName;
 
     private final String searchIndices;
-
+   
     private final Node node;
 
     private final Client client;
@@ -76,10 +76,14 @@ public class ElasticDataStore extends ContentDataStore {
     private final Map<Name, String> docTypes;
 
     private Map<String, ElasticLayerConfiguration> layerConfigurations;
+
+    private Long scrollSize;
+    
+    private Integer scrollTimeSeconds;    
     
     public ElasticDataStore(String searchHost, Integer hostPort, 
             String indexName, String searchIndices, String clusterName,
-            boolean localNode, boolean storeData, String dataPath) {
+            boolean localNode, boolean storeData, String dataPath, Long scrollSize, Integer scrollTimeSeconds) {
 
         LOGGER.fine("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
 
@@ -90,6 +94,9 @@ public class ElasticDataStore extends ContentDataStore {
         } else {
             this.searchIndices = indexName;
         }
+        
+        this.scrollSize = scrollSize;
+        this.scrollTimeSeconds = scrollTimeSeconds;
 
         if (dataPath != null) {
             Settings build = ImmutableSettings.builder()
@@ -378,7 +385,15 @@ public class ElasticDataStore extends ContentDataStore {
         return searchIndices;
     }
 
-    public Client getClient() {
+    public Long getScrollSize() {
+		return scrollSize;
+	}
+    
+	public Integer getScrollTimeSeconds() {
+		return scrollTimeSeconds;
+	}
+
+	public Client getClient() {
         return client;
     }
 
@@ -405,4 +420,12 @@ public class ElasticDataStore extends ContentDataStore {
         return docType;
     }
 
+	public void setScrollSize(Long scrollSize) {
+		this.scrollSize = scrollSize;
+	}
+
+	public void setScrollTime(Integer scrollTimeSeconds) {
+		this.scrollTimeSeconds = scrollTimeSeconds;
+		
+	}
 }
