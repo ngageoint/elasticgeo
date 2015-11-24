@@ -510,7 +510,7 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
     @Test
     public void testScrollTimeDoesntChangesOutputSize() throws Exception {
         init();
-        Integer initialScrollTime = dataStore.getScrollTimeSeconds();
+        Integer initialScrollTime = dataStore.getScrollTime();
         dataStore.setScrollTime(initialScrollTime * 10);
         FilterFactory ff = dataStore.getFilterFactory();
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
@@ -518,6 +518,18 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         assertEquals(8, features.size());
         dataStore.setScrollTime(initialScrollTime);       
     }      
+    
+    @Test
+    public void testScrollEnabledDoesntChangesOutputSize() throws Exception {
+        init();
+        Boolean scrollEnabled = (dataStore.getScrollEnabled()!=null)?dataStore.getScrollEnabled():false;
+        dataStore.setScrollEnabled(true);
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(8, features.size());
+        dataStore.setScrollEnabled(scrollEnabled);       
+    }     
 
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {
         assertEquals(ids.length, features.size());

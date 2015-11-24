@@ -112,7 +112,8 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 		LOGGER.fine("getReaderInternal");
 		FeatureReader<SimpleFeatureType, SimpleFeature> reader = null;
 		try {
-			SearchType searchType = useSort(query) ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.SCAN;
+			SearchType searchType = (useSortOrPagination(query) 
+					|| !getDataStore().getScrollEnabled()) ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.SCAN;
 			final SearchRequestBuilder searchRequest = prepareSearchRequest(query, searchType);
 			SearchResponse sr = searchRequest.execute().get();
 			String scrollId = sr.getScrollId();
@@ -182,8 +183,8 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 			if (dataStore.getScrollSize() != null) {
 				searchRequest.setSize(dataStore.getScrollSize().intValue());
 			}
-			if (dataStore.getScrollTimeSeconds() != null) {
-				searchRequest.setScroll(TimeValue.timeValueSeconds(dataStore.getScrollTimeSeconds()));
+			if (dataStore.getScrollTime() != null) {
+				searchRequest.setScroll(TimeValue.timeValueSeconds(dataStore.getScrollTime()));
 			}
 		}
 
@@ -204,7 +205,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 		LOGGER.fine(String.format("postFilter: %s", postFilter.toString()));
 		searchRequest.setQuery(elasticQuery).setPostFilter(postFilter);
 
-		if (useSort(query) && elasticQuery.toString().equals(QueryBuilders.matchAllQuery().toString())) {
+		if (isSort(query) && elasticQuery.toString().equals(QueryBuilders.matchAllQuery().toString())) {
 			searchRequest.addSort("_uid", naturalSortOrder);
 		}
 
@@ -233,10 +234,14 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 		}
 	}
 
-	private boolean useSort(Query query) {
+	private boolean isSort(Query query) {
+		return query.getSortBy() != null && query.getSortBy().length > 0;
+	}
+	
+	private boolean useSortOrPagination(Query query) {
 		return (query.getSortBy() != null && query.getSortBy().length > 0) ||
 				query.getStartIndex()!=null;
-	}
+	}	
 
 	private int getSize(Query query) {
 		final int size;

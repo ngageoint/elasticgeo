@@ -76,14 +76,17 @@ public class ElasticDataStore extends ContentDataStore {
     private final Map<Name, String> docTypes;
 
     private Map<String, ElasticLayerConfiguration> layerConfigurations;
-
+    
     private Long scrollSize;
     
-    private Integer scrollTimeSeconds;    
+    private Boolean scrollEnabled;
+    
+    private Integer scrollTime;    
     
     public ElasticDataStore(String searchHost, Integer hostPort, 
             String indexName, String searchIndices, String clusterName,
-            boolean localNode, boolean storeData, String dataPath, Long scrollSize, Integer scrollTimeSeconds) {
+            boolean localNode, boolean storeData, String dataPath, 
+            Long scrollSize, Integer scrollTime, Boolean scrollEnabled) {
 
         LOGGER.fine("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
 
@@ -95,8 +98,9 @@ public class ElasticDataStore extends ContentDataStore {
             this.searchIndices = indexName;
         }
         
+        this.scrollEnabled = scrollEnabled;
         this.scrollSize = scrollSize;
-        this.scrollTimeSeconds = scrollTimeSeconds;
+        this.scrollTime = scrollTime;
 
         if (dataPath != null) {
             Settings build = ImmutableSettings.builder()
@@ -267,6 +271,75 @@ public class ElasticDataStore extends ContentDataStore {
         }
         return elasticAttributes;
     }
+    
+    @Override
+    public void dispose() {
+        LOGGER.fine("disposing");
+        this.client.close();
+        if (this.node != null) {
+            this.node.close();
+        }
+        super.dispose();
+    }
+
+    public String getIndexName() {
+        return indexName;
+    }
+
+    public String getSearchIndices() {
+        return searchIndices;
+    }
+
+	public Client getClient() {
+        return client;
+    }
+	
+	public Long getScrollSize() {
+		return scrollSize;
+	}
+
+	public Boolean getScrollEnabled() {
+		return scrollEnabled;
+	}
+
+	public Integer getScrollTime() {
+		return scrollTime;
+	}
+
+	public void setScrollSize(Long scrollSize) {
+		this.scrollSize = scrollSize;
+	}
+
+	public void setScrollEnabled(Boolean scrollEnabled) {
+		this.scrollEnabled = scrollEnabled;
+	}
+
+	public void setScrollTime(Integer scrollTime) {
+		this.scrollTime = scrollTime;
+	}
+
+	public Map<String, ElasticLayerConfiguration> getLayerConfigurations() {
+        return layerConfigurations;
+    }
+
+    public void setLayerConfiguration(ElasticLayerConfiguration layerConfig) {
+        final String layerName = layerConfig.getLayerName();
+        this.layerConfigurations.put(layerName, layerConfig);
+	}
+    
+    public Map<Name, String> getDocTypes() {
+        return docTypes;
+    }
+
+    public String getDocType(Name typeName) {
+        final String docType;
+        if (docTypes.containsKey(typeName)) {
+            docType = docTypes.get(typeName);
+        } else {
+            docType = typeName.getLocalPart();
+        }
+        return docType;
+    }    
 
     private void walk(List<ElasticAttribute> elasticAttributes, Map<String,Object> map, 
             String propertyKey, boolean startType, boolean nested) {
@@ -366,66 +439,4 @@ public class ElasticDataStore extends ContentDataStore {
             }
         }
     }
-
-    @Override
-    public void dispose() {
-        LOGGER.fine("disposing");
-        this.client.close();
-        if (this.node != null) {
-            this.node.close();
-        }
-        super.dispose();
-    }
-
-    public String getIndexName() {
-        return indexName;
-    }
-
-    public String getSearchIndices() {
-        return searchIndices;
-    }
-
-    public Long getScrollSize() {
-		return scrollSize;
-	}
-    
-	public Integer getScrollTimeSeconds() {
-		return scrollTimeSeconds;
-	}
-
-	public Client getClient() {
-        return client;
-    }
-
-	public Map<String, ElasticLayerConfiguration> getLayerConfigurations() {
-        return layerConfigurations;
-    }
-
-    public void setLayerConfiguration(ElasticLayerConfiguration layerConfig) {
-        final String layerName = layerConfig.getLayerName();
-        this.layerConfigurations.put(layerName, layerConfig);
-	}
-    
-    public Map<Name, String> getDocTypes() {
-        return docTypes;
-    }
-
-    public String getDocType(Name typeName) {
-        final String docType;
-        if (docTypes.containsKey(typeName)) {
-            docType = docTypes.get(typeName);
-        } else {
-            docType = typeName.getLocalPart();
-        }
-        return docType;
-    }
-
-	public void setScrollSize(Long scrollSize) {
-		this.scrollSize = scrollSize;
-	}
-
-	public void setScrollTime(Integer scrollTimeSeconds) {
-		this.scrollTimeSeconds = scrollTimeSeconds;
-		
-	}
 }
