@@ -122,9 +122,13 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 				String scrollId = sr.getScrollId();
 				List<SearchHit> list = new ArrayList<>();
 				float maxScore = -1;
-				while (sr != null && scrollId != null) {
+				final int maxFeatures = getSize(query);
+				do {
 					LOGGER.fine("Scroll id = " + scrollId);
-					sr = getDataStore().getClient().prepareSearchScroll(scrollId).execute().actionGet();
+					sr = getDataStore().getClient()
+					        .prepareSearchScroll(scrollId)
+					        .setScroll(TimeValue.timeValueSeconds(getDataStore().getScrollTime()))
+					        .execute().actionGet();
 					scrollId = sr.getScrollId();
 					if (sr != null && sr.getHits() != null) {
 						maxScore = (maxScore < sr.getHits().maxScore()) ? sr.getHits().maxScore() : maxScore;
@@ -133,6 +137,9 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 					} else {
 						LOGGER.severe("Expected result for scroll id = " + sr.getScrollId());
 					}
+				} while (scrollId != null && sr.getHits().hits().length > 0 && list.size()<maxFeatures);
+				if (list.size() > maxFeatures) {
+				    list = list.subList(0, maxFeatures);
 				}
 				reader = new ElasticFeatureReader(getState(), list.iterator(), maxScore);
 			}

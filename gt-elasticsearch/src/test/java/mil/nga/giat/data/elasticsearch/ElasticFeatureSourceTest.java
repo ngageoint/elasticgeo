@@ -32,6 +32,7 @@ import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.junit.After;
 import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -59,6 +60,12 @@ import org.opengis.filter.spatial.BBOX;
 
 public class ElasticFeatureSourceTest extends ElasticTestSupport {
 
+    @After
+    public void tearDown() {
+        dataStore.setScrollEnabled(scrollEnabled);
+        dataStore.setScrollSize(scrollSize);
+    }
+    
     @Test
     public void testSchema() throws Exception {
         init();
@@ -502,7 +509,7 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         dataStore.setScrollSize(3l);
         FilterFactory ff = dataStore.getFilterFactory();
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
-        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
         dataStore.setScrollSize(intialScrollSize);       
     }  
@@ -514,7 +521,7 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         dataStore.setScrollTime(initialScrollTime * 10);
         FilterFactory ff = dataStore.getFilterFactory();
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
-        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
         dataStore.setScrollTime(initialScrollTime);       
     }      
@@ -522,14 +529,23 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
     @Test
     public void testScrollEnabledDoesntChangesOutputSize() throws Exception {
         init();
-        Boolean scrollEnabled = (dataStore.getScrollEnabled()!=null)?dataStore.getScrollEnabled():false;
         dataStore.setScrollEnabled(true);
         FilterFactory ff = dataStore.getFilterFactory();
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
-        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
         dataStore.setScrollEnabled(scrollEnabled);       
     }     
+    
+    @Test
+    public void testScrollHonorsMaxFeatures() throws Exception {
+        init();
+        dataStore.setScrollSize(1l);
+        Query q = new Query();
+        q.setMaxFeatures(7);
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
+        assertEquals(7, features.size());
+    }      
 
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {
         assertEquals(ids.length, features.size());
