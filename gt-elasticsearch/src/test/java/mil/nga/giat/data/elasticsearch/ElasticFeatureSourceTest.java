@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.geotools.data.Query;
@@ -545,6 +546,19 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         q.setMaxFeatures(7);
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
         assertEquals(7, features.size());
+    }      
+    
+    @Test(expected=NoSuchElementException.class)
+    public void testScrollNoSuchElement() throws Exception {
+        init();
+        dataStore.setScrollSize(1l);
+        Query q = new Query();
+        q.setMaxFeatures(1);
+        SimpleFeatureIterator it = featureSource.getFeatures(q).features();
+        assertTrue(it.hasNext());
+        it.next();
+        assertTrue(!it.hasNext());
+        it.next();
     }      
 
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {
