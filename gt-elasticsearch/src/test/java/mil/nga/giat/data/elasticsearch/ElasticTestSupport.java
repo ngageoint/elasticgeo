@@ -136,12 +136,18 @@ public abstract class ElasticTestSupport {
     public void setup() throws IOException {
         Map<String,Serializable> params = createConnectionParams();
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
-        dataStore = (ElasticDataStore) factory.createDataStore(params);        
+        dataStore = (ElasticDataStore) factory.createDataStore(params);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) { }
     }
     
     @After
     public void tearDown() {
         dataStore.dispose();
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) { }
     }
 
     private static void connect() throws Exception {
