@@ -10,7 +10,7 @@ Compatibility
 
 * Java JDK (>=1.7)
 * GeoServer >= 2.6
-* Elasticsearch version 1.3 or greater. 1.3.2, 1.4.4 and 1.5.2 have been tested.
+* Elasticsearch >= 1.4
 
 Installation
 ------------

@@ -17,10 +17,7 @@
 
 package mil.nga.giat.data.elasticsearch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -94,22 +91,25 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
     public void testSchemaWithShortName() throws Exception {
         init();
         ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
-        layerConfig.getAttributes().get(17).setUseShortName(true);
+        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
+            attribute.setUseShortName(true);
+        }
         SimpleFeatureType schema = featureSource.getSchema();
         assertNotNull(schema);
-        assertTrue(schema.getDescriptor("hejda") != null);
+        assertNotNull(schema.getDescriptor("hejda"));
     }
     
     @Test
     public void testSchemaWithInvalidSrid() throws Exception {
         init();
         ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
-        layerConfig.getAttributes().get(9).setSrid(1);
+        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
+            attribute.setSrid(-1);
+        }
         SimpleFeatureType schema = featureSource.getSchema();
         assertNotNull(schema);
-
-        assertNotNull(schema.getGeometryDescriptor());
-        assertTrue(schema.getDescriptor("geo") == null);
+        assertNull(schema.getGeometryDescriptor());
+        assertNull(schema.getDescriptor("geo"));
     }
 
     @Test

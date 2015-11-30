@@ -20,8 +20,8 @@
   </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <geotools.version>13.3</geotools.version>
-    <geoserver.version>2.7.3</geoserver.version>
+    <geotools.version>13.4</geotools.version>
+    <geoserver.version>2.7.4</geoserver.version>
     <elasticsearch.version>1.5.2</elasticsearch.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
   </properties>
