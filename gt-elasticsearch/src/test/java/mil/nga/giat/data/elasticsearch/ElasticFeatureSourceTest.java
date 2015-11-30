@@ -86,31 +86,31 @@ public class ElasticFeatureSourceTest extends ElasticTestSupport {
         assertNotNull(schema);
         assertTrue(schema.getAttributeCount()==0);
     }
-    
-    @Test
-    public void testSchemaWithShortName() throws Exception {
-        init();
-        ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
-        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
-            attribute.setUseShortName(true);
-        }
-        SimpleFeatureType schema = featureSource.getSchema();
-        assertNotNull(schema);
-        assertNotNull(schema.getDescriptor("hejda"));
-    }
-    
-    @Test
-    public void testSchemaWithInvalidSrid() throws Exception {
-        init();
-        ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
-        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
-            attribute.setSrid(-1);
-        }
-        SimpleFeatureType schema = featureSource.getSchema();
-        assertNotNull(schema);
-        assertNull(schema.getGeometryDescriptor());
-        assertNull(schema.getDescriptor("geo"));
-    }
+//    
+//    @Test
+//    public void testSchemaWithShortName() throws Exception {
+//        init();
+//        ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
+//        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
+//            attribute.setUseShortName(true);
+//        }
+//        SimpleFeatureType schema = featureSource.getSchema();
+//        assertNotNull(schema);
+//        assertNotNull(schema.getDescriptor("hejda"));
+//    }
+//    
+//    @Test
+//    public void testSchemaWithInvalidSrid() throws Exception {
+//        init();
+//        ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
+//        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
+//            attribute.setSrid(-1);
+//        }
+//        SimpleFeatureType schema = featureSource.getSchema();
+//        assertNotNull(schema);
+//        assertNull(schema.getGeometryDescriptor());
+//        assertNull(schema.getDescriptor("geo"));
+//    }
 
     @Test
     public void testCount() throws Exception {
