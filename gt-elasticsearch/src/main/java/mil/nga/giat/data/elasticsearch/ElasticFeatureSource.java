@@ -8,7 +8,6 @@ import static org.opengis.filter.sort.SortOrder.ASCENDING;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
@@ -21,7 +20,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.sort.SortOrder;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.FilteringFeatureReader;
@@ -183,14 +181,13 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 		}
 		final QueryBuilder elasticQuery = filterToElastic.getQueryBuilder();
 		final FilterBuilder postFilter = filterToElastic.getFilterBuilder();
-		LOGGER.fine(String.format("postFilter: %s", postFilter.toString()));
 		searchRequest.setQuery(elasticQuery).setPostFilter(postFilter);
 
 		if (isSort(query) && elasticQuery.toString().equals(QueryBuilders.matchAllQuery().toString())) {
 			searchRequest.addSort("_uid", naturalSortOrder);
 		}
 
-		LOGGER.info(searchRequest.toString());
+		LOGGER.fine(searchRequest.toString());
 
 		return searchRequest;
 	}
