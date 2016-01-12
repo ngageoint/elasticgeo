@@ -60,6 +60,8 @@ public abstract class ElasticTestSupport {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticTestSupport.class);
+    
+    private static final String LINE_SEPARATOR = "line.separator";
 
     private static final String PROPERTIES_FILE = "elasticsearch.properties";
 
@@ -147,7 +149,8 @@ public abstract class ElasticTestSupport {
         // index documents
         InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE);
         try (Scanner scanner = new Scanner(inputStream)) {
-            scanner.useDelimiter("\\n");
+        	String eol = System.getProperty(LINE_SEPARATOR);
+            scanner.useDelimiter(eol);
             while (scanner.hasNext()) {
                 final String line = scanner.next();
                 if (!line.startsWith("#")) {
