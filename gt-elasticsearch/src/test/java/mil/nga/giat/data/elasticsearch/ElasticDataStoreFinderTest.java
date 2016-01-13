@@ -50,10 +50,11 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
 
-        Map<String,Serializable> map = new HashMap<>();
-        map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, "9300");
-        map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
+        Map<String,Serializable> map = createConnectionParams();
+//        Map<String,Serializable> map =  new HashMap<>();
+//        map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
+//        map.put(ElasticDataStoreFactory.HOSTPORT.key, "9300");
+//        map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
         ElasticDataStoreFactory fac;

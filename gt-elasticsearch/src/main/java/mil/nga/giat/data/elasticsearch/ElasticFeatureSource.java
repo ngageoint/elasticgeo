@@ -7,7 +7,6 @@ package mil.nga.giat.data.elasticsearch;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.geotools.data.FeatureReader;
@@ -146,9 +145,11 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                     + " Additional post-query filtering will be performed.");
         }
         final QueryBuilder elasticQuery = filterToElastic.getQueryBuilder();
-        final FilterBuilder postFilter = filterToElastic.getFilterBuilder();
+        final QueryBuilder postFilter = filterToElastic.getFilterBuilder();
         LOGGER.fine("Elasticsearch query: " + elasticQuery);
         LOGGER.fine("Elasticsearch post filter: " + postFilter);
+        
+        //Why post filter??        
         searchRequest.setQuery(elasticQuery).setPostFilter(postFilter);
 
         // sort
