@@ -1,26 +1,25 @@
-This is a fork of 
+#ElasticGeo
 
-https://github.com/ngageoint/elasticgeo
+ElasticGeo provides a GeoTools data store that allows geospatial features from an Elasticsearch index to be published via OGC services using GeoServer.  
 
-So all licenses apply and original source is there...
+###Pull Request
+
+If you'd like to contribute to this project, please make a pull request. We'll review the pull request and discuss the changes. All pull request contributions to this project will be released under the appropriate license conditions discussed below. 
+
+Software source code previously released under an open source license and then modified by NGA staff is considered a "joint work" (see 17 USC 101); it is partially copyrighted, partially public domain, and as a whole is protected by the copyrights of the non-government authors and must be released according to the terms of the original open source license.
+
+###Project relies upon:
+
+GeoTools under [LGPL v 2.1](http://geotools.org/about.html)
+
+Elasticsearch under [Apache License v 2.0](https://github.com/elastic/elasticsearch/blob/master/LICENSE.txt) 
+
+GeoServer under [GPL v 2 with later option](http://geoserver.org/license/) 
+
+ElasticGeo under [LGPL v 2.1](https://github.com/matsjg/elasticgeo)
+
+###Documentation
+
+https://github.com/ngageoint/elasticgeo/blob/master/gs-web-elasticsearch/doc/index.rst
 
 
-This for was done to try and port to Elasticsearch 2.x apis.
-
-This only attempts to port to get all the tests to pass, it is not known if works in geoserver...
-
-
-Some of the changes:
-
-1) Removed the test quadtree levels setting, it was causing the index to be over 400 MB for just a few simple geo json records used in tests.
-
-2) Updated the connect() method in ElasticTestSupport to use system line endings so people on windows with git replacing LF with CRLF can build the project without errors.
-
-3) I think all tests no longer use elasticsearch cluster name
-
-4) The biggest refactor was from Elasticsearch no longer having a FilterBuilder API.  I left original code commented because I probably made a few mistakes.  I have not updated any documentation, other
-than remove javadoc links that break in jdk 1.8 builds.
-
-5) changed the artifact id in poms, appending -2x.  
-
-6) 
