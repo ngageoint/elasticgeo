@@ -49,7 +49,7 @@
   <dependencies>
     <dependency>
       <groupId>mil.nga.giat</groupId>
-      <artifactId>gt-elasticsearch</artifactId>
+      <artifactId>gt-elasticsearch-2x</artifactId>
       <version>${geotools.version}</version>
     </dependency>
     <dependency>
@@ -68,6 +68,7 @@
       <groupId>org.geotools</groupId>
       <artifactId>gt-api</artifactId>
       <version>${geotools.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.mockrunner</groupId>
@@ -122,6 +123,7 @@
                       <exclude>javax.media:jai*:*</exclude>
                       <exclude>*:jts:*</exclude>
                       <exclude>*:*:jsr305</exclude>
+                      <exclude>*:guava:*</exclude>
                     </excludes>
 		  </artifactSet>
 		  <filters>

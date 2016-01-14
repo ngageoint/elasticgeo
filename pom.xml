@@ -9,8 +9,8 @@
   <url>https://github.com/ngageoint/elasticgeo</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <geotools.version>12.2</geotools.version>
-    <geoserver.version>2.6.2</geoserver.version>
+    <geotools.version>13.3</geotools.version>
+    <geoserver.version>2.7.3</geoserver.version>
     <elasticsearch.version>2.1.1</elasticsearch.version>
   </properties>
   <modules>
