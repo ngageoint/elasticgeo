@@ -18,6 +18,7 @@
 package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -38,18 +39,15 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.elasticsearch.node.NodeBuilder.*;
-import mil.nga.giat.data.elasticsearch.ElasticAttribute;
-import mil.nga.giat.data.elasticsearch.ElasticDataStore;
-import mil.nga.giat.data.elasticsearch.ElasticDataStoreFactory;
-import mil.nga.giat.data.elasticsearch.ElasticFeatureSource;
-import mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration;
-
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
+import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
 import org.geotools.temporal.object.DefaultInstant;
@@ -67,6 +65,8 @@ public abstract class ElasticTestSupport {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticTestSupport.class);
+    
+    private static final String LINE_SEPARATOR = "line.separator";
 
     private static final String PROPERTIES_FILE = "elasticsearch.properties";
 
@@ -82,7 +82,9 @@ public abstract class ElasticTestSupport {
 
     protected static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
 
-    protected static int numShards = 5;
+    protected static int numShards = 1;
+    
+    protected static int numReplicas = 0;
     
     protected String layerName = "active";
 
@@ -99,6 +101,8 @@ public abstract class ElasticTestSupport {
     protected static boolean scrollEnabled;
     
     protected static long scrollSize;
+
+    protected static Path path;
 
     protected static int activeNumShards;
     
@@ -151,13 +155,13 @@ public abstract class ElasticTestSupport {
     }
 
     private static void connect() throws Exception {
-        Path baseDir = Paths.get("target/elasticsearch");
+        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
         baseDir.toFile().mkdirs();
         dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
         
         LOGGER.info("Creating local test Elasticsearch cluster (path.home=" + dataPath + ")");
-        Settings build = ImmutableSettings.builder()
-                .put("path.data", dataPath)
+        Settings build = Settings.builder()
+                .put("path.home", dataPath)
                 .put("http.enabled", false)
                 .build();
         node = nodeBuilder()
@@ -165,11 +169,13 @@ public abstract class ElasticTestSupport {
                 .local(true)
                 .clusterName(clusterName)
                 .node();
+
         Client client = node.client();
 
         // create index and add mappings
-        Settings indexSettings = ImmutableSettings.settingsBuilder()
+        Settings indexSettings = Settings.settingsBuilder()
                 .put("number_of_shards", numShards)
+                .put("number_of_replicas", numReplicas)
                 .build();
         CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
         builder.setSettings(indexSettings);
@@ -185,8 +191,11 @@ public abstract class ElasticTestSupport {
 
         // index documents
         InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE);
+        BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+
         try (Scanner scanner = new Scanner(inputStream)) {
-            scanner.useDelimiter("\\n");
+            String eol = System.getProperty(LINE_SEPARATOR);
+            scanner.useDelimiter(eol);
             while (scanner.hasNext()) {
                 final String line = scanner.next();
                 if (!line.startsWith("#")) {
@@ -205,12 +214,26 @@ public abstract class ElasticTestSupport {
                         layerName = null;
                     }
 
-                    client.prepareIndex(indexName, layerName)
-                    .setSource(line)
-                    .setId(id)
-                    .execute().actionGet();
+                    bulkRequestBuilder.add(client.prepareIndex(indexName, layerName).setSource(line).setId(id));
+
+//                    IndexResponse response = client.prepareIndex(indexName, layerName)
+//                            .setSource(line)
+//                            .setId(id)
+//                            .execute().actionGet();
+
                 }
             }
+            BulkResponse bulkresp = bulkRequestBuilder.execute().actionGet();
+
+//            NodesStatsRequestBuilder nrbld = new NodesStatsRequestBuilder(client, NodesStatsAction.INSTANCE);
+//            NodesStatsResponse nsrep = nrbld.all().execute().actionGet();
+//            for (NodeStats nstat: nsrep.getNodes()){
+//                System.out.println("total index count: " + nstat.getIndices().getIndexing().getTotal().getIndexCount());
+//                System.out.println("total doc count: " + nstat.getIndices().getDocs().getCount());
+//                System.out.println("total size in bytes: " + nstat.getIndices().getStore().getSizeInBytes());
+//            }
+
+            RefreshResponse refreshresp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
         }
         LOGGER.info("Done setting up Elasticsearch");
     }

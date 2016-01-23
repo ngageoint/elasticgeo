@@ -18,6 +18,7 @@ package mil.nga.giat.data.elasticsearch;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -35,7 +36,6 @@ import java.util.logging.Logger;
 import mil.nga.giat.data.elasticsearch.ElasticDataStore;
 import mil.nga.giat.data.elasticsearch.ElasticDataStoreFactory;
 
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 
@@ -67,10 +67,10 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
     @Test
     public void testFactoryWithTransportClient() throws IOException {
         // setup client for testing http connection params
-        Path baseDir = Paths.get("target/elasticsearch");
+        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
         String dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
-        Settings build = ImmutableSettings.builder()
-                .put("path.data", dataPath)
+        Settings build = Settings.builder()
+                .put("path.home", dataPath)
                 .build();
         Node node = nodeBuilder().settings(build).node();
 
@@ -104,10 +104,10 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
     @Test
     public void testFactoryWithNodeClient() throws IOException {
         // setup client for testing http connection params
-        Path baseDir = Paths.get("target/elasticsearch");
+        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
         String dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
-        Settings build = ImmutableSettings.builder()
-                .put("path.data", dataPath)
+        Settings build = Settings.builder()
+                .put("path.home", dataPath)
                 .build();
         Node node = nodeBuilder().settings(build).node();
 

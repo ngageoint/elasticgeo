@@ -22,7 +22,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <geotools.version>14.1</geotools.version>
     <geoserver.version>2.8.1</geoserver.version>
-    <elasticsearch.version>1.5.2</elasticsearch.version>
+    <elasticsearch.version>2.1.1</elasticsearch.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
   </properties>
   <modules>

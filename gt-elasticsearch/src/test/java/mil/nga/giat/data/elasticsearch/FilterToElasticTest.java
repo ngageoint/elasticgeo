@@ -24,6 +24,7 @@ import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.GEOMETRY
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.geo.builders.LineStringBuilder;
 import org.elasticsearch.common.geo.builders.PolygonBuilder;
@@ -196,7 +197,8 @@ public class FilterToElasticTest {
     @Test
     public void testId() {
         final Id filter = ff.id(ff.featureId("id"));
-        IdsFilterBuilder expected = FilterBuilders.idsFilter().addIds("id");
+        IdsQueryBuilder expected = QueryBuilders.idsQuery().addIds("id");
+//        IdsFilterBuilder expected = FilterBuilders.idsFilter().addIds("id");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -206,9 +208,11 @@ public class FilterToElasticTest {
     @Test
     public void testAnd() {
         And filter = ff.and(ff.id(ff.featureId("id1")), ff.id(ff.featureId("id2")));
-        AndFilterBuilder expected = FilterBuilders.andFilter(
-                FilterBuilders.idsFilter().addIds("id1"), 
-                FilterBuilders.idsFilter().addIds("id2"));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().must(QueryBuilders.idsQuery().addIds("id1"))
+                .must(QueryBuilders.idsQuery().addIds("id2"));
+//        AndFilterBuilder expected = FilterBuilders.andFilter(
+//                FilterBuilders.idsFilter().addIds("id1"), 
+//                FilterBuilders.idsFilter().addIds("id2"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -218,9 +222,11 @@ public class FilterToElasticTest {
     @Test
     public void testOr() {
         final Or filter = ff.or(ff.id(ff.featureId("id1")), ff.id(ff.featureId("id2")));
-        OrFilterBuilder expected = FilterBuilders.orFilter(
-                FilterBuilders.idsFilter().addIds("id1"), 
-                FilterBuilders.idsFilter().addIds("id2"));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().should(QueryBuilders.idsQuery().addIds("id1"))
+                .should(QueryBuilders.idsQuery().addIds("id2"));
+//        OrFilterBuilder expected = FilterBuilders.orFilter(
+//                FilterBuilders.idsFilter().addIds("id1"), 
+//                FilterBuilders.idsFilter().addIds("id2"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -230,7 +236,8 @@ public class FilterToElasticTest {
     @Test
     public void testNot() {
         Not filter = ff.not(ff.id(ff.featureId("id")));
-        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.idsFilter().addIds("id"));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.idsQuery().addIds("id"));
+//        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.idsFilter().addIds("id"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -240,7 +247,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsNull() {
         PropertyIsNull filter = ff.isNull(ff.property("prop"));
-        MissingFilterBuilder expected = FilterBuilders.missingFilter("prop");
+        MissingQueryBuilder expected = QueryBuilders.missingQuery("prop");
+//        MissingFilterBuilder expected = FilterBuilders.missingFilter("prop");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -250,7 +258,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsNotNull() {
         Not filter = ff.not(ff.isNull(ff.property("prop")));
-        ExistsFilterBuilder expected = FilterBuilders.existsFilter("prop");
+        ExistsQueryBuilder expected = QueryBuilders.existsQuery("prop");
+//        ExistsFilterBuilder expected = FilterBuilders.existsFilter("prop");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -260,7 +269,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsEqualToString() {
         PropertyIsEqualTo filter = ff.equals(ff.property("stringAttr"), ff.literal("value"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("stringAttr", "value");
+        TermQueryBuilder expected = QueryBuilders.termQuery("stringAttr", "value");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("stringAttr", "value");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -270,7 +280,8 @@ public class FilterToElasticTest {
     @Test
     public void testNestedPropertyIsEqualToString() {
         PropertyIsEqualTo filter = ff.equals(ff.property("nested.hej"), ff.literal("value"));
-        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", FilterBuilders.termFilter("nested.hej", "value"));
+        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", QueryBuilders.termQuery("nested.hej", "value"));
+//        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", FilterBuilders.termFilter("nested.hej", "value"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -280,7 +291,8 @@ public class FilterToElasticTest {
     @Test
     public void testNestedStringIsEqualToProperty() {
         PropertyIsEqualTo filter = ff.equals(ff.literal("value"), ff.property("nested.hej"));
-        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", FilterBuilders.termFilter("nested.hej", "value"));
+        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", QueryBuilders.termQuery("nested.hej", "value"));
+//        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", FilterBuilders.termFilter("nested.hej", "value"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -290,7 +302,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsNotEqualToString() {
         PropertyIsNotEqualTo filter = ff.notEqual(ff.property("stringAttr"), ff.literal("value"));
-        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.termFilter("stringAttr", "value"));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery("stringAttr", "value"));
+//        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.termFilter("stringAttr", "value"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -300,7 +313,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsEqualToDouble() {
         PropertyIsEqualTo filter = ff.equals(ff.property("doubleAttr"), ff.literal("4.5"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("doubleAttr", 4.5);
+        TermQueryBuilder expected = QueryBuilders.termQuery("doubleAttr", 4.5);
+//        TermFilterBuilder expected = FilterBuilders.termFilter("doubleAttr", 4.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -310,7 +324,8 @@ public class FilterToElasticTest {
     @Test
     public void testDoubleIsEqualtoProperty() {
         PropertyIsEqualTo filter = ff.equals(ff.literal("4.5"), ff.property("doubleAttr"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("doubleAttr", 4.5);
+        TermQueryBuilder expected = QueryBuilders.termQuery("doubleAttr", 4.5);
+//        TermFilterBuilder expected = FilterBuilders.termFilter("doubleAttr", 4.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -320,7 +335,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsNotEqualToDouble() {
         PropertyIsNotEqualTo filter = ff.notEqual(ff.property("doubleAttr"), ff.literal("4.5"));
-        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.termFilter("doubleAttr", 4.5));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery("doubleAttr", 4.5));
+//        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.termFilter("doubleAttr", 4.5));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -330,7 +346,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsEqualToFloat() {
         PropertyIsEqualTo filter = ff.equals(ff.property("floatAttr"), ff.literal("4.5"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("floatAttr", 4.5f);
+        TermQueryBuilder expected = QueryBuilders.termQuery("floatAttr", 4.5f);
+//        TermFilterBuilder expected = FilterBuilders.termFilter("floatAttr", 4.5f);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -340,7 +357,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsEqualToInteger() {
         PropertyIsEqualTo filter = ff.equals(ff.property("integerAttr"), ff.literal("4"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("integerAttr", 4);
+        TermQueryBuilder expected = QueryBuilders.termQuery("integerAttr", 4);
+//        TermFilterBuilder expected = FilterBuilders.termFilter("integerAttr", 4);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -350,7 +368,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsEqualToBoolean() {
         PropertyIsEqualTo filter = ff.equals(ff.property("booleanAttr"), ff.literal("true"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("booleanAttr", true);
+        TermQueryBuilder expected = QueryBuilders.termQuery("booleanAttr", true);
+//        TermFilterBuilder expected = FilterBuilders.termFilter("booleanAttr", true);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -360,7 +379,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsGreaterThan() {
         PropertyIsGreaterThan filter = ff.greater(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").gt(4.5);
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").gt(4.5);
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").gt(4.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -370,7 +390,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsLessThan() {
         PropertyIsLessThan filter = ff.less(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").lt(4.5);
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").lt(4.5);
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").lt(4.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -380,7 +401,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsGreaterThanOrEqualTo() {
         PropertyIsGreaterThanOrEqualTo filter = ff.greaterOrEqual(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").gte(4.5);
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").gte(4.5);
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").gte(4.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -390,7 +412,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsLessThanOrEqualTo() {
         PropertyIsLessThanOrEqualTo filter = ff.lessOrEqual(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").lte(4.5);
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").lte(4.5);
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").lte(4.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -400,7 +423,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsBetween() {
         PropertyIsBetween filter = ff.between(ff.property("doubleAttr"), ff.literal("4.5"), ff.literal("5.5"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").gte(4.5).lte(5.5);
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").gte(4.5).lte(5.5);
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("doubleAttr").gte(4.5).lte(5.5);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -410,7 +434,8 @@ public class FilterToElasticTest {
     @Test
     public void testUnknownPropertyIsBetween() {
         PropertyIsBetween filter = ff.between(ff.property("unknownStr"), ff.literal("a"), ff.literal("c"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("unknownStr").gte("a").lte("c");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("unknownStr").gte("a").lte("c");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("unknownStr").gte("a").lte("c");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -420,7 +445,8 @@ public class FilterToElasticTest {
     @Test
     public void testIncludeFilter() {
         IncludeFilter filter = Filter.INCLUDE;
-        MatchAllFilterBuilder expected = FilterBuilders.matchAllFilter();
+        MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
+//        MatchAllFilterBuilder expected = FilterBuilders.matchAllFilter();
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -430,7 +456,8 @@ public class FilterToElasticTest {
     @Test
     public void testExcludeFilter() {
         ExcludeFilter filter = Filter.EXCLUDE;
-        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
+//        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -463,7 +490,8 @@ public class FilterToElasticTest {
     @Test
     public void testPropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("analyzed"), "hello");
-        QueryFilterBuilder expected = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("analyzed"));
+        QueryStringQueryBuilder expected = QueryBuilders.queryStringQuery("hello").defaultField("analyzed");
+//        QueryFilterBuilder expected = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("analyzed"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -473,7 +501,8 @@ public class FilterToElasticTest {
     @Test
     public void testCaseSensitivePropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("analyzed"), "hello", "\\", "*", ".", true);
-        QueryFilterBuilder expected = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("analyzed"));
+        QueryStringQueryBuilder expected = QueryBuilders.queryStringQuery("hello").defaultField("analyzed");
+//        QueryFilterBuilder expected = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("analyzed"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -483,8 +512,9 @@ public class FilterToElasticTest {
     @Test
     public void testNestedPropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("nested.hej"), "hello");
-        QueryFilterBuilder expectedFilter = FilterBuilders.queryFilter(QueryBuilders.queryString("hello").defaultField("nested.hej"));
-        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", expectedFilter);
+        QueryStringQueryBuilder expectedFilter = QueryBuilders.queryStringQuery("hello").defaultField("nested.hej");
+        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", expectedFilter);
+//        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", expectedFilter);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -533,7 +563,8 @@ public class FilterToElasticTest {
     public void testGeoShapeBboxFilter() throws ParseException, IOException {
         BBOX filter = ff.bbox("geom", 0., 0., 1., 1., "EPSG:4326");
         PolygonBuilder shape = ShapeBuilder.newPolygon().point(0, 0).point(0,1).point(1,1).point(1,0).point(0,0);
-        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
+        GeoShapeQueryBuilder expected = QueryBuilders.geoShapeQuery("geom", shape, ShapeRelation.INTERSECTS);
+//        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -544,7 +575,8 @@ public class FilterToElasticTest {
     public void testGeoShapeIntersectsFilter() throws CQLException {
         Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
-        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
+        GeoShapeQueryBuilder expected = QueryBuilders.geoShapeQuery("geom", shape, ShapeRelation.INTERSECTS);
+//        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -556,7 +588,8 @@ public class FilterToElasticTest {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Intersects filter = ff.intersects(ff.property("geom"), ff.literal(ls));
         
-        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
+//        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -568,7 +601,8 @@ public class FilterToElasticTest {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(ls));
         
-        MatchAllFilterBuilder expected = FilterBuilders.matchAllFilter();
+        MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
+//        MatchAllFilterBuilder expected = FilterBuilders.matchAllFilter();
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -584,7 +618,8 @@ public class FilterToElasticTest {
         GeometryCollection gc = gf.createGeometryCollection(new Geometry[] {poly, ls});
         Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(gc));
         
-        MatchAllFilterBuilder expected = FilterBuilders.matchAllFilter();
+        MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
+//        MatchAllFilterBuilder expected = FilterBuilders.matchAllFilter();
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -595,7 +630,8 @@ public class FilterToElasticTest {
     public void testGeoShapeIntersectsFilterReversed() throws CQLException {
         Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(LINESTRING(0 0,1 1), \"geom\")");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
-        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
+        GeoShapeQueryBuilder expected = QueryBuilders.geoShapeQuery("geom", shape, ShapeRelation.INTERSECTS);
+//        GeoShapeFilterBuilder expected = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -606,9 +642,12 @@ public class FilterToElasticTest {
     public void testAndWithBbox() {
         And filter = ff.and(ff.id(ff.featureId("id1")), ff.bbox("geom", 0., 0., 1., 1., "EPSG:4326"));
         PolygonBuilder shape = ShapeBuilder.newPolygon().point(0, 0).point(0,1).point(1,1).point(1,0).point(0,0);
-        AndFilterBuilder expected = FilterBuilders.andFilter(
-                FilterBuilders.idsFilter().addIds("id1"), 
-                FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery()
+                .must(QueryBuilders.idsQuery().addIds("id1"))
+                .must(QueryBuilders.geoShapeQuery("geom", shape, ShapeRelation.INTERSECTS));
+//        AndFilterBuilder expected = FilterBuilders.andFilter(
+//                FilterBuilders.idsFilter().addIds("id1"), 
+//                FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -618,7 +657,9 @@ public class FilterToElasticTest {
     @Test
     public void testGeoPointBboxFilter() {
         BBOX filter = ff.bbox("geo_point", 0., 0., 1., 1., "EPSG:4326");
-        GeoBoundingBoxFilterBuilder expected = FilterBuilders.geoBoundingBoxFilter("geo_point").topLeft(1,0).bottomRight(0,1);
+        GeoBoundingBoxQueryBuilder expected = QueryBuilders.geoBoundingBoxQuery("geo_point").topLeft(1, 0)
+                .bottomRight(0, 1);
+//        GeoBoundingBoxFilterBuilder expected = FilterBuilders.geoBoundingBoxFilter("geo_point").topLeft(1,0).bottomRight(0,1);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -628,7 +669,9 @@ public class FilterToElasticTest {
     @Test
     public void testGeoPolygonFilter() throws CQLException {
         Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geo_point\", POLYGON((0 0, 0 1, 1 1, 1 0, 0 0)))");
-        GeoPolygonFilterBuilder expected = FilterBuilders.geoPolygonFilter("geo_point").addPoint(0,0).addPoint(1,0).addPoint(1,1).addPoint(0,1).addPoint(0,0);
+        GeoPolygonQueryBuilder expected = QueryBuilders.geoPolygonQuery("geo_point").addPoint(0, 0).addPoint(1, 0)
+                .addPoint(1, 1).addPoint(0, 1).addPoint(0, 0);
+//        GeoPolygonFilterBuilder expected = FilterBuilders.geoPolygonFilter("geo_point").addPoint(0,0).addPoint(1,0).addPoint(1,1).addPoint(0,1).addPoint(0,0);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -638,7 +681,9 @@ public class FilterToElasticTest {
     @Test
     public void testDWithinFilter() throws CQLException {
         DWithin filter = (DWithin) ECQL.toFilter("DWITHIN(\"geo_point\", POINT(0 1), 1.0, meters)");
-        GeoDistanceFilterBuilder expected = FilterBuilders.geoDistanceFilter("geo_point").lat(1).lon(0).distance(1., DistanceUnit.METERS);
+        GeoDistanceQueryBuilder expected = QueryBuilders.geoDistanceQuery("geo_point").lat(1).lon(0).distance(1.,
+                DistanceUnit.METERS);
+//        GeoDistanceFilterBuilder expected = FilterBuilders.geoDistanceFilter("geo_point").lat(1).lon(0).distance(1., DistanceUnit.METERS);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -648,7 +693,9 @@ public class FilterToElasticTest {
     @Test
     public void testDWithinPolygonFilter() throws CQLException {
         DWithin filter = (DWithin) ECQL.toFilter("DWITHIN(\"geo_point\", POLYGON((0 0, 0 1, 1 1, 1 0, 0 0)), 1.0, meters)");
-        GeoDistanceFilterBuilder expected = FilterBuilders.geoDistanceFilter("geo_point").lat(0.5).lon(0.5).distance(1., DistanceUnit.METERS);
+        GeoDistanceQueryBuilder expected = QueryBuilders.geoDistanceQuery("geo_point").lat(0.5).lon(0.5).distance(1.,
+                DistanceUnit.METERS);
+//        GeoDistanceFilterBuilder expected = FilterBuilders.geoDistanceFilter("geo_point").lat(0.5).lon(0.5).distance(1., DistanceUnit.METERS);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -658,7 +705,9 @@ public class FilterToElasticTest {
     @Test
     public void testDBeyondFilter() throws CQLException {
         Beyond filter = (Beyond) ECQL.toFilter("BEYOND(\"geo_point\", POINT(0 1), 1.0, meters)");
-        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.geoDistanceFilter("geo_point").lat(1).lon(0).distance(1., DistanceUnit.METERS));
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(
+                QueryBuilders.geoDistanceQuery("geo_point").lat(1).lon(0).distance(1., DistanceUnit.METERS));
+//        NotFilterBuilder expected = FilterBuilders.notFilter(FilterBuilders.geoDistanceFilter("geo_point").lat(1).lon(0).distance(1., DistanceUnit.METERS));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -668,10 +717,13 @@ public class FilterToElasticTest {
     @Test
     public void compoundFilter() throws CQLException {
         Filter filter = ECQL.toFilter("time > \"1970-01-01\" and INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
-        RangeFilterBuilder expected1 = FilterBuilders.rangeFilter("time").gt("1970-01-01");
+        RangeQueryBuilder expected1 = QueryBuilders.rangeQuery("time").gt("1970-01-01");
+//        RangeFilterBuilder expected1 = FilterBuilders.rangeFilter("time").gt("1970-01-01");
         LineStringBuilder shape = ShapeBuilder.newLineString().point(0, 0).point(1,1);
-        GeoShapeFilterBuilder expected2 = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
-        AndFilterBuilder expected = FilterBuilders.andFilter(expected1, expected2);
+        GeoShapeQueryBuilder expected2 = QueryBuilders.geoShapeQuery("geom", shape, ShapeRelation.INTERSECTS);
+//        GeoShapeFilterBuilder expected2 = FilterBuilders.geoShapeFilter("geom", shape, ShapeRelation.INTERSECTS);
+        BoolQueryBuilder expected = QueryBuilders.boolQuery().must(expected1).must(expected2);
+//        AndFilterBuilder expected = FilterBuilders.andFilter(expected1, expected2);
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -681,7 +733,8 @@ public class FilterToElasticTest {
     @Test
     public void testCql() throws CQLException {
         Filter filter = ECQL.toFilter("\"object.field\"='value'");
-        TermFilterBuilder expected = FilterBuilders.termFilter("object.field", "value");
+        TermQueryBuilder expected = QueryBuilders.termQuery("object.field", "value");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("object.field", "value");
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -693,7 +746,8 @@ public class FilterToElasticTest {
         query.setHints(null);
         
         builder.addViewParams(query);
-        assertTrue(builder.getFilterBuilder().toString().equals(FilterBuilders.matchAllFilter().toString()));
+        assertTrue(builder.getFilterBuilder().toString().equals(QueryBuilders.matchAllQuery().toString()));
+//        assertTrue(builder.getFilterBuilder().toString().equals(FilterBuilders.matchAllFilter().toString()));
         assertTrue(builder.getQueryBuilder().toString().equals(QueryBuilders.matchAllQuery().toString()));
     }
 
@@ -705,16 +759,20 @@ public class FilterToElasticTest {
         final Pattern expected = Pattern.compile(".*\"wrapper\".*\"query\".*\"" + new String(encoded) + ".*", Pattern.MULTILINE|Pattern.DOTALL);
 
         builder.addViewParams(query);
-        assertTrue(builder.getFilterBuilder().toString().equals(FilterBuilders.matchAllFilter().toString()));
+        assertTrue(builder.getFilterBuilder().toString().equals(QueryBuilders.matchAllQuery().toString()));
+//        assertTrue(builder.getFilterBuilder().toString().equals(FilterBuilders.matchAllFilter().toString()));
         assertTrue(expected.matcher(builder.getQueryBuilder().toString()).matches());
     }
 
     @Test
     public void testFilterViewParam() {
-        IdsFilterBuilder idsFilter = FilterBuilders.idsFilter().addIds("id");
+        IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
+//        IdsFilterBuilder idsFilter = FilterBuilders.idsFilter().addIds("id");
         parameters.put("f", idsFilter.toString());
         byte[] encoded = Base64.encodeBase64(idsFilter.toString().getBytes());
-        final Pattern expected = Pattern.compile(".*\"wrapper\".*\"filter\".*\"" + new String(encoded) + ".*", Pattern.MULTILINE|Pattern.DOTALL);
+        final Pattern expected = Pattern.compile(".*\"wrapper\".*\"query\".*\"" + new String(encoded) + ".*",
+                Pattern.MULTILINE | Pattern.DOTALL);
+//        final Pattern expected = Pattern.compile(".*\"wrapper\".*\"filter\".*\"" + new String(encoded) + ".*", Pattern.MULTILINE|Pattern.DOTALL);
 
         builder.addViewParams(query);
         assertTrue(expected.matcher(builder.getFilterBuilder().toString()).matches());
@@ -723,29 +781,34 @@ public class FilterToElasticTest {
 
     @Test
     public void testAndFilterViewParam() {
-        IdsFilterBuilder idsFilter = FilterBuilders.idsFilter().addIds("id");
+        IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
+//        IdsFilterBuilder idsFilter = FilterBuilders.idsFilter().addIds("id");
         builder.filterBuilder = idsFilter;
         parameters.put("f", idsFilter.toString());
 
         builder.addViewParams(query);
-        assertTrue(builder.getFilterBuilder() instanceof AndFilterBuilder);
+        assertTrue(builder.getFilterBuilder() instanceof BoolQueryBuilder);
+//        assertTrue(builder.getFilterBuilder() instanceof AndFilterBuilder);
     }
     
     @Test
     public void testNativeOnlyFilterViewParam() {
         parameters.put("native-only", "true");        
-        IdsFilterBuilder idsFilter = FilterBuilders.idsFilter().addIds("id");
+        IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
+//        IdsFilterBuilder idsFilter = FilterBuilders.idsFilter().addIds("id");
         builder.filterBuilder = idsFilter;
         parameters.put("f", idsFilter.toString());
         
         builder.addViewParams(query);
-        assertTrue(!(builder.getFilterBuilder() instanceof AndFilterBuilder));
+        assertTrue(!(builder.getFilterBuilder() instanceof AndQueryBuilder));
+//        assertTrue(!(builder.getFilterBuilder() instanceof AndFilterBuilder));
     }
 
     @Test
     public void testTemporalStringLiteral() {
         After filter = ff.after(ff.property("dateAttr"), ff.literal("1970-01-01 00:00:00"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-01-01 00:00:00");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-01-01 00:00:00");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-01-01 00:00:00");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -755,8 +818,10 @@ public class FilterToElasticTest {
     @Test
     public void testNestedTemporalStringLiteral() {
         After filter = ff.after(ff.property("nested.datehej"), ff.literal("1970-01-01 00:00:00"));
-        RangeFilterBuilder expectedFilter = FilterBuilders.rangeFilter("nested.datehej").gt("1970-01-01 00:00:00");
-        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", expectedFilter);
+        RangeQueryBuilder expectedFilter = QueryBuilders.rangeQuery("nested.datehej").gt("1970-01-01 00:00:00");
+//        RangeFilterBuilder expectedFilter = FilterBuilders.rangeFilter("nested.datehej").gt("1970-01-01 00:00:00");
+        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", expectedFilter);
+//        NestedFilterBuilder expected = FilterBuilders.nestedFilter("nested", expectedFilter);
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -770,7 +835,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttr"), ff.literal(temporalInstant));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T00:00:00.000Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T00:00:00.000Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T00:00:00.000Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -785,7 +851,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttrWithFormat"), ff.literal(temporalInstant));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttrWithFormat").gt("1970-07-19");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttrWithFormat").gt("1970-07-19");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttrWithFormat").gt("1970-07-19");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -800,7 +867,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttrWithFormat"), ff.literal(temporalInstant));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttrWithFormat").gt("19700719T020203.456Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttrWithFormat").gt("19700719T020203.456Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttrWithFormat").gt("19700719T020203.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -814,7 +882,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttr"), ff.literal(temporalInstant));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T02:02:03.456Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T02:02:03.456Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T02:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -828,7 +897,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.literal(temporalInstant), ff.property("dateAttr"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T02:02:03.456Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T02:02:03.456Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T02:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -843,7 +913,8 @@ public class FilterToElasticTest {
         Instant temporalInstant2 = new DefaultInstant(new DefaultPosition(date2));
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
         After filter = ff.after(ff.property("dateAttr"), ff.literal(period));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T07:08:09.101Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T07:08:09.101Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -858,7 +929,8 @@ public class FilterToElasticTest {
         Instant temporalInstant2 = new DefaultInstant(new DefaultPosition(date2));
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
         After filter = ff.after(ff.literal(period), ff.property("dateAttr"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T01:02:03.456Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T01:02:03.456Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T01:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -870,7 +942,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456Z");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         org.opengis.filter.temporal.Before filter = ff.before(ff.property("dateAttr"), ff.literal(temporalInstant));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T01:02:03.456Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T01:02:03.456Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T01:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -886,7 +959,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         org.opengis.filter.temporal.Before filter = ff.before(ff.property("dateAttr"), ff.literal(period));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T01:02:03.456Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T01:02:03.456Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").lt("1970-07-19T01:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -902,7 +976,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         org.opengis.filter.temporal.Before filter = ff.before(ff.literal(period), ff.property("dateAttr"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T07:08:09.101Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T07:08:09.101Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -918,7 +993,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         Begins filter = ff.begins(ff.property("dateAttr"), ff.literal(period));
-        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T01:02:03.456Z");
+        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T01:02:03.456Z");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T01:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -954,7 +1030,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         BegunBy filter = ff.begunBy(ff.literal(period), ff.property("dateAttr"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T01:02:03.456Z");
+        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T01:02:03.456Z");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T01:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -970,7 +1047,9 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         During filter = ff.during(ff.property("dateAttr"), ff.literal(period));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T01:02:03.456Z").lt("1970-07-19T07:08:09.101Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T01:02:03.456Z")
+                .lt("1970-07-19T07:08:09.101Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T01:02:03.456Z").lt("1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -986,7 +1065,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         Ends filter = ff.ends(ff.property("dateAttr"), ff.literal(period));
-        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T07:08:09.101Z");
+        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T07:08:09.101Z");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -1002,7 +1082,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         EndedBy filter = ff.endedBy(ff.literal(period), ff.property("dateAttr"));
-        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T07:08:09.101Z");
+        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T07:08:09.101Z");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -1018,7 +1099,8 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         EndedBy filter = ff.endedBy(ff.property("dateAttr"), ff.literal(period));
-        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T07:08:09.101Z");
+        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr","1970-07-19T07:08:09.101Z");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -1034,7 +1116,9 @@ public class FilterToElasticTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         TContains filter = ff.tcontains(ff.literal(period), ff.property("dateAttr"));
-        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T01:02:03.456Z").lt("1970-07-19T07:08:09.101Z");
+        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T01:02:03.456Z")
+                .lt("1970-07-19T07:08:09.101Z");
+//        RangeFilterBuilder expected = FilterBuilders.rangeFilter("dateAttr").gt("1970-07-19T01:02:03.456Z").lt("1970-07-19T07:08:09.101Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -1046,7 +1130,8 @@ public class FilterToElasticTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456Z");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         TEquals filter = ff.tequals(ff.property("dateAttr"), ff.literal(temporalInstant));
-        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T01:02:03.456Z");
+        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T01:02:03.456Z");
+//        TermFilterBuilder expected = FilterBuilders.termFilter("dateAttr","1970-07-19T01:02:03.456Z");
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -1121,5 +1206,4 @@ public class FilterToElasticTest {
     public void testUnsupportedLiteralTimePeriod() {
         builder.visitLiteralTimePeriod(null);
     }
-        
 }

@@ -27,8 +27,8 @@ import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.GeoPolygonFilterBuilder;
+import org.elasticsearch.index.query.GeoPolygonQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.JTS;
 import org.opengis.feature.type.AttributeDescriptor;
@@ -117,14 +117,16 @@ class FilterToElasticHelper {
         final double distance;
         distance = Double.valueOf(toMeters(inputDistance, inputUnits));
 
-        delegate.filterBuilder = FilterBuilders.geoDistanceFilter(key)
+//        delegate.filterBuilder = FilterBuilders.geoDistanceFilter(key)
+        delegate.filterBuilder = QueryBuilders.geoDistanceQuery(key)
                 .lat(lat)
                 .lon(lon)
                 .distance(distance, DistanceUnit.METERS);
 
         if ((filter instanceof DWithin && swapped)
                 || (filter instanceof Beyond && !swapped)) {
-            delegate.filterBuilder = FilterBuilders.notFilter(delegate.filterBuilder);
+            delegate.filterBuilder = QueryBuilders.boolQuery().mustNot(delegate.filterBuilder);
+            // delegate.filterBuilder = FilterBuilders.notFilter(delegate.filterBuilder);
         }
     }
 
@@ -149,13 +151,16 @@ class FilterToElasticHelper {
             geometry = clipToWorld(geometry);
             if(isWorld(geometry)) {
                 // nothing to filter in this case
-                delegate.filterBuilder = FilterBuilders.matchAllFilter();
+                delegate.filterBuilder = QueryBuilders.matchAllQuery();
+                // delegate.filterBuilder = FilterBuilders.matchAllFilter();
                 return;
             } else if(isEmpty(geometry)) {
                 if(!(filter instanceof Disjoint)) {
-                    delegate.filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
+                    delegate.filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
+                    // delegate.filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
                 } else {
-                    delegate.filterBuilder = FilterBuilders.matchAllFilter();
+                    delegate.filterBuilder = QueryBuilders.matchAllQuery();
+                    // delegate.filterBuilder = FilterBuilders.matchAllFilter();
                 }
                 return;
             }
@@ -202,9 +207,11 @@ class FilterToElasticHelper {
             e2.accept(delegate, extraData);
             final ShapeBuilder shapeBuilder = delegate.currentShapeBuilder;
 
-            delegate.filterBuilder = FilterBuilders.geoShapeFilter(key, shapeBuilder, shapeRelation);
+            delegate.filterBuilder = QueryBuilders.geoShapeQuery(key, shapeBuilder, shapeRelation);
+            // delegate.filterBuilder = FilterBuilders.geoShapeFilter(key, shapeBuilder, shapeRelation);
         } else {
-            delegate.filterBuilder = FilterBuilders.matchAllFilter();
+            delegate.filterBuilder = QueryBuilders.matchAllQuery();
+            // delegate.filterBuilder = FilterBuilders.matchAllFilter();
         }
     }
 
@@ -221,8 +228,10 @@ class FilterToElasticHelper {
                         || (swapped && filter instanceof Contains)
                         || filter instanceof Intersects)) {
             final Polygon polygon = (Polygon) geometry;
-            final GeoPolygonFilterBuilder geoPolygonFilter;
-            geoPolygonFilter = FilterBuilders.geoPolygonFilter(key);
+            final GeoPolygonQueryBuilder geoPolygonFilter;
+            geoPolygonFilter = QueryBuilders.geoPolygonQuery(key);
+            // final GeoPolygonFilterBuilder geoPolygonFilter;
+            // geoPolygonFilter = FilterBuilders.geoPolygonFilter(key);
             for (final Coordinate coordinate : polygon.getCoordinates()) {
                 geoPolygonFilter.addPoint(coordinate.y, coordinate.x);
             }
@@ -233,14 +242,16 @@ class FilterToElasticHelper {
             final double minX = envelope.getMinX();
             final double maxY = envelope.getMaxY();
             final double maxX = envelope.getMaxX();
-            delegate.filterBuilder = FilterBuilders.geoBoundingBoxFilter(key)
+            // delegate.filterBuilder = FilterBuilders.geoBoundingBoxFilter(key)
+            delegate.filterBuilder = QueryBuilders.geoBoundingBoxQuery(key)
                     .topLeft(maxY, minX)
                     .bottomRight(minY, maxX);
         } else {
             FilterToElastic.LOGGER.fine(filter.getClass().getSimpleName() 
                     + " is unsupported for geo_point types");
             delegate.fullySupported = false;
-            delegate.filterBuilder = FilterBuilders.matchAllFilter();
+            delegate.filterBuilder = QueryBuilders.matchAllQuery();
+            // delegate.filterBuilder = FilterBuilders.matchAllFilter();
         }
     }
 

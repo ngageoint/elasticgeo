@@ -64,6 +64,7 @@
       <groupId>org.geotools</groupId>
       <artifactId>gt-api</artifactId>
       <version>${geotools.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.mockrunner</groupId>
@@ -118,6 +119,7 @@
                       <exclude>javax.media:jai*:*</exclude>
                       <exclude>*:jts:*</exclude>
                       <exclude>*:*:jsr305</exclude>
+		      <exclude>*:guava:*</exclude>
                     </excludes>
 		  </artifactSet>
 		  <filters>

@@ -1,20 +1,13 @@
 {  
     "not-active" : {
-        "properties" : {
-          "geo" : {
-            "type" : "geo_shape",
-            "tree" : "quadtree",
-            "tree_levels" : 26
-          },
+        "properties" : {       
           "geo2" : {
             "type" : "geo_shape",
-            "tree" : "quadtree",
-            "tree_levels" : 26
+            "tree" : "quadtree"
           },
           "geo3" : {
             "type" : "geo_shape",
-            "tree" : "quadtree",
-            "tree_levels" : 26
+            "tree" : "quadtree"
           },
           "id" : {
             "type" : "string",
@@ -25,14 +18,17 @@
             "format" : "dateOptionalTime"
           },
           "modem_b" : {
-            "type" : "boolean"
+            "type" : "boolean",
+            "store": "true"
           },
           "security_ss" : {
             "type" : "string",
-            "index":    "not_analyzed"
+            "index":    "not_analyzed",
+            "store": "true"
           },
           "speed_is" : {
-            "type" : "integer"
+            "type" : "integer",
+            "store": "true"
           },
           "standard_ss" : {
             "type" : "string",

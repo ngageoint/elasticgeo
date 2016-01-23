@@ -6,7 +6,12 @@ package mil.nga.giat.data.elasticsearch;
 
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -24,11 +29,8 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.joda.Joda;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.ImmutableSettings.Builder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -47,6 +49,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.Name;
 
+import com.google.common.collect.ImmutableList;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
 
@@ -103,8 +106,8 @@ public class ElasticDataStore extends ContentDataStore {
         this.scrollTime = scrollTime;
 
         if (dataPath != null) {
-            Settings build = ImmutableSettings.builder()
-                    .put("path.data", dataPath)
+            Settings build = Settings.settingsBuilder()
+                    .put("path.home", dataPath)
                     .put("http.enabled", false)
                     .build();
             node = nodeBuilder()
@@ -115,7 +118,17 @@ public class ElasticDataStore extends ContentDataStore {
             client = node.client();
             isLocal = true;
         } else if (localNode) {
+            Path path = null;
+            try {
+                path = Files.createTempDirectory("gt_es");
+            } catch (IOException e) {
+                throw new RuntimeException("unable to create temp director for path.home", e);
+            }
+            Settings build = Settings.settingsBuilder()
+                    .put("path.home", path)
+                    .build();
             node = nodeBuilder()
+                    .settings(build)
                     .data(storeData)
                     .clusterName(clusterName)
                     .node();
@@ -123,11 +136,10 @@ public class ElasticDataStore extends ContentDataStore {
             isLocal = false;
         } else {
             final TransportAddress address;
-            address = new InetSocketTransportAddress(searchHost, hostPort);
-            Builder settings = ImmutableSettings.settingsBuilder()
-                    .put("cluster.name", clusterName);
-            client = new TransportClient(settings);
-            ((TransportClient) client).addTransportAddress(address);
+            address = new InetSocketTransportAddress(getInetAddress(searchHost), hostPort);
+            Settings settings = Settings.settingsBuilder()
+                    .put("cluster.name", clusterName).build();
+            client = TransportClient.builder().settings(settings).build().addTransportAddress(address);
             node = null;
             isLocal = false;
         }
@@ -148,7 +160,7 @@ public class ElasticDataStore extends ContentDataStore {
         IndexMetaData metadata = state.metaData().index(indexName);
         if (metadata != null) {
             final ImmutableOpenMap<String, MappingMetaData> mappings;
-            mappings = state.metaData().index(indexName).mappings();
+            mappings = state.metaData().index(indexName).getMappings();
             final Iterator<String> elasticTypes = mappings.keysIt();
             final Vector<Name> names = new Vector<Name>();
             while (elasticTypes.hasNext()) {
@@ -162,6 +174,15 @@ public class ElasticDataStore extends ContentDataStore {
         layerConfigurations = new ConcurrentHashMap<>();
         docTypes = new HashMap<>();
     }
+
+	private InetAddress getInetAddress(String searchHost) {
+		try {
+			return InetAddress.getByName(searchHost);
+		} catch (UnknownHostException e) {
+//			LOGGER.severe(e.getLocalizedMessage());
+			throw new RuntimeException(e);
+		}
+	}
 
     @Override
     protected List<Name> createTypeNames() {

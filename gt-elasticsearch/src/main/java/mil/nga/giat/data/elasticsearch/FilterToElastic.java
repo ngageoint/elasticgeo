@@ -28,17 +28,12 @@ import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FOR
 import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
 
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
-import org.elasticsearch.common.jackson.core.JsonFactory;
-import org.elasticsearch.common.jackson.core.JsonParser;
 import org.elasticsearch.common.joda.Joda;
-import org.elasticsearch.common.joda.time.format.DateTimeFormatter;
+import org.apache.lucene.queryparser.xml.FilterBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContentParser;
-import org.elasticsearch.index.query.AndFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermFilterBuilder;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
@@ -47,6 +42,7 @@ import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.util.ConverterFactory;
 import org.geotools.util.Converters;
 import org.geotools.util.logging.Logging;
+import org.joda.time.format.DateTimeFormatter;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.And;
@@ -111,6 +107,8 @@ import org.opengis.filter.temporal.TEquals;
 import org.opengis.filter.temporal.TOverlaps;
 import org.opengis.temporal.Period;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -121,7 +119,7 @@ import com.vividsolutions.jts.geom.LinearRing;
  * applies SQL View parameters from {@link Query} defining Elasticsearch 
  * {@link QueryBuilder} ("Q") and FilterBuilder ("F") directly. If 
  * provided, specified FilterBuilder is added to the generated FilterBuilder to 
- * produce an {@link AndFilterBuilder}.
+ * produce an .
  * 
  * Based on org.geotools.data.jdbc.FilterToSQL in the GeoTools library/jdbc module.
  */
@@ -143,7 +141,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
     protected Geometry currentGeometry;
 
-    protected FilterBuilder filterBuilder;
+    protected QueryBuilder filterBuilder;
 
     protected QueryBuilder queryBuilder;
 
@@ -158,7 +156,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     private DateTimeFormatter dateFormatter;
 
     public FilterToElastic() {
-        filterBuilder = FilterBuilders.matchAllFilter();
+        filterBuilder = QueryBuilders.matchAllQuery();
         queryBuilder = QueryBuilders.matchAllQuery();
         helper = new FilterToElasticHelper(this);
         fullySupported = null;
@@ -276,7 +274,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
      * @param filter the filter to be visited
      */
     public Object visit(ExcludeFilter filter, Object extraData) {
-        filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
+        filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
+//        filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
         return extraData;
     }
 
@@ -288,7 +287,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
      *  
      */
     public Object visit(IncludeFilter filter, Object extraData) {
-        filterBuilder = FilterBuilders.matchAllFilter();
+        filterBuilder = QueryBuilders.matchAllQuery();
+//        filterBuilder = FilterBuilders.matchAllFilter();
         return extraData;
     }
 
@@ -327,10 +327,11 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         final Object lower = field;
         upperbounds.accept(this, context);
         final Object upper = field;
-        filterBuilder = FilterBuilders.rangeFilter(key).gte(lower).lte(upper);
+        filterBuilder = QueryBuilders.rangeQuery(key).gte(lower).lte(upper);
+//      filterBuilder = FilterBuilders.rangeFilter(key).gte(lower).lte(upper);
         if(nested) {
             String path = extractNestedPath(key);
-            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
+            filterBuilder = QueryBuilders.nestedQuery(path, filterBuilder);
         }
 
         return extraData;
@@ -376,15 +377,18 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         if (analyzed) {
             // use query string query post filter for analyzed fields
             String pattern = convertToQueryString(esc, multi, single, matchCase, literal);
-            filterBuilder = FilterBuilders.queryFilter(QueryBuilders.queryString(pattern).defaultField(key));
+            filterBuilder = QueryBuilders.queryStringQuery(pattern).defaultField(key);
+//            filterBuilder = FilterBuilders.queryFilter(QueryBuilders.queryString(pattern).defaultField(key));
         } else {
             // default to regexp filter
             String pattern = convertToRegex(esc, multi, single, matchCase, literal);
-            filterBuilder = FilterBuilders.regexpFilter(key, pattern);
+            filterBuilder = QueryBuilders.regexpQuery(key, pattern);
+//            filterBuilder = FilterBuilders.regexpFilter(key, pattern);
         }
         if (nested) {
             String path = extractNestedPath(key);
-            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
+            filterBuilder = QueryBuilders.nestedQuery(path,filterBuilder);
+//            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
         }
 
         return extraData;
@@ -412,10 +416,12 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         if(filter.getFilter() instanceof PropertyIsNull) {
             Expression expr = ((PropertyIsNull) filter.getFilter()).getExpression();
             expr.accept(this, extraData);
-            filterBuilder = FilterBuilders.existsFilter((String) field);
+            filterBuilder = QueryBuilders.existsQuery((String) field);
+//            filterBuilder = FilterBuilders.existsFilter((String) field);
         } else {
             filter.getFilter().accept(this, extraData);
-            filterBuilder = FilterBuilders.notFilter(filterBuilder);
+            filterBuilder = QueryBuilders.boolQuery().mustNot(filterBuilder);
+//            filterBuilder = FilterBuilders.notFilter(filterBuilder);
         }
         return extraData;
     }
@@ -441,18 +447,30 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     protected Object visit(BinaryLogicOperator filter, Object extraData) {
         LOGGER.finer("exporting LogicFilter");
 
-        final List<FilterBuilder> filterList = new ArrayList<>();
+        final List<QueryBuilder> filterList = new ArrayList<>();
+//        final List<FilterBuilder> filterList = new ArrayList<>();
         for (final Filter child : filter.getChildren()) {
             child.accept(this, extraData);
             filterList.add(filterBuilder);
         }
-        final FilterBuilder[] filters;
-        filters = filterList.toArray(new FilterBuilder[filterList.size()]);
+        final QueryBuilder[] filters;
+//        final FilterBuilder[] filters;
+        filters = filterList.toArray(new QueryBuilder[filterList.size()]);
+//        filters = filterList.toArray(new FilterBuilder[filterList.size()]);
         if (extraData.equals("AND")) {
-            filterBuilder = FilterBuilders.andFilter(filters);
-        } else {
-            // OR
-            filterBuilder = FilterBuilders.orFilter(filters);
+            BoolQueryBuilder andQ = QueryBuilders.boolQuery();
+            for (QueryBuilder filterQ: filters){
+                andQ.must(filterQ);
+            }
+            filterBuilder = andQ;
+//            filterBuilder = FilterBuilders.andFilter(filters);
+        } else if (extraData.equals("OR")) {
+            BoolQueryBuilder orQ = QueryBuilders.boolQuery();
+            for (QueryBuilder filterQ: filters){
+                orQ.should(filterQ);
+            }
+            filterBuilder = orQ;
+//            filterBuilder = FilterBuilders.orFilter(filters);
         }
         return extraData;
     }
@@ -602,23 +620,30 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
 
         if (type.equals("=")) {
-            filterBuilder = FilterBuilders.termFilter(key, field);
+            filterBuilder = QueryBuilders.termQuery(key, field);
+//            filterBuilder = FilterBuilders.termFilter(key, field);
         } else if (type.equals("!=")) {
-            TermFilterBuilder equalsFilter;
-            equalsFilter = FilterBuilders.termFilter(key, field);
-            filterBuilder = FilterBuilders.notFilter(equalsFilter);
+            filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery(key, field));
+//            TermFilterBuilder equalsFilter;
+//            equalsFilter = FilterBuilders.termFilter(key, field);
+//            filterBuilder = FilterBuilders.notFilter(equalsFilter);
         } else if (type.equals(">")) {
-            filterBuilder = FilterBuilders.rangeFilter(key).gt(field);
+            filterBuilder = QueryBuilders.rangeQuery(key).gt(field);
+//            filterBuilder = FilterBuilders.rangeFilter(key).gt(field);
         } else if (type.equals(">=")) {
-            filterBuilder = FilterBuilders.rangeFilter(key).gte(field);
+            filterBuilder = QueryBuilders.rangeQuery(key).gte(field);
+//            filterBuilder = FilterBuilders.rangeFilter(key).gte(field);
         } else if (type.equals("<")) {
-            filterBuilder = FilterBuilders.rangeFilter(key).lt(field);
+            filterBuilder = QueryBuilders.rangeQuery(key).lt(field);
+//            filterBuilder = FilterBuilders.rangeFilter(key).lt(field);
         } else if (type.equals("<=")) {
-            filterBuilder = FilterBuilders.rangeFilter(key).lte(field);
+            filterBuilder = QueryBuilders.rangeQuery(key).lte(field);
+//            filterBuilder = FilterBuilders.rangeFilter(key).lte(field);
         }
+
         if (nested) {
             String path = extractNestedPath(key);
-            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
+            filterBuilder = QueryBuilders.nestedQuery(path,filterBuilder);
         }
     }
 
@@ -641,7 +666,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         Expression expr = filter.getExpression();
 
         expr.accept(this, extraData);
-        filterBuilder = FilterBuilders.missingFilter((String) field);
+        filterBuilder = QueryBuilders.missingQuery((String) field);
+//        filterBuilder = FilterBuilders.missingFilter((String) field);
         return extraData;
     }
 
@@ -661,7 +687,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             idList.add(id.toString());
         }
         final String[] ids = idList.toArray(new String[idList.size()]);
-        filterBuilder = FilterBuilders.idsFilter().addIds(ids);
+        filterBuilder = QueryBuilders.idsQuery().addIds(ids);
+//        filterBuilder = FilterBuilders.idsFilter().addIds(ids);
         return extraData;
     }
 
@@ -817,9 +844,11 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 final Object end = field;
 
                 if ((op.equals(" > ") && !swapped) || (op.equals(" < ") && swapped)) {
-                    filterBuilder = FilterBuilders.rangeFilter(key).gt(end);
+                    filterBuilder = QueryBuilders.rangeQuery(key).gt(end);
+//                    filterBuilder = FilterBuilders.rangeFilter(key).gt(end);
                 } else {
-                    filterBuilder = FilterBuilders.rangeFilter(key).lt(begin);
+                    filterBuilder = QueryBuilders.rangeQuery(key).lt(begin);
+//                    filterBuilder = FilterBuilders.rangeFilter(key).lt(begin);
                 }
             }
             else {
@@ -828,9 +857,11 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 temporal.accept(this, typeContext);
 
                 if (op.equals(" < ") || swapped) {
-                    filterBuilder = FilterBuilders.rangeFilter(key).lt(field);
+                    filterBuilder = QueryBuilders.rangeQuery(key).lt(field);
+//                    filterBuilder = FilterBuilders.rangeFilter(key).lt(field);
                 } else {
-                    filterBuilder = FilterBuilders.rangeFilter(key).gt(field);
+                    filterBuilder = QueryBuilders.rangeQuery(key).gt(field);
+//                    filterBuilder = FilterBuilders.rangeFilter(key).gt(field);
                 }
             }
         }
@@ -845,7 +876,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             else {
                 visitEnd(period, extraData);
             }
-            filterBuilder = FilterBuilders.termFilter(key, field);
+            filterBuilder = QueryBuilders.termQuery(key, field);
+//            filterBuilder = FilterBuilders.termFilter(key, field);
         }
         else if (filter instanceof During || filter instanceof TContains){
             property.accept(this, extraData);
@@ -854,18 +886,20 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             visitBegin(period, extraData);
             final Object lower = field;
             visitEnd(period, extraData);
-            filterBuilder = FilterBuilders.rangeFilter(key).gt(lower).lt(field);
+            filterBuilder = QueryBuilders.rangeQuery(key).gt(lower).lt(field);
+//            filterBuilder = FilterBuilders.rangeFilter(key).gt(lower).lt(field);
         }
         else if (filter instanceof TEquals) {
             property.accept(this, extraData);
             key = (String) field;
             temporal.accept(this, typeContext);
-            filterBuilder = FilterBuilders.termFilter(key, field);
+            filterBuilder = QueryBuilders.termQuery(key, field);
+//            filterBuilder = FilterBuilders.termFilter(key, field);
         }
         
         if (nested) {
             String path = extractNestedPath(key);
-            filterBuilder = FilterBuilders.nestedFilter(path,filterBuilder);
+            filterBuilder = QueryBuilders.nestedQuery(path,filterBuilder);
         }
 
         return extraData;
@@ -1185,7 +1219,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             }
             if (nativeOnly) {
                 LOGGER.fine("Ignoring GeoServer filter (Elasticsearch native query/post filter only)");
-                filterBuilder = FilterBuilders.matchAllFilter();
+                filterBuilder = QueryBuilders.matchAllQuery();
             }
             for (final Map.Entry<String, String> entry : parameters.entrySet()) {
                 if (entry.getKey().equalsIgnoreCase("q")) {
@@ -1194,11 +1228,15 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 }
                 if (entry.getKey().equalsIgnoreCase("f")) {
                     final String value = entry.getValue();
-                    if (nativeOnly || filterBuilder.toString().equals(FilterBuilders.matchAllFilter().toString())) {
-                        filterBuilder = FilterBuilders.wrapperFilter(value);
+                    if (nativeOnly || filterBuilder.toString().equals(QueryBuilders.matchAllQuery().toString())) {
+//                  if (filterBuilder.toString().equals(FilterBuilders.matchAllFilter().toString())) {
+                        filterBuilder = QueryBuilders.wrapperQuery(value);
+//                        filterBuilder = FilterBuilders.wrapperFilter(value);
                     } else {
-                        filterBuilder = FilterBuilders.andFilter(filterBuilder, 
-                                FilterBuilders.wrapperFilter(value));
+                        filterBuilder = QueryBuilders.boolQuery().must(filterBuilder).must(
+                                QueryBuilders.wrapperQuery(value));
+//                        filterBuilder = FilterBuilders.andFilter(filterBuilder,
+//                                FilterBuilders.wrapperFilter(value));
                     }
                 }
             }
@@ -1261,7 +1299,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         return field.replace("." + base, "");
     }
     
-    public FilterBuilder getFilterBuilder() {
+
+    public QueryBuilder getFilterBuilder() {
         return filterBuilder;
     }
 

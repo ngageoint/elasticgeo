@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.elasticsearch.ElasticsearchIllegalArgumentException;
-import org.elasticsearch.common.geo.GeoHashUtils;
 import org.elasticsearch.common.geo.GeoPoint;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -60,12 +58,7 @@ public class ElasticParserUtil {
                 geometry = geometryFactory.createPoint(new Coordinate(x,y));
             } else {
                 // try geohash
-                GeoPoint geoPoint = null;
-                try {
-                    geoPoint = GeoHashUtils.decode((String) obj);
-                } catch (ElasticsearchIllegalArgumentException e) {
-                    // not a geohash
-                }
+                GeoPoint geoPoint = GeoPoint.fromGeohash((String) obj);
                 if (geoPoint != null) {
                     final double lat = geoPoint.lat();
                     final double lon = geoPoint.lon();
