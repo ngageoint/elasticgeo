@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>mil.nga.giat</groupId>
-    <artifactId>elasticgeo-2x</artifactId>
+    <artifactId>elasticgeo-es2x</artifactId>
     <version>2.6.2</version>
   </parent>
   <groupId>mil.nga.giat</groupId>
-  <artifactId>gt-elasticsearch-2x</artifactId>
+  <artifactId>gt-elasticsearch-es2x</artifactId>
   <version>${geotools.version}</version>
   <packaging>jar</packaging>
   <name>GeoTools Elasticsearch Module</name>

@@ -285,7 +285,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
      */
     public Object visit(ExcludeFilter filter, Object extraData) {
         filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
-//        filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
         return extraData;
     }
 
@@ -298,7 +297,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
      */
     public Object visit(IncludeFilter filter, Object extraData) {
         filterBuilder = QueryBuilders.matchAllQuery();
-//        filterBuilder = FilterBuilders.matchAllFilter();
         return extraData;
     }
 
@@ -331,7 +329,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         upperbounds.accept(this, context);
         final Object upper = field;
         filterBuilder = QueryBuilders.rangeQuery(key).gte(lower).lte(upper);
-//        filterBuilder = FilterBuilders.rangeFilter(key).gte(lower).lte(upper);
 
         return extraData;
     }
@@ -370,12 +367,10 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             // use query string query post filter for analyzed fields
             String pattern = convertToQueryString(esc, multi, single, matchCase, literal);
             filterBuilder = QueryBuilders.queryStringQuery(pattern).defaultField(key);
-//            filterBuilder = FilterBuilders.queryFilter(QueryBuilders.queryString(pattern).defaultField(key));
         } else {
             // default to regexp filter
             String pattern = convertToRegex(esc, multi, single, matchCase, literal);
             filterBuilder = QueryBuilders.regexpQuery(key, pattern);
-//            filterBuilder = FilterBuilders.regexpFilter(key, pattern);
         }
 
         return extraData;
@@ -404,11 +399,9 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             Expression expr = ((PropertyIsNull) filter.getFilter()).getExpression();
             expr.accept(this, extraData);
             filterBuilder = QueryBuilders.existsQuery((String) field);
-//            filterBuilder = FilterBuilders.existsFilter((String) field);
         } else {
             filter.getFilter().accept(this, extraData);
             filterBuilder = QueryBuilders.boolQuery().mustNot(filterBuilder);
-//            filterBuilder = FilterBuilders.notFilter(filterBuilder);
         }
         return extraData;
     }
@@ -435,29 +428,24 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         LOGGER.finer("exporting LogicFilter");
 
         final List<QueryBuilder> filterList = new ArrayList<>();
-//        final List<FilterBuilder> filterList = new ArrayList<>();
         for (final Filter child : filter.getChildren()) {
             child.accept(this, extraData);
             filterList.add(filterBuilder);
         }
         final QueryBuilder[] filters;
-//        final FilterBuilder[] filters;
         filters = filterList.toArray(new QueryBuilder[filterList.size()]);
-//        filters = filterList.toArray(new FilterBuilder[filterList.size()]);
         if (extraData.equals("AND")) {
         	BoolQueryBuilder andQ = QueryBuilders.boolQuery();
         	for (QueryBuilder filterQ: filters){
         		andQ.must(filterQ);
         	}
     		filterBuilder = andQ;
-//            filterBuilder = FilterBuilders.andFilter(filters);
         } else if (extraData.equals("OR")) {
         	BoolQueryBuilder orQ = QueryBuilders.boolQuery();
         	for (QueryBuilder filterQ: filters){
         		orQ.should(filterQ);
         	}
         	filterBuilder = orQ;
-//            filterBuilder = FilterBuilders.orFilter(filters);
         } else {
             filterBuilder = null;
         }
@@ -614,24 +602,16 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
             if (type.equals("=")) {
                 filterBuilder = QueryBuilders.termQuery(key, field);
-//                filterBuilder = FilterBuilders.termFilter(key, field);
             } else if (type.equals("!=")) {
             	filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery(key, field));
-//                TermFilterBuilder equalsFilter;
-//                equalsFilter = FilterBuilders.termFilter(key, field);
-//                filterBuilder = FilterBuilders.notFilter(equalsFilter);
             } else if (type.equals(">")) {
                 filterBuilder = QueryBuilders.rangeQuery(key).gt(field);
-//                filterBuilder = FilterBuilders.rangeFilter(key).gt(field);
             } else if (type.equals(">=")) {
                 filterBuilder = QueryBuilders.rangeQuery(key).gte(field);
-//                filterBuilder = FilterBuilders.rangeFilter(key).gte(field);
             } else if (type.equals("<")) {
                 filterBuilder = QueryBuilders.rangeQuery(key).lt(field);
-//                filterBuilder = FilterBuilders.rangeFilter(key).lt(field);
             } else if (type.equals("<=")) {
                 filterBuilder = QueryBuilders.rangeQuery(key).lte(field);
-//                filterBuilder = FilterBuilders.rangeFilter(key).lte(field);
             }
         }
         else {
@@ -683,7 +663,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
         expr.accept(this, extraData);
         filterBuilder = QueryBuilders.missingQuery((String) field);
-//        filterBuilder = FilterBuilders.missingFilter((String) field);
         return extraData;
     }
 
@@ -704,7 +683,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
         final String[] ids = idList.toArray(new String[idList.size()]);
         filterBuilder = QueryBuilders.idsQuery().addIds(ids);
-//        filterBuilder = FilterBuilders.idsFilter().addIds(ids);
         return extraData;
     }
 
@@ -865,10 +843,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
                 if ((op.equals(" > ") && !swapped) || (op.equals(" < ") && swapped)) {
                     filterBuilder = QueryBuilders.rangeQuery(key).gt(end);
-//                    filterBuilder = FilterBuilders.rangeFilter(key).gt(end);
                 } else {
                     filterBuilder = QueryBuilders.rangeQuery(key).lt(begin);
-//                    filterBuilder = FilterBuilders.rangeFilter(key).lt(begin);
                 }
             }
             else {
@@ -878,10 +854,8 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
                 if (op.equals(" < ") || swapped) {
                     filterBuilder = QueryBuilders.rangeQuery(key).lt(field);
-//                    filterBuilder = FilterBuilders.rangeFilter(key).lt(field);
                 } else {
                     filterBuilder = QueryBuilders.rangeQuery(key).gt(field);
-//                    filterBuilder = FilterBuilders.rangeFilter(key).gt(field);
                 }
             }
         }
@@ -897,7 +871,6 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 visitEnd(period, extraData);
             }
             filterBuilder = QueryBuilders.termQuery(key, field);
-//            filterBuilder = FilterBuilders.termFilter(key, field);
         }
         else if (filter instanceof During || filter instanceof TContains){
             property.accept(this, extraData);
@@ -907,14 +880,12 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             final Object lower = field;
             visitEnd(period, extraData);
             filterBuilder = QueryBuilders.rangeQuery(key).gt(lower).lt(field);
-//            filterBuilder = FilterBuilders.rangeFilter(key).gt(lower).lt(field);
         }
         else if (filter instanceof TEquals) {
             property.accept(this, extraData);
             final String key = (String) field;
             temporal.accept(this, typeContext);
             filterBuilder = QueryBuilders.termQuery(key, field);
-//            filterBuilder = FilterBuilders.termFilter(key, field);
         }
 
         return extraData;
@@ -1281,14 +1252,10 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                 if (entry.getKey().equalsIgnoreCase("f")) {
                     final String value = entry.getValue();
                     if (filterBuilder.toString().equals(QueryBuilders.matchAllQuery().toString())) {
-//                  if (filterBuilder.toString().equals(FilterBuilders.matchAllFilter().toString())) {
                     	filterBuilder = QueryBuilders.wrapperQuery(value);
-//                        filterBuilder = FilterBuilders.wrapperFilter(value);
                     } else {
                         filterBuilder = QueryBuilders.boolQuery().must(filterBuilder).must( 
                         		QueryBuilders.wrapperQuery(value));
-//                        filterBuilder = FilterBuilders.andFilter(filterBuilder, 
-//                                FilterBuilders.wrapperFilter(value));
                     }
                 }
             }

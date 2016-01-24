@@ -130,12 +130,7 @@ public abstract class ElasticTestSupport {
         Settings build = Settings.builder()
                 .put("path.home", path)
                 .put("cluster.name",clusterName)
-//                .put("path.data", path + File.separator + "data")
                 .build();
-//        Settings build = ImmutableSettings.builder()
-//                .put("path.home", path)
-//                .put("path.data", path + File.separator + "data")
-//                .build();
         node = nodeBuilder().settings(build).node();
         Client client = node.client();
         
@@ -180,24 +175,10 @@ public abstract class ElasticTestSupport {
                     }
                     
 	                    bulkRequestBuilder.add(client.prepareIndex(indexName, layerName).setSource(line).setId(id));
-	                    
-//	                    IndexResponse response = client.prepareIndex(indexName, layerName)
-//	                    .setSource(line)
-//	                    .setId(id)
-//	                    .execute().actionGet();
-                    
+	                                        
                 }
             }
-            BulkResponse bulkresp = bulkRequestBuilder.execute().actionGet();
-            
-//            NodesStatsRequestBuilder nrbld = new NodesStatsRequestBuilder(client, NodesStatsAction.INSTANCE);
-//            NodesStatsResponse nsrep = nrbld.all().execute().actionGet();
-//            for (NodeStats nstat: nsrep.getNodes()){
-//            	System.out.println("total index count: " + nstat.getIndices().getIndexing().getTotal().getIndexCount());
-//            	System.out.println("total doc count: " + nstat.getIndices().getDocs().getCount());
-//            	System.out.println("total size in bytes: " + nstat.getIndices().getStore().getSizeInBytes());            	
-//            }
-          
+            BulkResponse bulkresp = bulkRequestBuilder.execute().actionGet();                      
             
             RefreshResponse refreshresp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
         }

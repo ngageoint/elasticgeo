@@ -4,10 +4,19 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import static org.opengis.filter.sort.SortOrder.ASCENDING;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
+
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.FilteringFeatureReader;
@@ -18,16 +27,8 @@ import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.Name;
-
-import static org.opengis.filter.sort.SortOrder.ASCENDING;
-
 import org.opengis.filter.sort.SortBy;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
 /**
  * Provides access to a specific type within the Elasticsearch index described
@@ -145,12 +146,12 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                     + " Additional post-query filtering will be performed.");
         }
         final QueryBuilder elasticQuery = filterToElastic.getQueryBuilder();
-        final QueryBuilder postFilter = filterToElastic.getFilterBuilder();
+        final QueryBuilder filter = filterToElastic.getFilterBuilder();
         LOGGER.fine("Elasticsearch query: " + elasticQuery);
-        LOGGER.fine("Elasticsearch post filter: " + postFilter);
-        
-        //Why post filter??        
-        searchRequest.setQuery(elasticQuery).setPostFilter(postFilter);
+        LOGGER.fine("Elasticsearch filter: " + filter);
+        final QueryBuilder filteredQuery = QueryBuilders.boolQuery().must(elasticQuery).filter(filter);
+        LOGGER.fine("Elasticsearch filteredQuery: " + filteredQuery);        
+        searchRequest.setQuery(elasticQuery).setPostFilter(filteredQuery);
 
         // sort
         SortOrder naturalSortOrder = SortOrder.ASC;
