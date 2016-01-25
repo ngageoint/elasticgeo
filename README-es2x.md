@@ -8,7 +8,8 @@ Changes to support Elasticsearch 2.x include:
 3. Minor changes to ensure tests use elasticsearch.properties in all tests, so as to use test cluster_name
 4. Removal of guava classes from gs-elasticsearch jar
 
-This plugin version was developed to work with geoserver-2.7.3.
+This plugin version was developed to work with geoserver-2.7.3.  This does not follow the release pattern of the parent project, where the 2.6.2
+version is developed to use the geotools version of geoserver 2.6.2.
 
 # Installation
 Installation is mostly the same as the ElasticGeo plugin, https://github.com/ngageoint/elasticgeo/blob/master/gs-web-elasticsearch/doc/index.rst
