@@ -30,6 +30,6 @@ Elasticsearch under [Apache License v 2.0](https://github.com/elastic/elasticsea
 
 ###Documentation
 
-https://github.com/ngageoint/elasticgeo/blob/master/gs-web-elasticsearch/doc/index.rst
+[Read more](gs-web-elasticsearch/doc/index.rst)
 
 
