@@ -59,7 +59,7 @@ The Elasticsearch data store configuration panel includes standard connection pa
    * - ``search_indices``
      - Indices to use when searching. Enables multi/cross index searches.
    * - ``cluster_name``
-     - Whether to use the node client or transport client to connect to Elasticsearch
+     - Cluster name
    * - ``use_local_node``
      - Whether to use the node client or transport client to connect to Elasticsearch
    * - ``store_data``
