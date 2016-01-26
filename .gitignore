@@ -6,4 +6,3 @@
 *.log
 *.iml
 **idea/
-gt-elasticsearch/data
