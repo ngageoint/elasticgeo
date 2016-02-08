@@ -24,13 +24,13 @@ Installation
 
 *Warning: Ensure GeoTools/GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment* 
 
-Pre-compiled Binaries
-~~~~~~~~~~~~~~~~~~~~~
+
+Pre-compiled Binaries::
 
 Unpack zipfile and copy plugin file(s) to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver. If installing the plugin for Elasticsearch 2.x, remove the old Guava jar (e.g. ``guava-17.0.jar``).
 
-Building from Source
-~~~~~~~~~~~~~~~~~~~~
+
+Building from Source::
 
 Build and install a local copy. By default the plugin will be compatible with Elasticsearch 2.x. For compatibility with Elasticsearch 1.x, include the ``elasticsearch1`` Maven profile when building::
 
