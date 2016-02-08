@@ -29,6 +29,11 @@ Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your Ge
 
     $ cp target/elasticgeo--gs--es--geoserver.jar GEOSERVER_HOME/WEB_INF/lib
 
+If installing the plugin for Elasticsearch 2.x, replace the Guava library in the GeoServer installation with Guava 18.0 or later.::
+
+    $ rm GEOSERVER_HOME/WEB_INF/lib/guava*.jar
+    $ cp target/lib/guava*.jar GEOSERVER_HOME/WEB_INF/lib
+
 Creating an Elasticsearch data store
 ------------------------------------
 

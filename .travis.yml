@@ -1,23 +1,34 @@
 sudo: false
 language: java
 jdk:
-  - oraclejdk8
+- oraclejdk8
 env:
   matrix:
-    - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ELASTICSEARCH_VERSION='1.4.4' ELASTICSEARCH_PROFILE_VERSION=1
-    - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ELASTICSEARCH_VERSION='1.5.2' ELASTICSEARCH_PROFILE_VERSION=1
-    - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ELASTICSEARCH_VERSION='1.7.3' ELASTICSEARCH_PROFILE_VERSION=1
-    - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ELASTICSEARCH_VERSION='2.1.1' ELASTICSEARCH_PROFILE_VERSION=2
-    - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ELASTICSEARCH_VERSION='1.4.4' ELASTICSEARCH_PROFILE_VERSION=1
-    - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ELASTICSEARCH_VERSION='1.5.2' ELASTICSEARCH_PROFILE_VERSION=1
-    - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ELASTICSEARCH_VERSION='1.7.3' ELASTICSEARCH_PROFILE_VERSION=1
-    - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ELASTICSEARCH_VERSION='2.1.1' ELASTICSEARCH_PROFILE_VERSION=2
-
+  - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ES1_VERSION='1.5.2' ES2_VERSION='2.1.1' ES_PROFILE_VERSION=1
+  - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ES1_VERSION='1.7.3' ES2_VERSION='2.1.1' ES_PROFILE_VERSION=1
+  - GEOTOOLS_VERSION='13.4'   GEOSERVER_VERSION='2.7.4' ES1_VERSION='1.7.3' ES2_VERSION='2.1.1' ES_PROFILE_VERSION=2
+  - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ES1_VERSION='1.5.2' ES2_VERSION='2.1.1' ES_PROFILE_VERSION=1
+  - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ES1_VERSION='1.7.3' ES2_VERSION='2.1.1' ES_PROFILE_VERSION=1
+  - GEOTOOLS_VERSION='14.1'   GEOSERVER_VERSION='2.8.1' ES1_VERSION='1.7.3' ES2_VERSION='2.1.1' ES_PROFILE_VERSION=2
 cache:
   directories:
-  - $HOME/.m2
-install: "mvn -q install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION} -Pelasticsearch${ELASTICSERCH_PROFILE_VERSION}"
-script: "mvn -q verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION} -Pelasticsearch${ELASTICSERCH_PROFILE_VERSION}"
+  - "$HOME/.m2"
+install: "mvn -q install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
+script: "mvn -q verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
 after_success:
-  - mvn coveralls:report -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION} -Pelasticsearch${ELASTICSERCH_PROFILE_VERSION}"
-
+- mvn coveralls:report -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
+- mvn package assembly:assembly -P deploy,elasticsearch${ES_PROFILE_VERSION} -pl gs-web-elasticsearch
+before_deploy:
+  - if [ ${ES_PROFILE_VERSION} == "1" ];
+    then export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES1_VERSION}.zip;
+    else export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES2_VERSION}.zip;
+    fi
+deploy:
+  provider: releases
+  api_key:
+    secure: UiMZusRpTSbs3BQWZxououT1VPj8LzUN4UYH8H+PcPdEEZfx/lDNCxlaj1YG8eVCflJL1TItPdU8jIEU435weP4v3cnSyUjq/3Oc4ey9CK/iuphoqvkqfCgRxpVsj9wuZkJqLobi9+9JFLz6NziCnX9ME5WxRgMPlfRU2jot/GM=
+  file_glob: true
+  skip_cleanup: true
+  file: "$PLUGIN_FILE"
+  on:
+    tags: true

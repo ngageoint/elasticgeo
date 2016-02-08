@@ -38,10 +38,37 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-	    <version>2.5.1</version>
+	<version>2.5.1</version>
         <configuration>
           <source>1.7</source>
           <target>1.7</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+	      <includeArtifactIds>guava</includeArtifactIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+	  <descriptor>src/assembly/dist.xml</descriptor>
+	  <appendAssemblyId>false</appendAssemblyId>
+	  <finalName>elasticgeo${project.version}-gs${geoserver.version}-es${elasticsearch.version}</finalName>
         </configuration>
       </plugin>
     </plugins>
