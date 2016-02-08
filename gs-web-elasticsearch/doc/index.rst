@@ -12,6 +12,13 @@ Compatibility
 * GeoServer: 2.7.x, 2.8.1
 * Elasticsearch: 1.4.x, 1.5.x, 1.7.x, 2.1.x
 
+Downloads
+---------
+
+Pre-compiled binaries for supported GeoServer and Elasticsearch versions can be found on the GitHub releases page. 
+
+https://github.com/ngageoint/elasticgeo/releases
+
 Installation
 ------------
 
