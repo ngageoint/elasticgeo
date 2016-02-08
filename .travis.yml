@@ -16,17 +16,15 @@ cache:
 install: "mvn -q install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}"
 script: "mvn -q verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}"
 after_success:
-  - mvn coveralls:report  -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}
-  - mvn package assembly:assembly -P deploy -pl gs-web-elasticsearch
-before_deploy:
-  - export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES1_VERSION}.zip"
+  - mvn coveralls:report -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}
+  - mvn package assembly:assembly -P deploy -pl gs-web-elasticsearch -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch.version=${ELASTICSEARCH_VERSION}
 deploy:
   provider: releases
   api_key:
     secure: UiMZusRpTSbs3BQWZxououT1VPj8LzUN4UYH8H+PcPdEEZfx/lDNCxlaj1YG8eVCflJL1TItPdU8jIEU435weP4v3cnSyUjq/3Oc4ey9CK/iuphoqvkqfCgRxpVsj9wuZkJqLobi9+9JFLz6NziCnX9ME5WxRgMPlfRU2jot/GM=
   file_glob: true
   skip_cleanup: true
-  file: "$PLUGIN_FILE"
+  file: "$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ELASTICSEARCH_VERSION}.zip)"
   on:
     tags: true
 
