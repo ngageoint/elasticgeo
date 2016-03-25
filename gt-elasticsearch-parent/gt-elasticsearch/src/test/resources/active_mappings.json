@@ -2,8 +2,7 @@
     "active" : {
         "properties" : {
           "geo" : {
-            "type" : "geo_point",
-	      "store": "true"
+            "type" : "geo_point"
           },
           "geo2" : {
             "type" : "geo_shape",

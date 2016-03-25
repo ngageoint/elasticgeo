@@ -23,7 +23,7 @@
     <geotools.version>14.1</geotools.version>
     <geoserver.version>2.8.1</geoserver.version>
     <elasticsearch1.version>1.4.4</elasticsearch1.version>
-    <elasticsearch2.version>2.1.1</elasticsearch2.version>
+    <elasticsearch2.version>2.2.0</elasticsearch2.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
   </properties>
   <modules>
