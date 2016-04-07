@@ -22,8 +22,8 @@ after_success:
 - mvn package assembly:assembly -P deploy,elasticsearch${ES_PROFILE_VERSION} -pl gs-web-elasticsearch -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
 before_deploy:
   - if [ ${ES_PROFILE_VERSION} == "1" ];
-    then export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES1_VERSION}.zip);
-    else export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES2_VERSION}.zip);
+    then export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES1_VERSION}.zip)";
+    else export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES2_VERSION}.zip)";
     fi
   - echo "Deploying $PLUGIN_FILE to GitHub releases"
 deploy:
