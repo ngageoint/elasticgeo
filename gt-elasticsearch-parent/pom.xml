@@ -4,11 +4,11 @@
   <parent>
     <groupId>mil.nga.giat</groupId>
     <artifactId>elasticgeo</artifactId>
-    <version>2.8.3</version>
+    <version>2.8-SNAPSHOT</version>
   </parent>
   <groupId>mil.nga.giat</groupId>
   <artifactId>gt-elasticsearch-parent</artifactId>
-  <version>2.8.3</version>
+  <version>2.8-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>GeoTools Elasticsearch Parent Module</name>
   <modules>
