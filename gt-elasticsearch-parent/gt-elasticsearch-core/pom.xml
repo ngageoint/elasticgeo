@@ -4,11 +4,11 @@
   <parent>
     <groupId>mil.nga.giat</groupId>
     <artifactId>gt-elasticsearch-parent</artifactId>
-    <version>2.9-RC1</version>
+    <version>2.9.0</version>
   </parent>
   <groupId>mil.nga.giat</groupId>
   <artifactId>gt-elasticsearch-core</artifactId>
-  <version>2.9-RC1</version>
+  <version>2.9.0</version>
   <packaging>jar</packaging>
   <name>GeoTools Elasticsearch Core</name>
   <dependencies>
