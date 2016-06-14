@@ -373,7 +373,12 @@ public class ElasticDataStore extends ContentDataStore {
                 if (!nested && map.containsKey("type")) {
                     nested = map.get("type").equals("nested");
                 }
-                walk(elasticAttributes, (Map) value, newPropertyKey, startType, nested);
+
+                if (ElasticParserUtil.isGeoPointFeature((Map) value)) {
+                    add(elasticAttributes, propertyKey, "geo_point", (Map) value, nested);
+                } else {
+                    walk(elasticAttributes, (Map) value, newPropertyKey, startType, nested);
+                }
             } else if (key.equals("type") && !value.equals("nested")) {
                 add(elasticAttributes, propertyKey, (String) value, map, nested);
             } else if (key.equals("_timestamp")) {

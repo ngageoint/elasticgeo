@@ -261,4 +261,14 @@ public class ElasticParserUtil {
         }
     }
 
+    public static boolean isGeoPointFeature(Map map) {
+        boolean result = false;
+        if (map.size() == 2 && map.containsKey("coordinates")) {
+            try {
+                result = "geo_point".equals(((Map) map.get("coordinates")).get("type"));
+            } catch (Exception e) { }
+        }
+        return result;
+    }
+
 }
