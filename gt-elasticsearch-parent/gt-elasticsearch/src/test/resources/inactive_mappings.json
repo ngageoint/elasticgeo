@@ -9,6 +9,16 @@
             "type" : "geo_shape",
             "tree" : "quadtree"
           },
+          "geo4" : {
+            "properties" : {
+              "coordinates" : {
+                "type" : "geo_point"
+              },
+              "type" : {
+                "type" : "string"
+              }
+            }
+          },
           "id" : {
             "type" : "string",
             "index":    "not_analyzed"

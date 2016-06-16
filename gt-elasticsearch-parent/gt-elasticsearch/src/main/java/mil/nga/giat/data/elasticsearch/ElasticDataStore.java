@@ -375,7 +375,7 @@ public class ElasticDataStore extends ContentDataStore {
                 }
 
                 if (ElasticParserUtil.isGeoPointFeature((Map) value)) {
-                    add(elasticAttributes, propertyKey, "geo_point", (Map) value, nested);
+                    add(elasticAttributes, propertyKey + ".coordinates", "geo_point", (Map) value, nested);
                 } else {
                     walk(elasticAttributes, (Map) value, newPropertyKey, startType, nested);
                 }

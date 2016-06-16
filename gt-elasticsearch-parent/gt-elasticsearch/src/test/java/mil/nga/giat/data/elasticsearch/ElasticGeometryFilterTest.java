@@ -24,6 +24,7 @@ import javax.measure.unit.SI;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.junit.Test;
+import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.filter.And;
@@ -262,6 +263,23 @@ public class ElasticGeometryFilterTest extends ElasticTestSupport {
         SimpleFeatureIterator fsi = features.features();
         assertTrue(fsi.hasNext());
         assertEquals(fsi.next().getID(), "active.09");
+    }
+    
+    @Test
+    public void testOgrStyleGeoPoint() throws Exception {
+        init("not-active","geo4.coordinates");
+        FilterFactory2 ff = (FilterFactory2) dataStore.getFilterFactory();
+        BBOX bbox = ff.bbox("geo4.coordinates", 0, 0, 5, 5, "EPSG:4326");
+        assertNotNull(featureSource.getSchema().getDescriptor("geo4.coordinates"));
+        assertNull(featureSource.getSchema().getDescriptor("geo4.type"));
+
+        SimpleFeatureCollection features = featureSource.getFeatures(bbox);
+        assertEquals(1, features.size());
+        SimpleFeatureIterator fsi = features.features();
+        assertTrue(fsi.hasNext());
+        SimpleFeature feature = fsi.next();
+        assertEquals(feature.getID(), "not-active.13");
+        assertNotNull(feature.getDefaultGeometry());
     }
 
 }
