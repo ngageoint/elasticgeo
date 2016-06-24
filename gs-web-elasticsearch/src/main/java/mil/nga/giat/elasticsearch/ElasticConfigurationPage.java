@@ -76,7 +76,7 @@ public abstract class ElasticConfigurationPage extends Panel {
     
     private final String useAllMarkupId;
 
-    private static final List GEOMETRY_TYPES = Arrays.asList(Geometry.class,
+    private static final List<Class<? extends Geometry>> GEOMETRY_TYPES = Arrays.asList(Geometry.class,
             GeometryCollection.class, Point.class, MultiPoint.class, LineString.class,
             MultiLineString.class, Polygon.class, MultiPolygon.class);
 
@@ -369,9 +369,13 @@ public abstract class ElasticConfigurationPage extends Panel {
 
         @Override
         public Object getObject(String id, IModel choices) {
+            for (Class<? extends Geometry> c : GEOMETRY_TYPES) {
+                if (id.equals(getDisplayValue(c))) {
+                    return c;
+                }
+            }
             return null;
         }
-
     }
 
     /**
