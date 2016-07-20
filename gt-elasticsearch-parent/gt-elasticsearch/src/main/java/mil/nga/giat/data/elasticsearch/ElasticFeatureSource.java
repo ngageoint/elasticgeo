@@ -48,6 +48,14 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     public ElasticFeatureSource(ContentEntry entry, Query query) throws IOException {
         super(entry, query);
+        
+        ElasticDataStore dataStore = getDataStore();
+        if (dataStore.getLayerConfigurations().get(entry.getName().getLocalPart()) == null) {
+            List<ElasticAttribute> attributes = dataStore.getElasticAttributes(entry.getName());
+            ElasticLayerConfiguration config = new ElasticLayerConfiguration(entry.getName().getLocalPart());
+            config.getAttributes().addAll(attributes);
+            dataStore.setLayerConfiguration(config);
+        }
     }
 
     /**

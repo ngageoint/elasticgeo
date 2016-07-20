@@ -27,9 +27,11 @@ import java.util.Map;
 import mil.nga.giat.data.elasticsearch.ElasticDataStoreFactory;
 
 import org.geotools.data.DataStore;
+import org.geotools.data.store.ContentFeatureSource;
 import org.junit.Test;
+import org.opengis.feature.simple.SimpleFeatureType;
 
-public abstract class ElasticDataStoreTest extends ElasticTestSupport {
+public class ElasticDataStoreTest extends ElasticTestSupport {
     
     @Test
     public void testGetNames() throws IOException {
@@ -62,6 +64,32 @@ public abstract class ElasticDataStoreTest extends ElasticTestSupport {
         assertTrue(layerConfig.getDocType().equals(layerConfig2.getDocType()));
         assertTrue(layerConfig.getLayerName().equals(layerConfig2.getLayerName()));
         assertTrue(layerConfig.getAttributes().equals(layerConfig2.getAttributes()));
+    }
+    
+    @Test
+    public void testSchema() throws IOException {
+        Map<String,Serializable> params = createConnectionParams();
+        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+        ElasticDataStore dataStore = (ElasticDataStore) factory.createDataStore(params);
+        ContentFeatureSource featureSource = dataStore.getFeatureSource("active");
+        SimpleFeatureType schema = featureSource.getSchema();
+        assertTrue(schema.getAttributeCount() > 0);
+        assertNotNull(schema.getDescriptor("speed_is"));
+    }
+    
+    @Test
+    public void testSchemaWithValidCustomName() throws Exception {
+        init();
+        Map<String,Serializable> params = createConnectionParams();
+        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+        ElasticDataStore dataStore = (ElasticDataStore) factory.createDataStore(params);
+        ElasticLayerConfiguration config2 = new ElasticLayerConfiguration(config);
+        config2.setLayerName("fake");
+        dataStore.setLayerConfiguration(config2);
+        ContentFeatureSource featureSource = dataStore.getFeatureSource("fake");
+        SimpleFeatureType schema = featureSource.getSchema();
+        assertTrue(schema.getAttributeCount() > 0);
+        assertNotNull(schema.getDescriptor("speed_is"));
     }
 
 }

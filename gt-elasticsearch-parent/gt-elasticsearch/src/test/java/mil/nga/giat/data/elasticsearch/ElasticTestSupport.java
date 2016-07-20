@@ -61,7 +61,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
 
-public abstract class ElasticTestSupport {
+public class ElasticTestSupport {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticTestSupport.class);

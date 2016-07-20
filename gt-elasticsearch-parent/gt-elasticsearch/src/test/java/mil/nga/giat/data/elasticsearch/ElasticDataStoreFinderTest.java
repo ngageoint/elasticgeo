@@ -47,7 +47,7 @@ import org.geotools.factory.FactoryCreator;
 import org.geotools.factory.FactoryRegistry;
 import org.junit.Test;
 
-public abstract class ElasticDataStoreFinderTest extends ElasticTestSupport {
+public class ElasticDataStoreFinderTest extends ElasticTestSupport {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticDataStoreFinderTest.class);
