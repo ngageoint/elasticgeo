@@ -163,7 +163,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
             // pagination
             searchRequest.setSize(getSize(query));
-            searchRequest.setFrom(getStartIndex(query));			
+            searchRequest.setFrom(getStartIndex(query));
         } else {
             searchRequest = dataStore.getClient().prepareSearch(dataStore.getSearchIndices()).setTypes(docType)
                     .setSearchType(SearchType.SCAN);
@@ -231,7 +231,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
     private boolean useSortOrPagination(Query query) {
         return (query.getSortBy() != null && query.getSortBy().length > 0) ||
                 query.getStartIndex()!=null;
-    }	
+    }
 
     private int getSize(Query query) {
         final int size;

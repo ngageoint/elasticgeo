@@ -168,14 +168,14 @@ public class ElasticDataStore extends ContentDataStore {
         docTypes = new HashMap<>();
     }
 
-	private InetAddress getInetAddress(String searchHost) {
-		try {
-			return InetAddress.getByName(searchHost);
-		} catch (UnknownHostException e) {
-//			LOGGER.severe(e.getLocalizedMessage());
-			throw new RuntimeException(e);
-		}
-	}
+    private InetAddress getInetAddress(String searchHost) {
+        try {
+            return InetAddress.getByName(searchHost);
+        } catch (UnknownHostException e) {
+//            LOGGER.severe(e.getLocalizedMessage());
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     protected List<Name> createTypeNames() {
@@ -306,42 +306,42 @@ public class ElasticDataStore extends ContentDataStore {
         return searchIndices;
     }
 
-	public Client getClient() {
+    public Client getClient() {
         return client;
     }
-	
-	public Long getScrollSize() {
-		return scrollSize;
-	}
 
-	public Boolean getScrollEnabled() {
-		return scrollEnabled;
-	}
+    public Long getScrollSize() {
+        return scrollSize;
+    }
 
-	public Integer getScrollTime() {
-		return scrollTime;
-	}
+    public Boolean getScrollEnabled() {
+        return scrollEnabled;
+    }
 
-	public void setScrollSize(Long scrollSize) {
-		this.scrollSize = scrollSize;
-	}
+    public Integer getScrollTime() {
+        return scrollTime;
+    }
 
-	public void setScrollEnabled(Boolean scrollEnabled) {
-		this.scrollEnabled = scrollEnabled;
-	}
+    public void setScrollSize(Long scrollSize) {
+        this.scrollSize = scrollSize;
+    }
 
-	public void setScrollTime(Integer scrollTime) {
-		this.scrollTime = scrollTime;
-	}
+    public void setScrollEnabled(Boolean scrollEnabled) {
+        this.scrollEnabled = scrollEnabled;
+    }
 
-	public Map<String, ElasticLayerConfiguration> getLayerConfigurations() {
+    public void setScrollTime(Integer scrollTime) {
+        this.scrollTime = scrollTime;
+    }
+
+    public Map<String, ElasticLayerConfiguration> getLayerConfigurations() {
         return layerConfigurations;
     }
 
     public void setLayerConfiguration(ElasticLayerConfiguration layerConfig) {
         final String layerName = layerConfig.getLayerName();
         this.layerConfigurations.put(layerName, layerConfig);
-	}
+    }
     
     public Map<Name, String> getDocTypes() {
         return docTypes;

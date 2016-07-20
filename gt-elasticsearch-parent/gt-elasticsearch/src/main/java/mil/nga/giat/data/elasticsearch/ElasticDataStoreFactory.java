@@ -107,9 +107,9 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final String dataPath = (String) getValue(DATA_PATH, params);
         final Long scrollSize;
         if (getValue(SCROLL_SIZE, params) instanceof Integer) {
-        	scrollSize = ((Integer)getValue(SCROLL_SIZE, params)).longValue();
+            scrollSize = ((Integer)getValue(SCROLL_SIZE, params)).longValue();
         } else {
-        	scrollSize = (Long)getValue(SCROLL_SIZE, params);
+            scrollSize = (Long)getValue(SCROLL_SIZE, params);
         }        
         final Boolean scrollEnabled = (Boolean)getValue(SCROLL_ENABLED, params);
         
