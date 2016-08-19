@@ -10,8 +10,8 @@ env:
 cache:
   directories:
   - "$HOME/.m2"
-install: "mvn -q install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
-script: "mvn -q verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
+install: "mvn install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
+script: "mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
 after_success:
 - mvn coveralls:report -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
 - mvn package assembly:assembly -P deploy,elasticsearch${ES_PROFILE_VERSION} -pl gs-web-elasticsearch -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch1.version=${ES1_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
