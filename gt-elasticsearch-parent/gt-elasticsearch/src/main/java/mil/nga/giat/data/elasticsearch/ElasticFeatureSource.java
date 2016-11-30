@@ -42,7 +42,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     private final static Logger LOGGER = Logging.getLogger(ElasticFeatureSource.class);
 
-    private final static int DEFAULT_MAX_FEATURES = 10000;
+    private final static int DEFAULT_MAX_FEATURES = 100;
 
     private Boolean filterFullySupported;
 
@@ -239,6 +239,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
             size = query.getMaxFeatures();
         } else {
             size = DEFAULT_MAX_FEATURES;
+            LOGGER.fine("Using default maxFeatures: " + DEFAULT_MAX_FEATURES);
         }
         return size;
     }

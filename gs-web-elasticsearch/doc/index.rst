@@ -129,6 +129,13 @@ To return to the field table after it has been closed, click the "Configure Elas
 .. figure:: images/elasticsearch_fieldlist_edit.png
    :align: center
 
+Configuring logging
+-------------------
+
+Logging is configurable through Log4j. The data store includes logging such as the query object being sent to Elasticsearch, which is logged at a lower level than may be enabled by default. To enable these logs, add the below line to the GeoServer logging configuration file (see GeoServer Global Settings).::
+
+    log4j.category.mil.nga.giat.data.elasticsearch=DEBUG 
+
 Usage
 ---------
 
