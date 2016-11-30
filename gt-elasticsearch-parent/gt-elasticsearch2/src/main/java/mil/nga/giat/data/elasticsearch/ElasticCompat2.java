@@ -2,7 +2,7 @@ package mil.nga.giat.data.elasticsearch;
 
 import java.util.Date;
 
-import org.apache.lucene.util.GeoHashUtils;
+import com.spatial4j.core.io.GeohashUtils;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -25,7 +25,7 @@ public class ElasticCompat2 implements ElasticCompat {
 
     @Override
     public String encodeGeohash(double lon, double lat, int level) {
-        return GeoHashUtils.stringEncode(lon, lat, level);
+        return GeohashUtils.encodeLatLon(lat, lon, level);
     }
 
     @Override

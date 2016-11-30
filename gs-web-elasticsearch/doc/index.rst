@@ -9,8 +9,8 @@ Compatibility
 -------------
 
 * Java JDK (>=1.7)
-* GeoServer: 2.9.x
-* Elasticsearch: 1.4.x, 1.5.x, 1.7.x, 2.1.x, 2.2.x
+* GeoServer: 2.9.x, 2.10.x
+* Elasticsearch: 1.4.x, 1.5.x, 1.7.x, 2.1.x, 2.2.x, 2.3.x, 2.4.x
 
 Downloads
 ---------
@@ -37,8 +37,7 @@ Build and install a local copy. By default the plugin will be compatible with El
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo
     $ mvn clean install [-Pelasticsearch1]
-    $ cd gs-web-elasticsearch
-    $ mvn package -P deploy[,elasticsearch1]
+    $ mvn package -pl gs-web-elasticsearch -P deploy[,elasticsearch1]
 
 Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver.::
 

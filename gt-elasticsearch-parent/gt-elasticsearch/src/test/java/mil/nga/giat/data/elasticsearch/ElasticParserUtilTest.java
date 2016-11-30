@@ -142,13 +142,14 @@ public class ElasticParserUtilTest {
         assertTrue(geometry.equals(geometryFactory.createPoint(new Coordinate(lon,lat))));
     }
     
-    @Ignore @Test
+    @Test
     public void testGeoHash() {
         final double lat = rand.nextDouble()*90-90;
         final double lon = rand.nextDouble()*180-180;
-        String geohash = ElasticCompatLoader.getCompat(null).encodeGeohash(lon, lat, 64);
+        String geohash = ElasticCompatLoader.getCompat(null).encodeGeohash(lon, lat, 11);
         final Geometry expected = geometryFactory.createPoint(new Coordinate(lon,lat));
-        assertTrue(parserUtil.createGeometry(geohash).equalsExact(expected, 1e-5));
+        final Geometry actual = parserUtil.createGeometry(geohash);
+        assertEquals(0, expected.distance(actual), 1e-5);
     }
     
     @Ignore @Test
