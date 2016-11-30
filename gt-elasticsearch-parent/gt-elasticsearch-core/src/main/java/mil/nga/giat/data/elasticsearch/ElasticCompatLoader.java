@@ -23,7 +23,7 @@ public class ElasticCompatLoader {
 
     public synchronized static ElasticCompat getCompat(String classOverride) {
         if (cachedCompat != null) {
-            LOGGER.fine("Returning cached Elasticsearch compatibility layer: " + cachedCompat.getClass().getCanonicalName());
+            LOGGER.finest("Returning cached Elasticsearch compatibility layer: " + cachedCompat.getClass().getCanonicalName());
             return cachedCompat;
         }
 

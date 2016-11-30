@@ -285,7 +285,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
      *
      */
     public Object visit(PropertyIsBetween filter, Object extraData) {
-        LOGGER.finer("exporting PropertyIsBetween");
+        LOGGER.finest("exporting PropertyIsBetween");
 
         Expression expr = (Expression) filter.getExpression();
         Expression lowerbounds = (Expression) filter.getLowerBoundary();
@@ -501,7 +501,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
      *
      */
     protected void visitBinaryComparisonOperator(BinaryComparisonOperator filter, Object extraData) {
-        LOGGER.finer("exporting FilterBuilder ComparisonFilter");
+        LOGGER.finest("exporting FilterBuilder ComparisonFilter");
 
         Expression left = filter.getExpression1();
         Expression right = filter.getExpression2();
@@ -582,7 +582,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
      *
      */
     public Object visit(PropertyIsNull filter, Object extraData) {
-        LOGGER.finer("exporting NullFilter");
+        LOGGER.finest("exporting NullFilter");
 
         Expression expr = filter.getExpression();
 
@@ -844,7 +844,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
      */
     @Override
     public Object visit(PropertyName expression, Object extraData) {
-        LOGGER.finer("exporting PropertyName");
+        LOGGER.finest("exporting PropertyName");
 
         SimpleFeatureType featureType = this.featureType;
         
@@ -887,7 +887,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
     @Override
     public Object visit(Literal expression, Object context)
             throws FilterToElasticException {
-        LOGGER.finer("exporting LiteralExpression");
+        LOGGER.finest("exporting LiteralExpression");
 
         // type to convert the literal to
         Class target = null;

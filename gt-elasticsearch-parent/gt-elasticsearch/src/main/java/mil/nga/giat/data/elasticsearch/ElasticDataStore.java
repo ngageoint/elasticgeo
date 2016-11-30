@@ -290,9 +290,10 @@ public class ElasticDataStore extends ContentDataStore {
     
     @Override
     public void dispose() {
-        LOGGER.fine("disposing");
+        LOGGER.fine("closing client");
         this.client.close();
         if (this.node != null) {
+            LOGGER.fine("closing node");
             this.node.close();
         }
         super.dispose();

@@ -130,7 +130,7 @@ public class FilterToElastic1 extends FilterToElastic {
      * @param extraData extra filter data.  Not modified directly by this method.
      */
     protected Object visit(BinaryLogicOperator filter, Object extraData) {
-        LOGGER.finer("exporting LogicFilter");
+        LOGGER.finest("exporting LogicFilter");
 
         final List<FilterBuilder> filterList = new ArrayList<>();
         for (final Filter child : filter.getChildren()) {

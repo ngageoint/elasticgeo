@@ -147,7 +147,7 @@ public class FilterToElastic2 extends FilterToElastic {
 
     @Override
     protected Object visit(BinaryLogicOperator filter, Object extraData) {
-        LOGGER.finer("exporting LogicFilter");
+        LOGGER.finest("exporting LogicFilter");
 
         final List<QueryBuilder> filterList = new ArrayList<>();
 //        final List<FilterBuilder> filterList = new ArrayList<>();
