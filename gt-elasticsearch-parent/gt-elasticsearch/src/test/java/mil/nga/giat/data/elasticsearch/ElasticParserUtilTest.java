@@ -82,9 +82,19 @@ public class ElasticParserUtilTest {
     }
     
     @Test
-    public void testGeoPointAsProperties() {
+    public void testGeoPointAsDoubleProperties() {
         final double lat = rand.nextDouble()*90-90;
         final double lon = rand.nextDouble()*180-180;
+        properties.put("lat", lat);
+        properties.put("lon", lon);
+        final Geometry geometry = parserUtil.createGeometry(properties);
+        assertTrue(geometry.equals(geometryFactory.createPoint(new Coordinate(lon,lat))));
+    }
+    
+    @Test
+    public void testGeoPointAsIntegerProperties() {
+        final int lat = rand.nextInt(180)-90;
+        final int lon = rand.nextInt(360)-180;
         properties.put("lat", lat);
         properties.put("lon", lon);
         final Geometry geometry = parserUtil.createGeometry(properties);

@@ -13,6 +13,8 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 
+import com.spatial4j.core.io.GeohashUtils;
+
 public class ElasticCompat1 implements ElasticCompat {
 
     @Override
@@ -27,7 +29,7 @@ public class ElasticCompat1 implements ElasticCompat {
 
     @Override
     public String encodeGeohash(double lon, double lat, int level) {
-        return GeoHashUtils.encode(lon, lat, level);
+        return GeohashUtils.encodeLatLon(lat, lon, level);
     }
 
     @Override

@@ -163,8 +163,8 @@ public class ElasticParserUtil {
             final Object lonObj = properties.get("lon");
             if (latObj != null && lonObj != null) {
                 final Double lat;
-                if (latObj instanceof Double) {
-                    lat = (Double)latObj;
+                if (latObj instanceof Number) {
+                    lat = ((Number)latObj).doubleValue();
                 } else if (latObj instanceof String) {
                     lat = new Double((String)latObj);
                 } else {
@@ -172,8 +172,8 @@ public class ElasticParserUtil {
                 }
 
                 final Double lon;
-                if (lonObj instanceof Double) {
-                    lon = (Double)lonObj;
+                if (lonObj instanceof Number) {
+                    lon = ((Number)lonObj).doubleValue();
                 } else if (lonObj instanceof String) {
                     lon = new Double((String)lonObj);
                 } else {
