@@ -492,6 +492,45 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
     }
 
     @Test
+    public void testOnlyStoredFieldsWithSourceFiltering() throws Exception {
+        init();
+        dataStore.setSourceFilteringEnabled(true);
+        Name name = new NameImpl("active");
+        for (final ElasticAttribute attribute : dataStore.getElasticAttributes(name) ){
+            if (!attribute.isStored()) {
+                attribute.setUse(false);
+            }
+        }
+        assertEquals(11, featureSource.getCount(Query.ALL));
+        SimpleFeatureIterator features = featureSource.getFeatures().features();
+        for (int i=0; i<11; i++) {
+            assertTrue(features.hasNext());
+            features.next();
+        }
+    }
+
+    @Test
+    public void testOnlySourceFieldsWithSourceFiltering() throws Exception {
+        init();
+        dataStore.setSourceFilteringEnabled(true);
+        Name name = new NameImpl("active");
+        for (final ElasticAttribute attribute : dataStore.getElasticAttributes(name) ){
+            if (attribute.isStored()) {
+                attribute.setUse(false);
+            }
+        }
+        featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(layerName);
+
+        assertEquals(11, featureSource.getCount(Query.ALL));
+
+        SimpleFeatureIterator features = featureSource.getFeatures().features();
+        for (int i=0; i<11; i++) {
+            assertTrue(features.hasNext());
+            features.next();
+        }
+    }
+
+    @Test
     public void testGetFeaturesWithIsGreaterThanFilterOnObjectType() throws Exception {
         init();
         FilterFactory ff = dataStore.getFilterFactory();
@@ -592,7 +631,16 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         it.next();
         assertTrue(!it.hasNext());
         it.next();
-    }      
+    }
+
+    @Test
+    public void testDefaultMaxFeatures() throws Exception {
+        init();
+        dataStore.setDefaultMaxFeatures(2);
+        Query q = new Query();
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
+        assertEquals(2, features.size());
+    }
 
     void assertCovered(SimpleFeatureCollection features, Integer... ids) {
         assertEquals(ids.length, features.size());

@@ -37,7 +37,11 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public static final Param STORE_DATA = new Param("store_data", Boolean.class, "Store data in local node", false, false);
 
     public static final Param DATA_PATH = new Param("data_path", String.class, "Data path (for testing)", false);
-    
+
+    public static final Param DEFAULT_MAX_FEATURES = new Param("default_max_features", Integer.class, "Default max features", false, 100);
+
+    public static final Param SOURCE_FILTERING_ENABLED = new Param("source_filtering_enabled", Boolean.class, "Enable source field filtering", false, false);
+
     public static final Param SCROLL_ENABLED = new Param("scroll_enabled", Boolean.class, "Use scan search type instead of dfs_query_then_fetch", false, false);
     
     public static final Param SCROLL_SIZE = new Param("scroll_size", Long.class, "Scroll size (ignored if scroll_enabled=false)", false, 20);
@@ -45,7 +49,18 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public static final Param SCROLL_TIME_SECONDS = new Param("scroll_time", Integer.class, "Time to keep the scroll open in seconds (ignored if scroll_enabled=false)", false, 120);
     
     protected static final Param[] PARAMS = {
-        HOSTNAME, HOSTPORT, INDEX_NAME, SEARCH_INDICES, CLUSTERNAME, LOCAL_NODE, STORE_DATA, SCROLL_ENABLED, SCROLL_SIZE, SCROLL_TIME_SECONDS
+            HOSTNAME,
+            HOSTPORT,
+            INDEX_NAME,
+            SEARCH_INDICES,
+            CLUSTERNAME,
+            LOCAL_NODE,
+            STORE_DATA,
+            DEFAULT_MAX_FEATURES,
+            SOURCE_FILTERING_ENABLED,
+            SCROLL_ENABLED,
+            SCROLL_SIZE,
+            SCROLL_TIME_SECONDS
     };
     
     protected static final String DISPLAY_NAME = "Elasticsearch";
@@ -105,19 +120,15 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final Boolean storeData = (Boolean) getValue(STORE_DATA, params);
         final Boolean localNode = (Boolean) getValue(LOCAL_NODE, params);
         final String dataPath = (String) getValue(DATA_PATH, params);
-        final Long scrollSize;
-        if (getValue(SCROLL_SIZE, params) instanceof Integer) {
-            scrollSize = ((Integer)getValue(SCROLL_SIZE, params)).longValue();
-        } else {
-            scrollSize = (Long)getValue(SCROLL_SIZE, params);
-        }        
-        final Boolean scrollEnabled = (Boolean)getValue(SCROLL_ENABLED, params);
         
-        final Integer scrollTime = (Integer)getValue(SCROLL_TIME_SECONDS, params);
-        
-        return new ElasticDataStore(searchHost, hostPort, indexName, searchIndices, 
-                clusterName, localNode, storeData, dataPath, scrollSize, scrollTime,
-                scrollEnabled);
+        final ElasticDataStore dataStore = new ElasticDataStore(searchHost, hostPort, indexName, searchIndices,
+                clusterName, localNode, storeData, dataPath);
+        dataStore.setDefaultMaxFeatures((Integer) getValue(DEFAULT_MAX_FEATURES, params));
+        dataStore.setSourceFilteringEnabled((Boolean) getValue(SOURCE_FILTERING_ENABLED, params));
+        dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));
+        dataStore.setScrollSize(((Number)getValue(SCROLL_SIZE, params)).longValue());
+        dataStore.setScrollTime((Integer)getValue(SCROLL_TIME_SECONDS, params));
+        return dataStore;
     }
 
     @Override

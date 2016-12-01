@@ -39,11 +39,11 @@ Build and install a local copy. By default the plugin will be compatible with El
     $ mvn clean install [-Pelasticsearch1]
     $ mvn package -pl gs-web-elasticsearch -P deploy[,elasticsearch1]
 
-Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver.::
+Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver::
 
-    $ cp target/elasticgeo--gs--es--geoserver.jar GEOSERVER_HOME/WEB_INF/lib
+    $ cp target/elasticgeo*.jar GEOSERVER_HOME/WEB_INF/lib
 
-If installing the plugin for Elasticsearch 2.x, replace the Guava library in the GeoServer installation with Guava 18.0 or later.::
+If installing the plugin for Elasticsearch 2.x, replace the Guava library in the GeoServer installation with Guava 18.0 or later::
 
     $ rm GEOSERVER_HOME/WEB_INF/lib/guava*.jar
     $ cp target/lib/guava*.jar GEOSERVER_HOME/WEB_INF/lib
@@ -69,25 +69,29 @@ The Elasticsearch data store configuration panel includes standard connection pa
 .. list-table::
    :widths: 20 80
 
-   * - ``elasticsearch_host``
+   * - elasticsearch_host
      - Host (IP) for connecting to Elasticsearch
-   * - ``elasticsearch_port``
+   * - elasticsearch_port
      - Port for connecting to Elasticsearch
-   * - ``index_name``
+   * - index_name
      - Index name
-   * - ``search_indices``
+   * - search_indices
      - Indices to use when searching. Enables multi/cross index searches.
-   * - ``cluster_name``
+   * - cluster_name
      - Cluster name
-   * - ``use_local_node``
+   * - use_local_node
      - Whether to use the node client or transport client to connect to Elasticsearch
-   * - ``store_data``
+   * - store_data
      - Whether to store data in the local node, if relevant
-   * - ``scroll_enabled``
+   * - default_max_features
+     - Default used when maxFeatures is unlimited
+   * - source_filtering_enabled
+     - Whether to enable filtering of the _source field
+   * - scroll_enabled
      - Enable the Elasticsearch scan and scroll API
-   * - ``scroll_size``
+   * - scroll_size
      - Number of documents per shard when using the scroll API
-   * - ``scroll_time``
+   * - scroll_time
      - Search context timeout when using the scroll API
 
 
@@ -132,7 +136,7 @@ To return to the field table after it has been closed, click the "Configure Elas
 Configuring logging
 -------------------
 
-Logging is configurable through Log4j. The data store includes logging such as the query object being sent to Elasticsearch, which is logged at a lower level than may be enabled by default. To enable these logs, add the below line to the GeoServer logging configuration file (see GeoServer Global Settings).::
+Logging is configurable through Log4j. The data store includes logging such as the query object being sent to Elasticsearch, which is logged at a lower level than may be enabled by default. To enable these logs, add the following line to the GeoServer logging configuration file (see GeoServer Global Settings)::
 
     log4j.category.mil.nga.giat.data.elasticsearch=DEBUG 
 

@@ -76,17 +76,20 @@ public class ElasticDataStore extends ContentDataStore {
     private final Map<Name, String> docTypes;
 
     private Map<String, ElasticLayerConfiguration> layerConfigurations;
-    
+
+    private boolean sourceFilteringEnabled;
+
+    private Integer defaultMaxFeatures;
+
     private Long scrollSize;
     
     private boolean scrollEnabled;
     
-    private Integer scrollTime;    
-    
+    private Integer scrollTime;
+
     public ElasticDataStore(String searchHost, Integer hostPort, 
             String indexName, String searchIndices, String clusterName,
-            boolean localNode, boolean storeData, String dataPath, 
-            Long scrollSize, Integer scrollTime, boolean scrollEnabled) {
+            boolean localNode, boolean storeData, String dataPath) {
 
         LOGGER.fine("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
 
@@ -97,10 +100,6 @@ public class ElasticDataStore extends ContentDataStore {
         } else {
             this.searchIndices = indexName;
         }
-        
-        this.scrollEnabled = scrollEnabled;
-        this.scrollSize = scrollSize;
-        this.scrollTime = scrollTime;
 
         final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
         
@@ -309,6 +308,22 @@ public class ElasticDataStore extends ContentDataStore {
 
     public Client getClient() {
         return client;
+    }
+
+    public boolean isSourceFilteringEnabled() {
+        return sourceFilteringEnabled;
+    }
+
+    public void setSourceFilteringEnabled(boolean sourceFilteringEnabled) {
+        this.sourceFilteringEnabled = sourceFilteringEnabled;
+    }
+
+    public Integer getDefaultMaxFeatures() {
+        return defaultMaxFeatures;
+    }
+
+    public void setDefaultMaxFeatures(Integer defaultMaxFeatures) {
+        this.defaultMaxFeatures = defaultMaxFeatures;
     }
 
     public Long getScrollSize() {

@@ -42,8 +42,6 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     private final static Logger LOGGER = Logging.getLogger(ElasticFeatureSource.class);
 
-    private final static int DEFAULT_MAX_FEATURES = 100;
-
     private Boolean filterFullySupported;
 
     public ElasticFeatureSource(ContentEntry entry, Query query) throws IOException {
@@ -122,6 +120,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                     || !getDataStore().getScrollEnabled()) ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.SCAN;
             final SearchRequestBuilder searchRequest = prepareSearchRequest(query, searchType);
             SearchResponse sr = searchRequest.execute().get();
+            LOGGER.fine("Search response hits/totalHits: " + sr.getHits().hits().length + "/" + sr.getHits().getTotalHits());
             if (searchType!=SearchType.SCAN) {
                 reader = new ElasticFeatureReader(getState(), sr);
             } else {
@@ -175,8 +174,10 @@ public class ElasticFeatureSource extends ContentFeatureSource {
             }
         }
 
-        // add fields
-        setIncludes(searchRequest);
+        if (dataStore.isSourceFilteringEnabled()) {
+            // add source includes
+            setSourceIncludes(searchRequest);
+        }
 
         // add query and post filter
         ElasticCompat compat = ElasticCompatLoader.getCompat(null);
@@ -185,12 +186,11 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         filterToElastic.encode(query);
         filterFullySupported = filterToElastic.getFullySupported();
         if (!filterFullySupported) {
-            LOGGER.fine("Filter is not fully supported by nativeElasticsearch."
+            LOGGER.fine("Filter is not fully supported by native Elasticsearch."
                     + " Additional post-query filtering will be performed.");
         }
         final QueryBuilder filteredQueryBuilder = filterToElastic.getQueryBuilder();
-        LOGGER.fine("Elasticsearch query: " + filteredQueryBuilder);
-        
+
         final QueryBuilder nativeQueryBuilder = filterToElastic.getNativeQueryBuilder();
 
         searchRequest.setQuery(filteredQueryBuilder);
@@ -199,12 +199,12 @@ public class ElasticFeatureSource extends ContentFeatureSource {
             searchRequest.addSort("_uid", naturalSortOrder);
         }
 
-        LOGGER.fine(searchRequest.toString());
+        LOGGER.fine("Elasticsearch request: " + System.lineSeparator() + searchRequest.toString());
 
         return searchRequest;
     }
 
-    private void setIncludes(final SearchRequestBuilder searchRequest) throws IOException {
+    private void setSourceIncludes(final SearchRequestBuilder searchRequest) throws IOException {
         final ElasticDataStore dataStore = getDataStore();
         final List<ElasticAttribute> attributes = dataStore.getElasticAttributes(entry.getName());
         List<String> sourceIncludes = new ArrayList<>();
@@ -235,11 +235,11 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
     private int getSize(Query query) {
         final int size;
-        if (query.getMaxFeatures() < Integer.MAX_VALUE) {
+        if (!query.isMaxFeaturesUnlimited()) {
             size = query.getMaxFeatures();
         } else {
-            size = DEFAULT_MAX_FEATURES;
-            LOGGER.fine("Using default maxFeatures: " + DEFAULT_MAX_FEATURES);
+            size = getDataStore().getDefaultMaxFeatures();
+            LOGGER.fine("Unlimited maxFeatures not supported. Using default: " + size);
         }
         return size;
     }

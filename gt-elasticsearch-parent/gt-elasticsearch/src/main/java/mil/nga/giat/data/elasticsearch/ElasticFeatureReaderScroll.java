@@ -7,6 +7,7 @@ import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
 import org.geotools.data.FeatureReader;
@@ -42,10 +43,12 @@ public class ElasticFeatureReaderScroll implements FeatureReader<SimpleFeatureTy
     private void advanceScroll() {
         final ElasticDataStore dataStore;
         dataStore = (ElasticDataStore) contentState.getEntry().getDataStore();
-        final SearchResponse searchResponse = dataStore.getClient()
-                .prepareSearchScroll(nextScrollId)
-                .setScroll(TimeValue.timeValueSeconds(dataStore.getScrollTime()))
-                .execute().actionGet();
+        final SearchScrollRequestBuilder scrollRequest = dataStore.getClient()
+                .prepareSearchScroll(nextScrollId);
+        if (dataStore.getScrollTime() != null) {
+            scrollRequest.setScroll(TimeValue.timeValueSeconds(dataStore.getScrollTime()));
+        }
+        final SearchResponse searchResponse = scrollRequest.execute().actionGet();
         final int numHits = searchResponse.getHits().hits().length;
         final List<SearchHit> hits;
         if (numFeatures+numHits <= maxFeatures) {
