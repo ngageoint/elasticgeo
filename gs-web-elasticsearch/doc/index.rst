@@ -8,9 +8,9 @@ This data store allows features from an Elasticsearch index to be published thro
 Compatibility
 -------------
 
-* Java JDK (>=1.7)
+* Java JDK (>=1.8)
 * GeoServer: 2.9.x, 2.10.x
-* Elasticsearch: 1.4.x, 1.5.x, 1.7.x, 2.1.x, 2.2.x, 2.3.x, 2.4.x
+* Elasticsearch: >=2.1.x, >=5.1.x
 
 Downloads
 ---------
@@ -32,21 +32,21 @@ Unpack zipfile and copy plugin file(s) to the ``WEB_INF/lib`` directory of your 
 
 Building from Source::
 
-Build and install a local copy. By default the plugin will be compatible with Elasticsearch 2.x. For compatibility with Elasticsearch 1.x, include the ``elasticsearch1`` Maven profile when building::
+Build and install a local copy. By default the plugin will be compatible with Elasticsearch 5.x. For compatibility with Elasticsearch 2.x, include the ``elasticsearch2`` Maven profile when building::
 
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo
-    $ mvn clean install [-Pelasticsearch1]
-    $ mvn package -pl gs-web-elasticsearch -P deploy[,elasticsearch1]
+    $ mvn clean install [-Pelasticsearch2]
+    $ mvn package -pl gs-web-elasticsearch -P deploy[,elasticsearch2]
 
 Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver::
 
-    $ cp target/elasticgeo*.jar GEOSERVER_HOME/WEB_INF/lib
+    $ cp gs-web-elasticsearch/target/elasticgeo*.jar GEOSERVER_HOME/WEB_INF/lib
 
 If installing the plugin for Elasticsearch 2.x, replace the Guava library in the GeoServer installation with Guava 18.0 or later::
 
     $ rm GEOSERVER_HOME/WEB_INF/lib/guava*.jar
-    $ cp target/lib/guava*.jar GEOSERVER_HOME/WEB_INF/lib
+    $ cp gs-web-elasticsearch/target/lib/guava-18.0.jar GEOSERVER_HOME/WEB_INF/lib
 
 Creating an Elasticsearch data store
 ------------------------------------
