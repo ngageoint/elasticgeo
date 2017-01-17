@@ -1,11 +1,9 @@
 package mil.nga.giat.data.elasticsearch;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
 import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.geo.GeoHashUtils;

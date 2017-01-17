@@ -60,15 +60,15 @@
                 <pluginExecution>
                   <pluginExecutionFilter>
                     <groupId>org.jacoco</groupId>
-                     <artifactId>jacoco-maven-plugin</artifactId>
-                     <versionRange>[${jacoco.version},)</versionRange>
-                     <goals>
-                         <goal>prepare-agent</goal>
-                     </goals>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <versionRange>[${jacoco.version},)</versionRange>
+                    <goals>
+                      <goal>prepare-agent</goal>
+                    </goals>
                   </pluginExecutionFilter>
-                    <action>
-                        <ignore />
-                    </action>
+                  <action>
+                    <ignore />
+                  </action>
                 </pluginExecution>
               </pluginExecutions>
             </lifecycleMappingMetadata>
@@ -80,7 +80,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-	    <version>2.5.1</version>
+        <version>2.5.1</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -90,55 +90,55 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.18.1</version>
-          <configuration>
-              <!-- Sets the VM argument line used when unit tests are run. -->
-              <argLine>${surefireArgLine}</argLine>
-              <!-- Skips unit tests if the value of skip.unit.tests property is true -->
-              <skipTests>${skip.unit.tests}</skipTests>
-              <!-- Excludes integration tests when unit tests are run. -->
-              <excludes>
-                  <exclude>**/IT*.java</exclude>
-              </excludes>
-          </configuration>
+        <configuration>
+          <!-- Sets the VM argument line used when unit tests are run. -->
+          <argLine>${surefireArgLine}</argLine>
+          <!-- Skips unit tests if the value of skip.unit.tests property is true -->
+          <skipTests>${skip.unit.tests}</skipTests>
+          <!-- Excludes integration tests when unit tests are run. -->
+          <excludes>
+            <exclude>**/IT*.java</exclude>
+          </excludes>
+        </configuration>
       </plugin>
-        <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>${jacoco.version}</version>
-            <executions>
-                <execution>
-                    <id>pre-unit-test</id>
-                    <goals>
-                        <goal>prepare-agent</goal>
-                    </goals>
-                    <configuration>
-                        <destFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</destFile>
-                        <propertyName>surefireArgLine</propertyName>
-                    </configuration>
-                </execution>
-                <execution>
-                    <id>post-unit-test</id>
-                    <phase>test</phase>
-                    <goals>
-                        <goal>report</goal>
-                    </goals>
-                    <configuration>
-                        <dataFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</dataFile>
-                        <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut</outputDirectory>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.eluder.coveralls</groupId>
-            <artifactId>coveralls-maven-plugin</artifactId>
-            <version>3.1.0</version>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>pre-unit-test</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
             <configuration>
-                <jacocoReports>
-                    <jacocoReport>${project.basedir}/gt-elasticsearch/target/site/jacoco-ut/jacoco.xml</jacocoReport>
-                </jacocoReports>
+              <destFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</destFile>
+              <propertyName>surefireArgLine</propertyName>
             </configuration>
-        </plugin>
+          </execution>
+          <execution>
+            <id>post-unit-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <dataFile>${project.build.directory}/coverage-reports/jacoco-ut.exec</dataFile>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.eluder.coveralls</groupId>
+        <artifactId>coveralls-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <configuration>
+          <jacocoReports>
+            <jacocoReport>${project.basedir}/gt-elasticsearch/target/site/jacoco-ut/jacoco.xml</jacocoReport>
+          </jacocoReports>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   <repositories>

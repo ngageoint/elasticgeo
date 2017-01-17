@@ -16,15 +16,11 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
-
-import mil.nga.giat.data.elasticsearch.ElasticDataStoreFactory;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.store.ContentFeatureSource;

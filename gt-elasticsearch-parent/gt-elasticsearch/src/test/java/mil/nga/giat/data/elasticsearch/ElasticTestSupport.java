@@ -40,17 +40,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
-import org.apache.commons.lang.NotImplementedException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
@@ -58,7 +54,6 @@ import org.geotools.temporal.object.DefaultInstant;
 import org.geotools.temporal.object.DefaultPeriod;
 import org.geotools.temporal.object.DefaultPosition;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.opengis.feature.simple.SimpleFeature;
@@ -201,23 +196,9 @@ public class ElasticTestSupport extends ESIntegTestCase {
                     }
 
                     bulkRequestBuilder.add(client.prepareIndex(indexName, layerName).setSource(line).setId(id));
-
-//                    IndexResponse response = client.prepareIndex(indexName, layerName)
-//                            .setSource(line)
-//                            .setId(id)
-//                            .execute().actionGet();
-
                 }
             }
             BulkResponse bulkresp = bulkRequestBuilder.execute().actionGet();
-
-//            NodesStatsRequestBuilder nrbld = new NodesStatsRequestBuilder(client, NodesStatsAction.INSTANCE);
-//            NodesStatsResponse nsrep = nrbld.all().execute().actionGet();
-//            for (NodeStats nstat: nsrep.getNodes()){
-//                System.out.println("total index count: " + nstat.getIndices().getIndexing().getTotal().getIndexCount());
-//                System.out.println("total doc count: " + nstat.getIndices().getDocs().getCount());
-//                System.out.println("total size in bytes: " + nstat.getIndices().getStore().getSizeInBytes());
-//            }
 
             RefreshResponse refreshresp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
         }

@@ -17,8 +17,6 @@
 
 package mil.nga.giat.data.elasticsearch;
 
-import static org.junit.Assert.*;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +29,7 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.store.ContentEntry;
 import org.geotools.feature.NameImpl;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -91,19 +89,19 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         assertNotNull(schema);
         assertNotNull(schema.getDescriptor("hejda"));
     }
-//    
-//    @Test
-//    public void testSchemaWithInvalidSrid() throws Exception {
-//        init();
-//        ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
-//        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
-//            attribute.setSrid(-1);
-//        }
-//        SimpleFeatureType schema = featureSource.getSchema();
-//        assertNotNull(schema);
-//        assertNull(schema.getGeometryDescriptor());
-//        assertNull(schema.getDescriptor("geo"));
-//    }
+
+    @Test @Ignore
+    public void testSchemaWithInvalidSrid() throws Exception {
+        init();
+        ElasticLayerConfiguration layerConfig = dataStore.getLayerConfigurations().get("active");
+        for (ElasticAttribute attribute : layerConfig.getAttributes()) {
+            attribute.setSrid(-1);
+        }
+        SimpleFeatureType schema = featureSource.getSchema();
+        assertNotNull(schema);
+        assertNull(schema.getGeometryDescriptor());
+        assertNull(schema.getDescriptor("geo"));
+    }
 
     @Test
     public void testCount() throws Exception {

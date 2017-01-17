@@ -39,7 +39,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
 
         super.visitDistanceSpatialOperator(filter, property, geometry, swapped, extraData);
         
-//        delegate.filterBuilder = FilterBuilders.geoDistanceFilter(key)
         getDelegate().filterBuilder = QueryBuilders.geoDistanceQuery(key)
                 .point(lat,lon)
                 .distance(distance, DistanceUnit.METERS);
@@ -47,7 +46,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
         if ((filter instanceof DWithin && swapped)
                 || (filter instanceof Beyond && !swapped)) {
             getDelegate().filterBuilder = QueryBuilders.boolQuery().mustNot(getDelegate().filterBuilder);
-            // delegate.filterBuilder = FilterBuilders.notFilter(delegate.filterBuilder);
         }
     }
 
@@ -62,15 +60,12 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             if(isWorld(this.geometry)) {
                 // nothing to filter in this case
                 getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-                // delegate.filterBuilder = FilterBuilders.matchAllFilter();
                 return;
             } else if(isEmpty(this.geometry)) {
                 if(!(filter instanceof Disjoint)) {
                     getDelegate().filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
-                    // delegate.filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
                 } else {
                     getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-                    // delegate.filterBuilder = FilterBuilders.matchAllFilter();
                 }
                 return;
             }
@@ -92,10 +87,8 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
                 // not clear where this would be thrown within this method call so shouldn't get here
                 throw new RuntimeException(e);
             }
-            // delegate.filterBuilder = FilterBuilders.geoShapeFilter(key, shapeBuilder, shapeRelation);
         } else {
             getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-            // delegate.filterBuilder = FilterBuilders.matchAllFilter();
         }
     }
 
@@ -112,8 +105,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
                         || (swapped && filter instanceof Contains)
                         || filter instanceof Intersects)) {
             final Polygon polygon = (Polygon) geometry;
-            // final GeoPolygonFilterBuilder geoPolygonFilter;
-            // geoPolygonFilter = FilterBuilders.geoPolygonFilter(key);
             final List<GeoPoint> points = new ArrayList<>();
             for (final Coordinate coordinate : polygon.getCoordinates()) {
                 points.add(new GeoPoint(coordinate.y, coordinate.x));
@@ -127,7 +118,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             final double minX = envelope.getMinX();
             final double maxY = envelope.getMaxY();
             final double maxX = envelope.getMaxX();
-            // delegate.filterBuilder = FilterBuilders.geoBoundingBoxFilter(key)
             ((FilterToElastic5) delegate).filterBuilder = QueryBuilders.geoBoundingBoxQuery(key)
                     .setCorners(maxY, minX, minY, maxX);
         } else {
@@ -135,7 +125,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
                     + " is unsupported for geo_point types");
             delegate.fullySupported = false;
             getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-            // delegate.filterBuilder = FilterBuilders.matchAllFilter();
         }
     }
     

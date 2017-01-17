@@ -34,7 +34,6 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
 
         super.visitDistanceSpatialOperator(filter, property, geometry, swapped, extraData);
         
-//        delegate.filterBuilder = FilterBuilders.geoDistanceFilter(key)
         getDelegate().filterBuilder = QueryBuilders.geoDistanceQuery(key)
                 .lat(lat)
                 .lon(lon)
@@ -43,7 +42,6 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
         if ((filter instanceof DWithin && swapped)
                 || (filter instanceof Beyond && !swapped)) {
             getDelegate().filterBuilder = QueryBuilders.boolQuery().mustNot(getDelegate().filterBuilder);
-            // delegate.filterBuilder = FilterBuilders.notFilter(delegate.filterBuilder);
         }
     }
 
@@ -58,15 +56,12 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             if(isWorld(this.geometry)) {
                 // nothing to filter in this case
                 getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-                // delegate.filterBuilder = FilterBuilders.matchAllFilter();
                 return;
             } else if(isEmpty(this.geometry)) {
                 if(!(filter instanceof Disjoint)) {
                     getDelegate().filterBuilder = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
-                    // delegate.filterBuilder = FilterBuilders.notFilter(FilterBuilders.matchAllFilter());
                 } else {
                     getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-                    // delegate.filterBuilder = FilterBuilders.matchAllFilter();
                 }
                 return;
             }
@@ -83,10 +78,8 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
 
         if (shapeRelation != null) {
             getDelegate().filterBuilder = QueryBuilders.geoShapeQuery(key, shapeBuilder, shapeRelation);
-            // delegate.filterBuilder = FilterBuilders.geoShapeFilter(key, shapeBuilder, shapeRelation);
         } else {
             getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-            // delegate.filterBuilder = FilterBuilders.matchAllFilter();
         }
     }
 
@@ -105,8 +98,6 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             final Polygon polygon = (Polygon) geometry;
             final GeoPolygonQueryBuilder geoPolygonFilter;
             geoPolygonFilter = QueryBuilders.geoPolygonQuery(key);
-            // final GeoPolygonFilterBuilder geoPolygonFilter;
-            // geoPolygonFilter = FilterBuilders.geoPolygonFilter(key);
             for (final Coordinate coordinate : polygon.getCoordinates()) {
                 geoPolygonFilter.addPoint(coordinate.y, coordinate.x);
             }
@@ -117,7 +108,6 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             final double minX = envelope.getMinX();
             final double maxY = envelope.getMaxY();
             final double maxX = envelope.getMaxX();
-            // delegate.filterBuilder = FilterBuilders.geoBoundingBoxFilter(key)
             ((FilterToElastic2) delegate).filterBuilder = QueryBuilders.geoBoundingBoxQuery(key)
                     .topLeft(maxY, minX)
                     .bottomRight(minY, maxX);
@@ -126,7 +116,6 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
                     + " is unsupported for geo_point types");
             delegate.fullySupported = false;
             getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
-            // delegate.filterBuilder = FilterBuilders.matchAllFilter();
         }
     }
     

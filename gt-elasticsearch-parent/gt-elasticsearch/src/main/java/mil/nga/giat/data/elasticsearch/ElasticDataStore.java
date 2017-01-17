@@ -138,7 +138,6 @@ public class ElasticDataStore extends ContentDataStore {
         try {
             return InetAddress.getByName(searchHost);
         } catch (UnknownHostException e) {
-//            LOGGER.severe(e.getLocalizedMessage());
             throw new RuntimeException(e);
         }
     }
