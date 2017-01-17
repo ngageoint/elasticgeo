@@ -32,12 +32,6 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     /** Cluster name. **/
     public static final Param CLUSTERNAME = new Param("cluster_name", String.class, "Name of cluster", false, "elasticsearch");
 
-    public static final Param LOCAL_NODE = new Param("use_local_node", Boolean.class, "Use node client", false, false);
-
-    public static final Param STORE_DATA = new Param("store_data", Boolean.class, "Store data in local node", false, false);
-
-    public static final Param DATA_PATH = new Param("data_path", String.class, "Data path (for testing)", false);
-
     public static final Param DEFAULT_MAX_FEATURES = new Param("default_max_features", Integer.class, "Default max features", false, 100);
 
     public static final Param SOURCE_FILTERING_ENABLED = new Param("source_filtering_enabled", Boolean.class, "Enable source field filtering", false, false);
@@ -54,8 +48,6 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             INDEX_NAME,
             SEARCH_INDICES,
             CLUSTERNAME,
-            LOCAL_NODE,
-            STORE_DATA,
             DEFAULT_MAX_FEATURES,
             SOURCE_FILTERING_ENABLED,
             SCROLL_ENABLED,
@@ -89,9 +81,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             final String searchHost = (String) HOSTNAME.lookUp(params);
             final String indexName = (String) INDEX_NAME.lookUp(params);
             final Integer hostport = (Integer) HOSTPORT.lookUp(params);
-            final String dataPath = (String) DATA_PATH.lookUp(params);
-            
-            if ((searchHost != null && hostport != null || dataPath != null) && indexName != null) {
+
+            if (searchHost != null && hostport != null && indexName != null) {
                 result = true;
             }
         } catch (IOException e) {
@@ -117,12 +108,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final String indexName = (String) INDEX_NAME.lookUp(params);
         final String searchIndices = (String) SEARCH_INDICES.lookUp(params);
         final String clusterName = (String) getValue(CLUSTERNAME, params);
-        final Boolean storeData = (Boolean) getValue(STORE_DATA, params);
-        final Boolean localNode = (Boolean) getValue(LOCAL_NODE, params);
-        final String dataPath = (String) getValue(DATA_PATH, params);
-        
-        final ElasticDataStore dataStore = new ElasticDataStore(searchHost, hostPort, indexName, searchIndices,
-                clusterName, localNode, storeData, dataPath);
+
+        final ElasticDataStore dataStore = new ElasticDataStore(searchHost, hostPort, indexName, searchIndices, clusterName);
         dataStore.setDefaultMaxFeatures((Integer) getValue(DEFAULT_MAX_FEATURES, params));
         dataStore.setSourceFilteringEnabled((Boolean) getValue(SOURCE_FILTERING_ENABLED, params));
         dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));

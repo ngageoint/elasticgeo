@@ -1,8 +1,10 @@
 package mil.nga.giat.data.elasticsearch;
 
 import java.util.Date;
+import java.util.Map;
 
 import com.spatial4j.core.io.GeohashUtils;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -37,11 +39,22 @@ public class ElasticCompat2 implements ElasticCompat {
     public Client createClient(Settings settings, TransportAddress... addresses) {
         return TransportClient.builder().settings(settings).build().addTransportAddresses(addresses);
     }
-    
+
     @Override
     public Date parseDateTime(String datestring, String format) {
         final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
         return dateFormatter.parseDateTime((String) datestring).toDate();
+    }
+
+    @Override
+    public boolean isAnalyzed(Map<String, Object> map) {
+        final String index = (String) map.get("index");
+        return index == null || index.equals("analyzed");
+    }
+
+    @Override
+    public void addField(SearchRequestBuilder builder, String name) {
+        builder.addField(name);
     }
 
 }

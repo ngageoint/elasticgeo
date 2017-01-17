@@ -39,15 +39,19 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
+import org.apache.commons.lang.NotImplementedException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.node.Node;
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
+import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.test.ESIntegTestCase;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
 import org.geotools.temporal.object.DefaultInstant;
@@ -61,7 +65,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
 
-public class ElasticTestSupport {
+@ThreadLeakScope(ThreadLeakScope.Scope.NONE)
+public class ElasticTestSupport extends ESIntegTestCase {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticTestSupport.class);
@@ -80,31 +85,29 @@ public class ElasticTestSupport {
 
     private static final Pattern ID_PATTERN = Pattern.compile(".*\"id\"\\s*:\\s*\"(\\d+)\".*");
 
-    protected static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
+    protected static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
 
-    protected static int numShards = 1;
+    protected static final int numShards = 1;
     
-    protected static int numReplicas = 0;
+    protected static final int numReplicas = 0;
     
     protected String layerName = "active";
 
     protected int SOURCE_SRID = 4326;
 
-    protected static String indexName;
+    protected String indexName;
 
-    protected static String clusterName;
-    
-    protected static String dataPath;
-    
-    protected static int port;
-    
-    protected static boolean scrollEnabled;
-    
-    protected static long scrollSize;
+    protected String clusterName;
 
-    protected static Path path;
+    protected int port;
+    
+    protected boolean scrollEnabled;
+    
+    protected long scrollSize;
 
-    protected static int activeNumShards;
+    protected Path path;
+
+    protected int activeNumShards;
     
     protected ElasticFeatureSource featureSource;
 
@@ -114,10 +117,19 @@ public class ElasticTestSupport {
     
     protected List<ElasticAttribute> attributes;
     
-    protected static Node node;
-        
+    protected Client client;
+
+    protected static String dataPath;
+
     @BeforeClass
-    public static synchronized void suiteSetup() throws Exception {
+    public static void beforeTestSuite() throws IOException {
+        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
+        baseDir.toFile().mkdirs();
+        dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
+    }
+
+    @Before
+    public void beforeTest() throws Exception {
         Properties properties = new Properties();
         InputStream inputStream = ClassLoader.getSystemResourceAsStream(PROPERTIES_FILE);
         properties.load(inputStream);
@@ -125,45 +137,30 @@ public class ElasticTestSupport {
         clusterName = properties.getProperty("cluster_name");
         scrollEnabled = Boolean.valueOf(properties.getProperty("scroll_enabled"));
         scrollSize = Long.valueOf(properties.getProperty("scroll_size"));
-        
-        if (node == null || node.isClosed()) {
-            connect();
-        }
-    }
-    
-    @AfterClass
-    public static synchronized void suiteTearDown() throws Exception {
-        //node.close();
-    }
-    
-    @Before
-    public void setup() throws IOException {
+
+        client = ESIntegTestCase.client();
+        ElasticDataStore.setClient(client);
         Map<String,Serializable> params = createConnectionParams();
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         dataStore = (ElasticDataStore) factory.createDataStore(params);
+        createIndices();
     }
-    
+
     @After
-    public void tearDown() {
+    public void afterTest() throws Exception {
         dataStore.dispose();
     }
 
-    private static void connect() throws Exception {
-        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
-        baseDir.toFile().mkdirs();
-        dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
-        
-        LOGGER.info("Creating local test Elasticsearch cluster (path.home=" + dataPath + ")");
+    @Override
+    protected Settings nodeSettings(int nodeOrdinal) {
+        return Settings.builder().put(super.nodeSettings(nodeOrdinal))
+                .put("path.home", dataPath)
+                .build();
+    }
+
+    protected void createIndices() throws IOException {
         final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
-        
-        Settings settings = compat.createSettings("path.home", dataPath, "http.enabled", false);
-        node = nodeBuilder()
-                .settings(settings)
-                .local(true)
-                .clusterName(clusterName)
-                .node();
-        Client client = node.client();
-        
+
         // create index and add mappings
         Settings indexSettings = compat.createSettings("number_of_shards", numShards, 
                 "number_of_replicas", numReplicas);
@@ -180,10 +177,9 @@ public class ElasticTestSupport {
         builder.execute().actionGet();
 
         // index documents
-        InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE);
         BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 
-        try (Scanner scanner = new Scanner(inputStream)) {
+        try (InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE); Scanner scanner = new Scanner(inputStream)) {
             String eol = System.getProperty(LINE_SEPARATOR);
             scanner.useDelimiter(eol);
             while (scanner.hasNext()) {
@@ -225,14 +221,12 @@ public class ElasticTestSupport {
 
             RefreshResponse refreshresp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
         }
-        LOGGER.info("Done setting up Elasticsearch");
     }
 
-    protected static Map<String,Serializable> createConnectionParams() {
+    protected Map<String,Serializable> createConnectionParams() {
         Map<String,Serializable> params = new HashMap<>();
         params.put(ElasticDataStoreFactory.INDEX_NAME.key, indexName);
         params.put(ElasticDataStoreFactory.CLUSTERNAME.key, clusterName);
-        params.put(ElasticDataStoreFactory.DATA_PATH.key, dataPath);
         params.put(ElasticDataStoreFactory.SCROLL_ENABLED.key, scrollEnabled);
         params.put(ElasticDataStoreFactory.SCROLL_SIZE.key, scrollSize);
         return params;

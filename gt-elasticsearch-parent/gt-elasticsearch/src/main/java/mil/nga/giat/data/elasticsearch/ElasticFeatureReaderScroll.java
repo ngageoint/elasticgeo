@@ -2,10 +2,13 @@ package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.logging.Logger;
 
+import org.elasticsearch.action.search.ClearScrollRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequestBuilder;
 import org.elasticsearch.common.unit.TimeValue;
@@ -31,24 +34,28 @@ public class ElasticFeatureReaderScroll implements FeatureReader<SimpleFeatureTy
     private int numFeatures;
     
     private boolean lastScroll;
+
+    private Set<String> scrollIds;
     
-    public ElasticFeatureReaderScroll(ContentState contentState, String scrollId, int maxFeatures) {
+    public ElasticFeatureReaderScroll(ContentState contentState, SearchResponse searchResponse, int maxFeatures) {
         this.contentState = contentState;
-        this.nextScrollId = scrollId;
         this.maxFeatures = maxFeatures;
         this.numFeatures = 0;
-        advanceScroll();
+        this.scrollIds = new HashSet<>();
+        processResponse(searchResponse);
     }
     
     private void advanceScroll() {
         final ElasticDataStore dataStore;
         dataStore = (ElasticDataStore) contentState.getEntry().getDataStore();
-        final SearchScrollRequestBuilder scrollRequest = dataStore.getClient()
-                .prepareSearchScroll(nextScrollId);
+        final SearchScrollRequestBuilder scrollRequest = dataStore.getClient().prepareSearchScroll(nextScrollId);
         if (dataStore.getScrollTime() != null) {
             scrollRequest.setScroll(TimeValue.timeValueSeconds(dataStore.getScrollTime()));
         }
-        final SearchResponse searchResponse = scrollRequest.execute().actionGet();
+        processResponse(scrollRequest.execute().actionGet());
+    }
+
+    private void processResponse(SearchResponse searchResponse) {
         final int numHits = searchResponse.getHits().hits().length;
         final List<SearchHit> hits;
         if (numFeatures+numHits <= maxFeatures) {
@@ -61,6 +68,7 @@ public class ElasticFeatureReaderScroll implements FeatureReader<SimpleFeatureTy
         nextScrollId = searchResponse.getScrollId();
         lastScroll = numHits == 0 || numFeatures+hits.size()>=maxFeatures;
         LOGGER.fine("Scoll numHits=" + hits.size() + " (total=" + numFeatures+hits.size());
+        scrollIds.add(nextScrollId);
     }
     
     @Override
@@ -90,6 +98,15 @@ public class ElasticFeatureReaderScroll implements FeatureReader<SimpleFeatureTy
 
     @Override
     public void close() throws IOException {
+        if (!scrollIds.isEmpty()) {
+            final ElasticDataStore dataStore;
+            dataStore = (ElasticDataStore) contentState.getEntry().getDataStore();
+            final ClearScrollRequestBuilder clearScrollRequest = dataStore.getClient().prepareClearScroll();
+            for (final String scrollId : scrollIds) {
+                clearScrollRequest.addScrollId(scrollId);
+            }
+            clearScrollRequest.execute().actionGet();
+        }
         delegate.close();
     }
 

@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
-      <version>${elasticsearch2.version}</version>
+      <version>${elasticsearch5.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>

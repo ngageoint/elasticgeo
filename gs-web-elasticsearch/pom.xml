@@ -15,8 +15,8 @@
   <version>2.9-SNAPSHOT</version>  
   <name>GeoServer Elasticsearch Module</name>
   <properties>
-    <elasticsearch.version>${elasticsearch2.version}</elasticsearch.version>
-    <elasticsearch.classifier>es2</elasticsearch.classifier>
+    <elasticsearch.version>${elasticsearch5.version}</elasticsearch.version>
+    <elasticsearch.classifier>es5</elasticsearch.classifier>
   </properties>
   <build>
     <resources>
@@ -132,10 +132,10 @@
   </dependencies>
   <profiles>
     <profile>
-      <id>elasticsearch1</id>
+      <id>elasticsearch2</id>
       <properties>
-	<elasticsearch.version>${elasticsearch1.version}</elasticsearch.version>
-	<elasticsearch.classifier>es1</elasticsearch.classifier>
+	<elasticsearch.version>${elasticsearch2.version}</elasticsearch.version>
+	<elasticsearch.classifier>es2</elasticsearch.classifier>
       </properties>
     </profile>
     <profile>

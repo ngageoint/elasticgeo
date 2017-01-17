@@ -4,13 +4,9 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
-import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,7 +30,6 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.node.Node;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
@@ -61,15 +56,15 @@ public class ElasticDataStore extends ContentDataStore {
 
     private final static Logger LOGGER = Logging.getLogger(ElasticDataStoreFactory.class);
 
+    private static ElasticCompat compat = ElasticCompatLoader.getCompat(null);
+
+    private static Client client;
+
+    private final boolean managedClient;
+
     private final String indexName;
 
     private final String searchIndices;
-   
-    private final Node node;
-
-    private final Client client;
-    
-    private final boolean isLocal;
 
     private final List<Name> baseTypeNames;
     
@@ -88,10 +83,11 @@ public class ElasticDataStore extends ContentDataStore {
     private Integer scrollTime;
 
     public ElasticDataStore(String searchHost, Integer hostPort, 
-            String indexName, String searchIndices, String clusterName,
-            boolean localNode, boolean storeData, String dataPath) {
+            String indexName, String searchIndices, String clusterName) {
 
         LOGGER.fine("initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
+
+        this.managedClient = client == null;
 
         this.indexName = indexName;
         
@@ -101,45 +97,16 @@ public class ElasticDataStore extends ContentDataStore {
             this.searchIndices = indexName;
         }
 
-        final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
-        
-        if (dataPath != null) {
-            Settings settings = compat.createSettings("path.home", dataPath, "http.enabled", false);
-            node = nodeBuilder()
-                    .settings(settings)
-                    .local(true)
-                    .clusterName(clusterName)
-                    .node();
-            client = node.client();
-            isLocal = true;
-        } else if (localNode) {
-            Path path = null;
-            try {
-                path = Files.createTempDirectory("gt_es");
-            } catch (IOException e) {
-                throw new RuntimeException("unable to create temp director for path.home", e);
-            }
-            Settings settings = compat.createSettings("path.home", path);
-            node = nodeBuilder()
-                    .settings(settings)
-                    .data(storeData)
-                    .clusterName(clusterName)
-                    .node();
-            client = node.client();
-            isLocal = false;
-        } else {
+        if (managedClient) {
+            LOGGER.fine("creating client");
             final TransportAddress address;
             address = new InetSocketTransportAddress(getInetAddress(searchHost), hostPort);
             Settings settings = compat.createSettings("cluster.name", clusterName);
             client = compat.createClient(settings, address);
-            node = null;
-            isLocal = false;
         }
-        LOGGER.fine("client connection established");
 
         final ClusterStateRequest clusterStateRequest;
         clusterStateRequest = Requests.clusterStateRequest()
-                .local(isLocal)
                 .indices(indexName);
 
         LOGGER.fine("querying cluster state");
@@ -225,7 +192,6 @@ public class ElasticDataStore extends ContentDataStore {
             clusterStateRequest = Requests.clusterStateRequest()
                     .routingTable(true)
                     .nodes(true)
-                    .local(isLocal)
                     .indices(indexName);
 
             final ClusterState state;
@@ -289,11 +255,9 @@ public class ElasticDataStore extends ContentDataStore {
     
     @Override
     public void dispose() {
-        LOGGER.fine("closing client");
-        this.client.close();
-        if (this.node != null) {
-            LOGGER.fine("closing node");
-            this.node.close();
+        if (managedClient) {
+            LOGGER.fine("closing client");
+            this.client.close();
         }
         super.dispose();
     }
@@ -422,10 +386,10 @@ public class ElasticDataStore extends ContentDataStore {
                 elasticAttribute.setGeometryType(ElasticGeometryType.GEO_SHAPE);
                 break;
             case "string":
+            case "keyword":
+            case "text":
                 binding = String.class;
-                final String index = (String) map.get("index");
-                final boolean analyzed = index == null || index.equals("analyzed");
-                elasticAttribute.setAnalyzed(analyzed);
+                elasticAttribute.setAnalyzed(compat.isAnalyzed(map));
                 break;
             case "integer":
                 binding = Integer.class;
@@ -475,5 +439,9 @@ public class ElasticDataStore extends ContentDataStore {
                 elasticAttributes.add(elasticAttribute);
             }
         }
+    }
+
+    public static void setClient(Client client) {
+        ElasticDataStore.client = client;
     }
 }

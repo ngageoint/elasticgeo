@@ -23,8 +23,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <geotools.version>16.0</geotools.version>
     <geoserver.version>2.10.0</geoserver.version>
-    <elasticsearch1.version>1.7.6</elasticsearch1.version>
     <elasticsearch2.version>2.4.2</elasticsearch2.version>
+    <elasticsearch2.lucene.version>5.5.2</elasticsearch2.lucene.version>
+    <elasticsearch5.version>5.1.1</elasticsearch5.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
   </properties>
   <modules>
@@ -38,6 +39,14 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.18.1</version>
+          <configuration>
+            <systemPropertyVariables>
+              <tests.security.manager>false</tests.security.manager>
+              <tests.es.logger.level>error</tests.es.logger.level>
+              <tests.locale>en</tests.locale>
+              <tests.timezone>utc</tests.timezone>
+            </systemPropertyVariables>
+          </configuration>
         </plugin>
         <!--This plugin's configuration is used to store Eclipse m2e settings
 			only. It has no influence on the Maven build itself. -->
@@ -73,8 +82,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
 	    <version>2.5.1</version>
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>

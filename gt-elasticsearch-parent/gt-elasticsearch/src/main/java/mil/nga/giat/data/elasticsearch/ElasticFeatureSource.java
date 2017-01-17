@@ -87,8 +87,8 @@ public class ElasticFeatureSource extends ContentFeatureSource {
     protected int getCountInternal(Query query) throws IOException {
         LOGGER.fine("getCountInternal");
         int hits = 0;
+        final SearchRequestBuilder searchRequest = prepareSearchRequest(query, false);
         try {
-            final SearchRequestBuilder searchRequest = prepareSearchRequest(query, SearchType.COUNT);
             if (!filterFullySupported) {
                 try (FeatureReader<SimpleFeatureType, SimpleFeature> reader = getReaderInternal(query)) {
                     while (reader.hasNext()) {
@@ -97,6 +97,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
                     }
                 }
             } else {
+                searchRequest.setSize(0);
                 final SearchResponse sr = searchRequest.execute().get();
                 final int totalHits = (int) sr.getHits().getTotalHits();
                 final int size = getSize(query);
@@ -116,15 +117,14 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         LOGGER.fine("getReaderInternal");
         FeatureReader<SimpleFeatureType, SimpleFeature> reader = null;
         try {
-            SearchType searchType = (useSortOrPagination(query) 
-                    || !getDataStore().getScrollEnabled()) ? SearchType.DFS_QUERY_THEN_FETCH : SearchType.SCAN;
-            final SearchRequestBuilder searchRequest = prepareSearchRequest(query, searchType);
+            final boolean scroll = !useSortOrPagination(query) && getDataStore().getScrollEnabled();
+            final SearchRequestBuilder searchRequest = prepareSearchRequest(query, scroll);
             SearchResponse sr = searchRequest.execute().get();
             LOGGER.fine("Search response hits/totalHits: " + sr.getHits().hits().length + "/" + sr.getHits().getTotalHits());
-            if (searchType!=SearchType.SCAN) {
+            if (!scroll) {
                 reader = new ElasticFeatureReader(getState(), sr);
             } else {
-                reader = new ElasticFeatureReaderScroll(getState(), sr.getScrollId(), getSize(query));
+                reader = new ElasticFeatureReaderScroll(getState(), sr, getSize(query));
             }
             if (!filterFullySupported) {
                 reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>(reader, query.getFilter());
@@ -136,17 +136,16 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         return reader;
     }
 
-    private SearchRequestBuilder prepareSearchRequest(Query query, SearchType searchType) throws IOException {
+    private SearchRequestBuilder prepareSearchRequest(Query query, boolean scroll) throws IOException {
         SortOrder naturalSortOrder = SortOrder.ASC;
         final SearchRequestBuilder searchRequest;
         final ElasticDataStore dataStore = getDataStore();
         final String docType = dataStore.getDocType(entry.getName());
 
-        LOGGER.fine("Preparing " + docType + " (" + entry.getName() + ") " + searchType + " query");
-        if (searchType!=SearchType.SCAN) {
-            searchRequest = dataStore.getClient().prepareSearch(dataStore.getSearchIndices()).setTypes(docType)
-                    .setSearchType(searchType);
-
+        LOGGER.fine("Preparing " + docType + " (" + entry.getName() + ") query");
+        searchRequest = dataStore.getClient().prepareSearch(dataStore.getSearchIndices()).setTypes(docType)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+        if (!scroll) {
             if (query.getSortBy()!=null){
                 for (final SortBy sort : query.getSortBy()) {
                     final SortOrder sortOrder = (sort.getSortOrder() == ASCENDING) ? SortOrder.ASC : SortOrder.DESC;
@@ -164,8 +163,6 @@ public class ElasticFeatureSource extends ContentFeatureSource {
             searchRequest.setSize(getSize(query));
             searchRequest.setFrom(getStartIndex(query));
         } else {
-            searchRequest = dataStore.getClient().prepareSearch(dataStore.getSearchIndices()).setTypes(docType)
-                    .setSearchType(SearchType.SCAN);
             if (dataStore.getScrollSize() != null) {
                 searchRequest.setSize(dataStore.getScrollSize().intValue());
             }
@@ -210,7 +207,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         List<String> sourceIncludes = new ArrayList<>();
         for (final ElasticAttribute attribute : attributes) {
             if (attribute.isUse() && attribute.isStored()) {
-                searchRequest.addField(attribute.getName());
+                ElasticCompatLoader.getCompat(null).addField(searchRequest, attribute.getName());
             } else if (attribute.isUse()) {
                 sourceIncludes.add(attribute.getName());
             }

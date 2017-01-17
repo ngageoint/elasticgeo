@@ -13,7 +13,7 @@ public class ElasticCompatLoader {
 
     protected static final Logger LOGGER = Logging.getLogger(ElasticCompatLoader.class);
 
-    private static final String DEFAULT_ES_COMPAT_VERSION = "2";
+    private static final String DEFAULT_ES_COMPAT_VERSION = "5";
 
     private static final String DEFAULT_ES_CLASS_NAME = ElasticCompat.class.getName() + DEFAULT_ES_COMPAT_VERSION;
 

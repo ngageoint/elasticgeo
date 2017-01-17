@@ -59,13 +59,6 @@ import org.opengis.filter.spatial.BBOX;
 
 public class ElasticFeatureFilterTest extends ElasticTestSupport {
 
-    @After
-    public void tearDown() {
-        dataStore.setScrollEnabled(scrollEnabled);
-        dataStore.setScrollSize(scrollSize);
-        dataStore.setLayerConfiguration(config);
-    }
-    
     @Test
     public void testSchema() throws Exception {
         init();
@@ -584,8 +577,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
-        dataStore.setScrollSize(intialScrollSize);       
-    }  
+    }
     
     @Test
     public void testScrollTimeDoesntChangesOutputSize() throws Exception {
@@ -596,8 +588,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
-        dataStore.setScrollTime(initialScrollTime);       
-    }      
+    }
     
     @Test
     public void testScrollEnabledDoesntChangesOutputSize() throws Exception {
@@ -607,8 +598,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
-        dataStore.setScrollEnabled(scrollEnabled);       
-    }     
+    }
     
     @Test
     public void testScrollHonorsMaxFeatures() throws Exception {
