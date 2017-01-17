@@ -11,6 +11,9 @@
   <version>2.9-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>GeoTools Elasticsearch Core</name>
+  <properties>
+    <elasticsearch.version>${elasticsearch5.version}</elasticsearch.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.geotools</groupId>
@@ -30,8 +33,7 @@
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
-      <version>${elasticsearch5.version}</version>
-      <optional>true</optional>
+      <version>${elasticsearch.version}</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -45,4 +47,12 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <profiles>
+    <profile>
+      <id>elasticsearch2</id>
+      <properties>
+        <elasticsearch.version>${elasticsearch2.version}</elasticsearch.version>
+      </properties>
+    </profile>
+  </profiles>
 </project>

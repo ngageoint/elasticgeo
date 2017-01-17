@@ -256,7 +256,8 @@ public class ElasticDataStore extends ContentDataStore {
     public void dispose() {
         if (managedClient) {
             LOGGER.fine("closing client");
-            this.client.close();
+            client.close();
+            client = null;
         }
         super.dispose();
     }

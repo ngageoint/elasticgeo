@@ -16,7 +16,7 @@
   <name>GeoServer Elasticsearch Module</name>
   <properties>
     <elasticsearch.version>${elasticsearch5.version}</elasticsearch.version>
-    <elasticsearch.classifier>es5</elasticsearch.classifier>
+    <elasticsearch.major.version>5</elasticsearch.major.version>
   </properties>
   <build>
     <resources>
@@ -60,7 +60,12 @@
       <groupId>mil.nga.giat</groupId>
       <artifactId>gt-elasticsearch</artifactId>
       <version>${project.version}</version>
-      <classifier>${elasticsearch.classifier}</classifier>
+      <classifier>es${elasticsearch.major.version}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>mil.nga.giat</groupId>
+      <artifactId>gt-elasticsearch${elasticsearch.major.version}</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch</groupId>
@@ -117,7 +122,7 @@
       <id>elasticsearch2</id>
       <properties>
         <elasticsearch.version>${elasticsearch2.version}</elasticsearch.version>
-        <elasticsearch.classifier>es2</elasticsearch.classifier>
+        <elasticsearch.major.version>2</elasticsearch.major.version>
       </properties>
       <build>
         <plugins>
@@ -139,7 +144,7 @@
               </execution>
             </executions>
           </plugin>
-      </plugins>
+        </plugins>
       </build>
     </profile>
     <profile>
