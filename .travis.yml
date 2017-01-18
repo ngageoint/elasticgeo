@@ -4,6 +4,10 @@ jdk:
 - oraclejdk8
 env:
   matrix:
+  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
+  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.2' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
+  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
+  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.1' ES_PROFILE_VERSION=5
   - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
   - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.2' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
   - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
@@ -11,11 +15,18 @@ env:
 cache:
   directories:
   - "$HOME/.m2"
-install: "mvn install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
-script: "mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
+install:
+- sed -i 's/<geotools.version>.*<\/geotools.version>/<geotools.version>'${GEOTOOLS_VERSION}'<\/geotools.version>/g' pom.xml
+- sed -i 's/<geoserver.version>.*<\/geoserver.version>/<geoserver.version>'${GEOSERVER_VERSION}'<\/geoserver.version>/g' pom.xml
+- sed -i 's/<elasticsearch2.version>.*<\/elasticsearch2.version>/<elasticsearch2.version>'${ES2_VERSION}'<\/elasticsearch2.version>/g' pom.xml
+- sed -i 's/<elasticsearch2.lucene.version>.*<\/elasticsearch2.lucene.version>/<elasticsearch2.lucene.version>'${ES2_LUCENE_VERSION}'<\/elasticsearch2.lucene.version>/g' pom.xml
+- sed -i 's/<elasticsearch5.version>.*<\/elasticsearch5.version>/<elasticsearch5.version>'${ES5_VERSION}'<\/elasticsearch5.version>/g' pom.xml
+- mvn install -DskipTests=true -Pelasticsearch${ES_PROFILE_VERSION}
+script:
+- mvn verify -Pelasticsearch${ES_PROFILE_VERSION}
 after_success:
-- mvn coveralls:report -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
-- mvn package assembly:assembly -P elasticsearch${ES_PROFILE_VERSION} -pl gs-web-elasticsearch -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
+- mvn coveralls:report -Pelasticsearch${ES_PROFILE_VERSION}
+- mvn package assembly:assembly -pl gs-web-elasticsearch -Pelasticsearch${ES_PROFILE_VERSION}
 before_deploy:
   - if [ ${ES_PROFILE_VERSION} == "2" ];
     then export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES2_VERSION}.zip)";

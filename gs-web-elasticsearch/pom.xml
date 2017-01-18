@@ -97,16 +97,6 @@
       <classifier>es${elasticsearch.major.version}</classifier>
     </dependency>
     <dependency>
-      <groupId>mil.nga.giat</groupId>
-      <artifactId>gt-elasticsearch${elasticsearch.major.version}</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.elasticsearch</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>${elasticsearch.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.geoserver</groupId>
       <artifactId>gs-main</artifactId>
       <version>${geoserver.version}</version>
@@ -171,9 +161,9 @@
       </build>
       <dependencies>
         <dependency>
-          <groupId>org.elasticsearch.client</groupId>
-          <artifactId>transport</artifactId>
-          <version>${elasticsearch.version}</version>
+          <groupId>mil.nga.giat</groupId>
+          <artifactId>gt-elasticsearch5</artifactId>
+          <version>${project.version}</version>
         </dependency>
       </dependencies>
     </profile>
@@ -209,6 +199,18 @@
           </plugin>
         </plugins>
       </build>
+      <dependencies>
+        <dependency>
+          <groupId>mil.nga.giat</groupId>
+          <artifactId>gt-elasticsearch2</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+          <version>18.0</version>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 </project>

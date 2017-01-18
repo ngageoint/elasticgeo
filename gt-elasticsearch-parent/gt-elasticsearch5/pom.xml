@@ -21,13 +21,11 @@
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
       <version>${elasticsearch5.version}</version>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>transport</artifactId>
       <version>${elasticsearch5.version}</version>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.locationtech.spatial4j</groupId>
