@@ -34,6 +34,7 @@
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
       <version>${elasticsearch.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>

@@ -15,7 +15,7 @@ install: "mvn install -DskipTests=true -Dgeotools.version=${GEOTOOLS_VERSION} -D
 script: "mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}"
 after_success:
 - mvn coveralls:report -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
-- mvn package assembly:assembly -P deploy,elasticsearch${ES_PROFILE_VERSION} -pl gs-web-elasticsearch -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
+- mvn package assembly:assembly -P elasticsearch${ES_PROFILE_VERSION} -pl gs-web-elasticsearch -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Delasticsearch2.version=${ES2_VERSION} -Delasticsearch2.lucene.version=${ES2_LUCENE_VERSION} -Delasticsearch5.version=${ES5_VERSION} -Pelasticsearch${ES_PROFILE_VERSION}
 before_deploy:
   - if [ ${ES_PROFILE_VERSION} == "2" ];
     then export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES2_VERSION}.zip)";

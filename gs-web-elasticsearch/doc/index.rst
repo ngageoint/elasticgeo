@@ -37,7 +37,6 @@ Build and install a local copy. By default the plugin will be compatible with El
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo
     $ mvn clean install [-Pelasticsearch2]
-    $ mvn package -pl gs-web-elasticsearch -P deploy[,elasticsearch2]
 
 Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart Geoserver::
 

@@ -21,11 +21,11 @@
   </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <geotools.version>16.0</geotools.version>
-    <geoserver.version>2.10.0</geoserver.version>
-    <elasticsearch2.version>2.4.2</elasticsearch2.version>
+    <geotools.version>16.1</geotools.version>
+    <geoserver.version>2.10.1</geoserver.version>
+    <elasticsearch2.version>2.4.4</elasticsearch2.version>
     <elasticsearch2.lucene.version>5.5.2</elasticsearch2.lucene.version>
-    <elasticsearch5.version>5.1.1</elasticsearch5.version>
+    <elasticsearch5.version>5.1.2</elasticsearch5.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
   </properties>
   <modules>

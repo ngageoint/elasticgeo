@@ -21,6 +21,7 @@
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
       <version>${elasticsearch2.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
