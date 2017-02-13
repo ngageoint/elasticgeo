@@ -1,3 +1,7 @@
+/**
+ * This file is hereby placed into the Public Domain. This means anyone is
+ * free to do whatever they wish with this file.
+ */
 package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
@@ -32,7 +36,7 @@ public class ElasticCompatLoader {
             className = classOverride;
         } else {
             ClassLoader classLoader = ElasticCompatLoader.class.getClassLoader();
-            try (InputStream in = classLoader.getResourceAsStream("es-build.properties")) {
+            try (InputStream in = classLoader.getResourceAsStream("esgeo-build.properties")) {
                 if (in != null) {
                     try (Scanner s = new Scanner(in)) {
                         s.useDelimiter("\\A");
@@ -47,7 +51,7 @@ public class ElasticCompatLoader {
             }
             if (className == null) {
                 LOGGER.info("Runtime Elasticsearch version could not be detected.  " +
-                         "Loading compatibility layer for Elasticsearch version " + DEFAULT_ES_COMPAT_VERSION);
+                        "Loading compatibility layer for Elasticsearch version " + DEFAULT_ES_COMPAT_VERSION);
                 className = DEFAULT_ES_CLASS_NAME;
             }
         }
@@ -64,5 +68,9 @@ public class ElasticCompatLoader {
 
         return cachedCompat = compat;
     }
-}
 
+    protected static void setCompat(ElasticCompat compat) {
+        ElasticCompatLoader.cachedCompat = compat;
+    }
+
+}

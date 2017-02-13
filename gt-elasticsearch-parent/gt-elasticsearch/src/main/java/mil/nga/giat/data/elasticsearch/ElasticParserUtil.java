@@ -203,7 +203,7 @@ public class ElasticParserUtil {
         }
         return geometryFactory.createPolygon(shell, holes);
     }
-    
+
     private Coordinate[] createCoordinates(final List<List> posList) {
         final Coordinate[] coordinates = new Coordinate[posList.size()];
         for (int i=0; i<posList.size(); i++) {

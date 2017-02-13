@@ -26,6 +26,7 @@
     <elasticsearch2.version>2.4.4</elasticsearch2.version>
     <elasticsearch2.lucene.version>5.5.2</elasticsearch2.lucene.version>
     <elasticsearch5.version>5.1.2</elasticsearch5.version>
+    <jackson.version>2.8.1</jackson.version>
     <jacoco.version>0.7.4.201502262128</jacoco.version>
   </properties>
   <modules>
@@ -46,6 +47,7 @@
               <tests.locale>en</tests.locale>
               <tests.timezone>utc</tests.timezone>
             </systemPropertyVariables>
+            <argLine>${surefireArgLine}</argLine>
           </configuration>
         </plugin>
         <!--This plugin's configuration is used to store Eclipse m2e settings
@@ -120,7 +122,9 @@
         <version>3.1.0</version>
         <configuration>
           <jacocoReports>
-            <jacocoReport>${project.basedir}/gt-elasticsearch/target/site/jacoco-ut/jacoco.xml</jacocoReport>
+            <jacocoReport>${project.basedir}/gt-elasticsearch-parent/gt-elasticsearch-core/target/site/jacoco-ut/jacoco.xml</jacocoReport>
+            <jacocoReport>${project.basedir}/gt-elasticsearch-parent/gt-elasticsearch/target/site/jacoco-ut/jacoco.xml</jacocoReport>
+            <jacocoReport>${project.basedir}/gt-elasticsearch-parent/gt-elasticsearch2/target/site/jacoco-ut/jacoco.xml</jacocoReport>
           </jacocoReports>
         </configuration>
       </plugin>

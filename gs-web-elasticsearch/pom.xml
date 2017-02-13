@@ -164,6 +164,12 @@
           <groupId>mil.nga.giat</groupId>
           <artifactId>gt-elasticsearch5</artifactId>
           <version>${project.version}</version>
+          <type>pom</type>
+        </dependency>
+        <dependency>
+          <groupId>mil.nga.giat</groupId>
+          <artifactId>gt-elasticsearch-core</artifactId>
+          <version>${project.version}</version>
         </dependency>
       </dependencies>
     </profile>

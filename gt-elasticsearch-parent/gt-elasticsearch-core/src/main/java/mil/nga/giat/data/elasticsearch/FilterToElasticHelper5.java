@@ -1,4 +1,19 @@
-package mil.nga.giat.data.elasticsearch;
+/*
+ *    GeoTools - The Open Source Java GIS Toolkit
+ *    http://geotools.org
+ *
+ *    (C) 2002-2009, Open Source Geospatial Foundation (OSGeo)
+ *
+ *    This library is free software; you can redistribute it and/or
+ *    modify it under the terms of the GNU Lesser General Public
+ *    License as published by the Free Software Foundation;
+ *    version 2.1 of the License.
+ *
+ *    This library is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *    Lesser General Public License for more details.
+ */package mil.nga.giat.data.elasticsearch;
 
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
@@ -38,7 +53,7 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             Object extraData) {
 
         super.visitDistanceSpatialOperator(filter, property, geometry, swapped, extraData);
-        
+
         getDelegate().filterBuilder = QueryBuilders.geoDistanceQuery(key)
                 .point(lat,lon)
                 .distance(distance, DistanceUnit.METERS);
@@ -54,7 +69,7 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             PropertyName property, Literal geometry, boolean swapped, Object extraData) {
 
         super.visitComparisonSpatialOperator(filter, property, geometry, swapped, extraData);
-        
+
         // if geography case, sanitize geometry first
         if(isCurrentGeography()) {
             if(isWorld(this.geometry)) {
@@ -84,7 +99,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             try {
                 getDelegate().filterBuilder = QueryBuilders.geoShapeQuery(key, shapeBuilder).relation(shapeRelation);
             } catch (IOException e) {
-                // not clear where this would be thrown within this method call so shouldn't get here
                 throw new RuntimeException(e);
             }
         } else {
@@ -97,7 +111,7 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             boolean swapped, Object extraData) {
 
         super.visitGeoPointBinarySpatialOperator(filter, e1, e2, swapped, extraData);
-        
+
         final Geometry geometry = delegate.currentGeometry;
 
         if (geometry instanceof Polygon &&
@@ -127,7 +141,7 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
         }
     }
-    
+
     private FilterToElastic5 getDelegate() {
         return (FilterToElastic5) delegate;
     }

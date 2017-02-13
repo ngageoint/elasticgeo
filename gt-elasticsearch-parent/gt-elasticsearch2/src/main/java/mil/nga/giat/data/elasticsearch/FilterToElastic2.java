@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
 
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.joda.Joda;
@@ -63,7 +63,7 @@ import com.fasterxml.jackson.core.JsonParser;
 public class FilterToElastic2 extends FilterToElastic {
 
     public static DateTimeFormatter DEFAULT_DATE_FORMATTER = Joda.forPattern("date_optional_time").printer();
-    
+
     protected QueryBuilder filterBuilder;
 
     private DateTimeFormatter dateFormatter;
@@ -111,7 +111,7 @@ public class FilterToElastic2 extends FilterToElastic {
 
     public Object visit(PropertyIsLike filter, Object extraData) {
         super.visit(filter, extraData);
-        
+
         if (analyzed) {
             // use query string query post filter for analyzed fields
             filterBuilder = QueryBuilders.queryStringQuery(pattern).defaultField(key);
@@ -128,7 +128,7 @@ public class FilterToElastic2 extends FilterToElastic {
 
     public Object visit(Not filter, Object extraData) {
         super.visit(filter, extraData);
-        
+
         if(filter.getFilter() instanceof PropertyIsNull) {
             filterBuilder = QueryBuilders.existsQuery((String) field);
         } else {
@@ -204,7 +204,7 @@ public class FilterToElastic2 extends FilterToElastic {
             PropertyName property, Literal temporal, boolean swapped, Object extraData) { 
 
         super.visitBinaryTemporalOperator(filter, property, temporal, swapped, extraData);
-        
+
         if (filter instanceof After || filter instanceof Before) {
             if (period != null) {
                 if ((op.equals(" > ") && !swapped) || (op.equals(" < ") && swapped)) {
@@ -232,7 +232,7 @@ public class FilterToElastic2 extends FilterToElastic {
         else if (filter instanceof TEquals) {
             filterBuilder = QueryBuilders.termQuery(key, field);
         }
-        
+
         if (nested) {
             filterBuilder = QueryBuilders.nestedQuery(path,filterBuilder);
         }
@@ -244,29 +244,29 @@ public class FilterToElastic2 extends FilterToElastic {
 
 
     // START IMPLEMENTING org.opengis.filter.ExpressionVisitor METHODS
-    
+
     protected void writeLiteral(Object literal) {
         super.writeLiteral(literal);
-        
+
         if (Date.class.isAssignableFrom(literal.getClass())) {
             field = dateFormatter.print(((Date) literal).getTime());
         }
     }
-    
+
     protected void visitLiteralGeometry(Literal expression) throws IOException {
         super.visitLiteralGeometry(expression);
 
         final GeometryJSON gjson = new GeometryJSON();
         final String geoJson = gjson.toString(currentGeometry);
         final JsonFactory factory = new JsonFactory();
-        JsonParser parser = factory.createJsonParser(geoJson);
+        final JsonParser parser = factory.createJsonParser(geoJson);
         final JsonXContentParser xParser = new JsonXContentParser(parser);
         xParser.nextToken();
         currentShapeBuilder = ShapeBuilder.parse(xParser);
     }
-    
+
     // END IMPLEMENTING org.opengis.filter.ExpressionVisitor METHODS
-    
+
     @Override
     protected void updateDateFormatter(AttributeDescriptor attType) {
         dateFormatter = DEFAULT_DATE_FORMATTER;
@@ -280,7 +280,7 @@ public class FilterToElastic2 extends FilterToElastic {
 
     protected void addViewParams(Query query) {
         super.addViewParams(query);
-        
+
         if (parameters != null) {
             if (nativeOnly) {
                 LOGGER.fine("Ignoring GeoServer filter (Elasticsearch native query/post filter only)");
@@ -314,5 +314,5 @@ public class FilterToElastic2 extends FilterToElastic {
         }
         return queryBuilder;
     }
-    
+
 }

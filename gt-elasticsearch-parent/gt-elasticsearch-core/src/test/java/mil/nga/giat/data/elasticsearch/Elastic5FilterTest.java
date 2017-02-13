@@ -15,10 +15,10 @@ import java.util.regex.Pattern;
 
 import mil.nga.giat.data.elasticsearch.FilterToElastic;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.GEOMETRY_TYPE;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.ANALYZED;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.GEOMETRY_TYPE;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.lucene.search.join.ScoreMode;
@@ -26,7 +26,6 @@ import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.geo.builders.LineStringBuilder;
 import org.elasticsearch.common.geo.builders.PolygonBuilder;
-import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.common.geo.builders.ShapeBuilders;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.*;
@@ -78,6 +77,7 @@ import org.opengis.filter.temporal.TEquals;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
 
+import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
@@ -91,7 +91,7 @@ public class Elastic5FilterTest {
     private FilterToElastic5 builder;
 
     private FilterFactory2 ff;
-    
+
     private GeometryFactory gf;
 
     private SimpleFeatureType featureType;
@@ -168,7 +168,7 @@ public class Elastic5FilterTest {
 
         dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-        
+
         gf = new GeometryFactory();
     }
 
@@ -191,6 +191,17 @@ public class Elastic5FilterTest {
 
         featureType = typeBuilder.buildFeatureType();
         setFilterBuilder();
+    }
+
+    @Test
+    public void testEncodeQuery() {
+        Query query = new Query();
+        query.setFilter(Filter.INCLUDE);
+        builder.encode(query);
+        assertEquals(QueryBuilders.matchAllQuery().toString(), builder.getQueryBuilder().toString());
+        assertEquals(QueryBuilders.matchAllQuery(), builder.getNativeQueryBuilder());
+        assertNull(builder.getAggregations());
+        assertTrue(builder.getFullySupported());
     }
 
     @Test
@@ -434,12 +445,12 @@ public class Elastic5FilterTest {
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
         assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
     }
-    
+
     @Test
     public void testNullFilter() {
         assertTrue(builder.visitNullFilter(null)==null);
     }
-    
+
     @Test
     public void testNilFilter() {
         builder.field = "field";
@@ -562,7 +573,7 @@ public class Elastic5FilterTest {
     public void testEmptyGeoShape() throws CQLException {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Intersects filter = ff.intersects(ff.property("geom"), ff.literal(ls));
-        
+
         BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
 
         builder.visit(filter, null);
@@ -574,7 +585,7 @@ public class Elastic5FilterTest {
     public void testEmptyDisjointGeoShape() throws CQLException {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(ls));
-        
+
         MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
 
         builder.visit(filter, null);
@@ -590,7 +601,7 @@ public class Elastic5FilterTest {
         LineString ls = gf.createLineString(new Coordinate[] {new Coordinate(0,0), new Coordinate(1,1)});
         GeometryCollection gc = gf.createGeometryCollection(new Geometry[] {poly, ls});
         Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(gc));
-        
+
         MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
 
         builder.visit(filter, null);
@@ -719,7 +730,7 @@ public class Elastic5FilterTest {
     @Test
     public void testViewParamWithNullHints() {
         query.setHints(null);
-        
+
         builder.addViewParams(query);
         assertTrue(builder.getQueryBuilder().toString().equals(QueryBuilders.matchAllQuery().toString()));
         assertTrue(builder.nativeQueryBuilder.toString().equals(QueryBuilders.matchAllQuery().toString()));
@@ -751,6 +762,14 @@ public class Elastic5FilterTest {
     }
 
     @Test
+    public void testAggregationViewParam() {
+        final String aggregation = "{\"ageohash_grid_agg\":{\"geohash_grid\": {\"field\":\"a_field\",\"precision\":1}}}";
+        parameters.put("a", aggregation);
+        builder.addViewParams(query);
+        assertTrue(builder.aggregations.equals(ImmutableMap.of("ageohash_grid_agg", ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1)))));
+    }
+
+    @Test
     public void testAndFilterViewParam() {
         IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
         builder.filterBuilder = idsFilter;
@@ -759,14 +778,14 @@ public class Elastic5FilterTest {
         builder.addViewParams(query);
         assertTrue(builder.getQueryBuilder() instanceof BoolQueryBuilder);
     }
-    
+
     @Test
     public void testNativeOnlyFilterViewParam() {
         parameters.put("native-only", "true");        
         IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
         builder.filterBuilder = idsFilter;
         parameters.put("f", idsFilter.toString());
-        
+
         builder.addViewParams(query);
         assertEquals(builder.getQueryBuilder().toString(), QueryBuilders.wrapperQuery(idsFilter.toString()).toString());
     }
@@ -1096,60 +1115,61 @@ public class Elastic5FilterTest {
 
         builder.visit(filter, null);
     }
-    
+
     @Test
     public void testPropertyNameWithExtraData() {
         builder.visit(ff.property("doubleAttr"), Double.class);
         assertTrue(builder.field.equals("doubleAttr"));
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedBinaryExpression() {
         builder.visit(ff.subtract(ff.property("doubleAttr"), ff.literal(2.5)), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedPropertyIsNill() {
         builder.visit(ff.isNil(ff.property("stringAttr"), ff.literal(2.5)), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedBinaryComparisonOperatorWithBinaryExpression() {
         builder.visit(ff.equals(ff.subtract(ff.property("doubleAttr"), ff.literal(2.5)),ff.literal(0.0)), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedBinaryTemporalOperator() {
         builder.visitBinaryTemporalOperator(null,null,null,null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedAdd() {
         builder.visit(ff.add(ff.property("p1"), ff.property("p2")), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedSubtract() {
         builder.visit(ff.subtract(ff.property("p1"), ff.property("p2")), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedMult() {
         builder.visit(ff.multiply(ff.property("p1"), ff.property("p2")), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedDivide() {
         builder.visit(ff.divide(ff.property("p1"), ff.property("p2")), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedFunction() {
         builder.visit(ff.function("sqrt", ff.property("doubleAttr")), null);
     }
-    
+
     @Test(expected=UnsupportedOperationException.class)
     public void testUnsupportedLiteralTimePeriod() {
         builder.visitLiteralTimePeriod(null);
     }
+
 }

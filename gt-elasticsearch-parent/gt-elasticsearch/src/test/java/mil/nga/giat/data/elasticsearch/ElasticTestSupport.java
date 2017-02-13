@@ -40,11 +40,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
+
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -65,7 +64,7 @@ public class ElasticTestSupport extends ESIntegTestCase {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticTestSupport.class);
-    
+
     private static final String LINE_SEPARATOR = "line.separator";
 
     private static final String PROPERTIES_FILE = "elasticsearch.properties";
@@ -83,9 +82,9 @@ public class ElasticTestSupport extends ESIntegTestCase {
     protected static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss");
 
     protected static final int numShards = 1;
-    
+
     protected static final int numReplicas = 0;
-    
+
     protected String layerName = "active";
 
     protected int SOURCE_SRID = 4326;
@@ -95,26 +94,28 @@ public class ElasticTestSupport extends ESIntegTestCase {
     protected String clusterName;
 
     protected int port;
-    
+
     protected boolean scrollEnabled;
-    
+
     protected long scrollSize;
 
     protected Path path;
 
     protected int activeNumShards;
-    
+
     protected ElasticFeatureSource featureSource;
 
     protected static ElasticDataStore dataStore;
 
     protected ElasticLayerConfiguration config;
-    
+
     protected List<ElasticAttribute> attributes;
-    
+
     protected Client client;
 
     protected static String dataPath;
+
+    protected final static int HTTP_TEST_PORT = 9400;
 
     @BeforeClass
     public static void beforeTestSuite() throws IOException {
@@ -134,7 +135,7 @@ public class ElasticTestSupport extends ESIntegTestCase {
         scrollSize = Long.valueOf(properties.getProperty("scroll_size"));
 
         client = ESIntegTestCase.client();
-        ElasticDataStore.setClient(client);
+        ElasticDataStore.setClient(new TransportElasticClient(client));
         Map<String,Serializable> params = createConnectionParams();
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         dataStore = (ElasticDataStore) factory.createDataStore(params);
@@ -198,9 +199,9 @@ public class ElasticTestSupport extends ESIntegTestCase {
                     bulkRequestBuilder.add(client.prepareIndex(indexName, layerName).setSource(line).setId(id));
                 }
             }
-            BulkResponse bulkresp = bulkRequestBuilder.execute().actionGet();
+            bulkRequestBuilder.execute().actionGet();
 
-            RefreshResponse refreshresp = client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
+            client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
         }
     }
 
@@ -254,7 +255,7 @@ public class ElasticTestSupport extends ESIntegTestCase {
     protected Period period(String d1, String d2) throws ParseException {
         return new DefaultPeriod(instant(d1), instant(d2));
     }
-    
+
     protected List<SimpleFeature> readFeatures(SimpleFeatureIterator iterator) {
         final List<SimpleFeature> features = new ArrayList<>();
         try {

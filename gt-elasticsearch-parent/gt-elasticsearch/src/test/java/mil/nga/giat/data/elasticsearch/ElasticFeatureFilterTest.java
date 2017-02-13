@@ -68,7 +68,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         assertTrue(schema.getDescriptor("geo2") instanceof GeometryDescriptor);
         assertTrue(schema.getDescriptor("geo3") instanceof GeometryDescriptor);
     }
-    
+
     @Test
     public void testSchemaWithoutLayerConfig() throws Exception {
         init();
@@ -77,7 +77,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         assertNotNull(schema);
         assertTrue(schema.getAttributeCount()==0);
     }
-    
+
     @Test
     public void testSchemaWithShortName() throws Exception {
         init();
@@ -145,7 +145,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         Query query = new Query();
         query.setStartIndex(5);
         query.setMaxFeatures(11);
-        
+
         assertEquals(6, featureSource.getCount(query));
     }
 
@@ -444,7 +444,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         SimpleFeatureCollection features = featureSource.getFeatures(f);
         assertCovered(features, 2, 5, 6);
     }
-    
+
     @Test
     public void testOnlyStoredFields() throws Exception {
         init();
@@ -461,7 +461,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
             features.next();
         }
     }
-    
+
     @Test
     public void testOnlySourceFields() throws Exception {
         init();
@@ -472,9 +472,9 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
             }
         }
         featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(layerName);
-        
+
         assertEquals(11, featureSource.getCount(Query.ALL));
-        
+
         SimpleFeatureIterator features = featureSource.getFeatures().features();
         for (int i=0; i<11; i++) {
             assertTrue(features.hasNext());
@@ -565,18 +565,17 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         SimpleFeatureCollection features = featureSource.getFeatures(f);
         assertEquals(8, features.size());
     }
-    
+
     @Test
     public void testScrollSizesDoesntChangesOutputSize() throws Exception {
         init();
-        Long intialScrollSize = dataStore.getScrollSize();
         dataStore.setScrollSize(3l);
         FilterFactory ff = dataStore.getFilterFactory();
         PropertyIsGreaterThan f = ff.greater(ff.property("nested.parent.child"), ff.literal("ba"));
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
     }
-    
+
     @Test
     public void testScrollTimeDoesntChangesOutputSize() throws Exception {
         init();
@@ -587,7 +586,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
     }
-    
+
     @Test
     public void testScrollEnabledDoesntChangesOutputSize() throws Exception {
         init();
@@ -597,7 +596,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(f).features());
         assertEquals(8, features.size());
     }
-    
+
     @Test
     public void testScrollHonorsMaxFeatures() throws Exception {
         init();
@@ -607,7 +606,7 @@ public class ElasticFeatureFilterTest extends ElasticTestSupport {
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
         assertEquals(7, features.size());
     }      
-    
+
     @Test(expected=NoSuchElementException.class)
     public void testScrollNoSuchElement() throws Exception {
         init();

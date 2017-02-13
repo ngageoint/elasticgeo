@@ -6,6 +6,7 @@ package mil.nga.giat.data.elasticsearch;
 
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
+
 import java.awt.RenderingHints.Key;
 import java.io.IOException;
 import java.io.Serializable;
@@ -20,7 +21,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     /** Cluster hostname. **/
     public static final Param HOSTNAME = new Param("elasticsearch_host", String.class, "Elasticsearch host", false, "localhost");
 
-    /** Cluster transport client port. **/
+    /** Cluster client port. **/
     public static final Param HOSTPORT = new Param("elasticsearch_port", Integer.class, "Elasticsearch port", false, 9300);
 
     /** Index name. **/
@@ -37,11 +38,13 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public static final Param SOURCE_FILTERING_ENABLED = new Param("source_filtering_enabled", Boolean.class, "Enable source field filtering", false, false);
 
     public static final Param SCROLL_ENABLED = new Param("scroll_enabled", Boolean.class, "Use scan search type instead of dfs_query_then_fetch", false, false);
-    
+
     public static final Param SCROLL_SIZE = new Param("scroll_size", Long.class, "Scroll size (ignored if scroll_enabled=false)", false, 20);
 
     public static final Param SCROLL_TIME_SECONDS = new Param("scroll_time", Integer.class, "Time to keep the scroll open in seconds (ignored if scroll_enabled=false)", false, 120);
-    
+
+    public static final Param MAX_BUCKETS = new Param("max_buckets", Long.class, "Maximum number of buckets hint for GeoHashGrid aggregations", false, 10000l);
+
     protected static final Param[] PARAMS = {
             HOSTNAME,
             HOSTPORT,
@@ -52,13 +55,14 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             SOURCE_FILTERING_ENABLED,
             SCROLL_ENABLED,
             SCROLL_SIZE,
-            SCROLL_TIME_SECONDS
+            SCROLL_TIME_SECONDS,
+            MAX_BUCKETS
     };
-    
+
     protected static final String DISPLAY_NAME = "Elasticsearch";
-    
+
     protected static final String DESCRIPTION = "Elasticsearch Index";
-    
+
     @Override
     public String getDisplayName() {
         return DISPLAY_NAME;
@@ -115,6 +119,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));
         dataStore.setScrollSize(((Number)getValue(SCROLL_SIZE, params)).longValue());
         dataStore.setScrollTime((Integer)getValue(SCROLL_TIME_SECONDS, params));
+        dataStore.setMaxBuckets((Long) MAX_BUCKETS.lookUp(params));
         return dataStore;
     }
 
@@ -122,7 +127,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public DataStore createNewDataStore(Map<String, Serializable> params) throws IOException {
         return null;
     }
-    
+
     private Object getValue(Param param, Map<String, Serializable> params) throws IOException {
         final Object value;
         if (param.lookUp(params) != null) {

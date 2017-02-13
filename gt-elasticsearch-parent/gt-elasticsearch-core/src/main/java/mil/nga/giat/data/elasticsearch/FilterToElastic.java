@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.ANALYZED;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.NESTED;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.ANALYZED;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
 import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -131,43 +131,45 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
     protected Object field;
 
     protected ShapeBuilder currentShapeBuilder;
-    
+
     protected Boolean fullySupported;
 
     protected FilterToElasticHelper helper;
-    
+
     protected String key;
-    
+
     protected Object lower;
-    
+
     protected Object upper;
-    
+
     protected Boolean nested;
-    
+
     protected String path;
-    
+
     protected String pattern;
-    
+
     protected Boolean analyzed;
-    
+
     protected String type;
-    
+
     protected String[] ids;
-    
+
     protected Period period;
-    
+
     protected String op;
-    
+
     protected Object begin;
-    
+
     protected Object end;
-    
+
     protected Map<String,String> parameters;
-    
+
     protected Boolean nativeOnly;
-    
+
     protected QueryBuilder nativeQueryBuilder;
-    
+
+    protected Map<String,Map<String,Map<String,Object>>> aggregations;
+
     public FilterToElastic() {
         fullySupported = null;
     }
@@ -306,14 +308,14 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             //assume it's a string?
             context = String.class;
         }
-        
+
         expr.accept(this, extraData);
         key = (String) field;
         lowerbounds.accept(this, context);
         lower = field;
         upperbounds.accept(this, context);
         upper = field;
-        
+
         if(nested) {
             path = extractNestedPath(key);
         }
@@ -357,7 +359,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
         att.accept(this, extraData);
         key = (String) field;
-        
+
         if (analyzed) {
             // use query string query post filter for analyzed fields
             pattern = convertToQueryString(esc, multi, single, matchCase, literal);
@@ -519,7 +521,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
                 rightContext = attType.getType().getBinding();
             }
         }
-        
+
         if (right instanceof PropertyName) {
             attType = (AttributeDescriptor)right.evaluate(featureType);
             if (attType != null) {
@@ -536,7 +538,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
                 updateDateFormatter(attType);
             }
         }
-        
+
         //case sensitivity
         if ( !filter.isMatchingCase() ) {
             //we only do for = and !=
@@ -552,7 +554,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         }
 
         type = (String) extraData;
-        
+
         if (left instanceof PropertyName) {
             left.accept(this, null);
             key = (String) field;
@@ -720,7 +722,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             }
             updateDateFormatter(attType);
         }
-        
+
         //check for time period
         period = null;
         if (temporal.evaluate(null) instanceof Period) {
@@ -793,7 +795,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             key = (String) field;
             temporal.accept(this, typeContext);
         }
-        
+
         if (nested) {
             path = extractNestedPath(key);
         }
@@ -847,7 +849,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         LOGGER.finest("exporting PropertyName");
 
         SimpleFeatureType featureType = this.featureType;
-        
+
         Class target = null;
         if(extraData instanceof Class) {
             target = (Class) extraData;
@@ -875,7 +877,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
         return extraData;
     }
-    
+
     /**
      * Export the contents of a Literal Expresion
      *
@@ -1067,11 +1069,11 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
     public Object visit(Function function, Object extraData) {
         throw new UnsupportedOperationException("Function support not implemented");
     }
-    
+
     // END IMPLEMENTING org.opengis.filter.ExpressionVisitor METHODS
-    
+
     abstract protected void updateDateFormatter(AttributeDescriptor attType);
-    
+
     /*
      * helper to do a safe convesion of expression to a number
      */
@@ -1146,20 +1148,25 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
         return result.toString();
     }
-    
+
     private static String extractNestedPath(String field) {
         final String[] parts = field.split("\\.");
         final String base = parts[parts.length-1];
         return field.replace("." + base, "");
     }
-    
+
     public Boolean getFullySupported() {
         return fullySupported;
     }
-    
+
     public QueryBuilder getNativeQueryBuilder() {
         return nativeQueryBuilder;
     }
-    
+
     abstract public QueryBuilder getQueryBuilder();
+
+    public Map<String,Map<String,Map<String,Object>>> getAggregations() {
+        return aggregations;
+    }
+
 }

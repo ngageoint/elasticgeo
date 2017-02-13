@@ -6,28 +6,30 @@ package mil.nga.giat.data.elasticsearch;
 
 import com.vividsolutions.jts.geom.Geometry;
 
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.DATE_FORMAT;
-import static mil.nga.giat.data.elasticsearch.ElasticLayerConfiguration.FULL_NAME;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.FULL_NAME;
 
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.store.ContentState;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * FeatureReader access to the Elasticsearch index.
  */
 public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, SimpleFeature> {
+
+    private final static Logger LOGGER = Logging.getLogger(ElasticFeatureReader.class);
 
     private final ContentState state;
 
@@ -37,27 +39,35 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
 
     private SimpleFeatureBuilder builder;
 
-    private Iterator<SearchHit> searchHitIterator;
+    private Iterator<ElasticHit> searchHitIterator;
+
+    private Iterator<Map<String,Object>> aggregationIterator;
 
     private ElasticParserUtil parserUtil;
 
-    public ElasticFeatureReader(ContentState contentState, SearchResponse response) {
-        this.state = contentState;
-        this.featureType = state.getFeatureType();
-        this.searchHitIterator = response.getHits().iterator();
-        this.builder = new SimpleFeatureBuilder(featureType);
-        this.parserUtil = new ElasticParserUtil();
-        this.maxScore = response.getHits().getMaxScore();
+    public ElasticFeatureReader(ContentState contentState, ElasticResponse response) {
+        this(contentState, response.getResults().getHits(), response.getAggregations(), response.getMaxScore());
     }
-    
-    public ElasticFeatureReader(ContentState contentState, Iterator<SearchHit> searchHitIterator) {
+
+    public ElasticFeatureReader(ContentState contentState, List<ElasticHit> hits, Map<String,ElasticAggregation> aggregations, float maxScore) {
         this.state = contentState;
         this.featureType = state.getFeatureType();
-        this.searchHitIterator = searchHitIterator;
+        this.searchHitIterator = hits.iterator();
         this.builder = new SimpleFeatureBuilder(featureType);
         this.parserUtil = new ElasticParserUtil();
-        this.maxScore = 0;
-    }    
+        this.maxScore = maxScore;
+
+        aggregationIterator = Collections.emptyIterator();
+        if (aggregations != null && !aggregations.isEmpty()) {
+            String aggregationName = aggregations.keySet().stream().findFirst().orElse(null);
+            if (aggregations.size() > 1) {
+                LOGGER.info("Result has multiple aggregations. Using " + aggregationName);
+            }
+            if (aggregations.get(aggregationName).getBuckets() != null) {
+                aggregationIterator = aggregations.get(aggregationName).getBuckets().iterator();
+            }
+        }
+    }
 
     @Override
     public SimpleFeatureType getFeatureType() {
@@ -66,7 +76,12 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
 
     @Override
     public SimpleFeature next() {
-        final SearchHit hit = searchHitIterator.next();
+        String id = searchHitIterator.hasNext() ? nextHit() : nextAggregation();
+        return builder.buildFeature(id);
+    }
+
+    private String nextHit() {
+        final ElasticHit hit = searchHitIterator.next();
         final SimpleFeatureType type = getFeatureType();
         final Map<String, Object> source = hit.getSource();
 
@@ -84,12 +99,7 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             final String name = descriptor.getType().getName().getLocalPart();
             final String sourceName = (String) descriptor.getUserData().get(FULL_NAME);
 
-            final SearchHitField field = hit.field(sourceName);
-            List<Object> values = null;
-            if (field != null) {
-                // hit field
-                values = field.values();
-            }
+            List<Object> values = hit.field(sourceName);
             if (values == null && source != null) {
                 // read field from source
                 values = parserUtil.readField(source, sourceName);
@@ -135,20 +145,22 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                     valueBuilder.append(value);
                 }
                 builder.set(name, valueBuilder.toString());
-            } else {
+            } else if (!name.equals("_aggregation")) {
                 builder.set(name, values);
             }
         }
 
-        final String typeName = state.getEntry().getTypeName();
-        final SimpleFeature feature;
-        feature = builder.buildFeature(typeName + "." + hit.getId());
-        return feature;
+        return state.getEntry().getTypeName() + "." + hit.getId();
+    }
+
+    private String nextAggregation() {
+        builder.set("_aggregation", aggregationIterator.next());
+        return null;
     }
 
     @Override
     public boolean hasNext() {
-        return searchHitIterator.hasNext();
+        return searchHitIterator.hasNext() || aggregationIterator.hasNext();
     }
 
     @Override

@@ -1,3 +1,19 @@
+/*
+ *    GeoTools - The Open Source Java GIS Toolkit
+ *    http://geotools.org
+ *
+ *    (C) 2002-2009, Open Source Geospatial Foundation (OSGeo)
+ *
+ *    This library is free software; you can redistribute it and/or
+ *    modify it under the terms of the GNU Lesser General Public
+ *    License as published by the Free Software Foundation;
+ *    version 2.1 of the License.
+ *
+ *    This library is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *    Lesser General Public License for more details.
+ */
 package mil.nga.giat.data.elasticsearch;
 
 import org.elasticsearch.common.unit.DistanceUnit;
@@ -33,7 +49,7 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             Object extraData) {
 
         super.visitDistanceSpatialOperator(filter, property, geometry, swapped, extraData);
-        
+
         getDelegate().filterBuilder = QueryBuilders.geoDistanceQuery(key)
                 .lat(lat)
                 .lon(lon)
@@ -50,7 +66,7 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             PropertyName property, Literal geometry, boolean swapped, Object extraData) {
 
         super.visitComparisonSpatialOperator(filter, property, geometry, swapped, extraData);
-        
+
         // if geography case, sanitize geometry first
         if(isCurrentGeography()) {
             if(isWorld(this.geometry)) {
@@ -88,7 +104,7 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             boolean swapped, Object extraData) {
 
         super.visitGeoPointBinarySpatialOperator(filter, e1, e2, swapped, extraData);
-        
+
         final Geometry geometry = delegate.currentGeometry;
 
         if (geometry instanceof Polygon &&
@@ -118,7 +134,7 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             getDelegate().filterBuilder = QueryBuilders.matchAllQuery();
         }
     }
-    
+
     private FilterToElastic2 getDelegate() {
         return (FilterToElastic2) delegate;
     }

@@ -16,14 +16,8 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,10 +56,6 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
 
     @Test
     public void testFactoryWithTransportClient() throws IOException {
-        // setup client for testing http connection params
-        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
-        String dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
-
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
 
