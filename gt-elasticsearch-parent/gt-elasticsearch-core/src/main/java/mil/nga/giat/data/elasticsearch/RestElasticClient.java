@@ -110,7 +110,7 @@ public class RestElasticClient implements ElasticClient {
         }
 
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("Request: " + requestBody);
+            LOGGER.fine("Elasticsearch request:\n" + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(requestBody));
         }
 
         return parseResponse(performRequest("POST", path, requestBody));

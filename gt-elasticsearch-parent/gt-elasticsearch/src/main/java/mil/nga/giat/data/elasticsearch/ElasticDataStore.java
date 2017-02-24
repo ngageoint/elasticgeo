@@ -67,7 +67,9 @@ public class ElasticDataStore extends ContentDataStore {
 
     private Integer scrollTime;
 
-    private Long maxBuckets;
+    private Long gridSize;
+
+    private Double gridThreshold;
 
     public ElasticDataStore(String searchHost, Integer hostPort, 
             String indexName, String searchIndices, String clusterName) throws IOException {
@@ -97,8 +99,6 @@ public class ElasticDataStore extends ContentDataStore {
 
         layerConfigurations = new ConcurrentHashMap<>();
         docTypes = new HashMap<>();
-
-        maxBuckets = (Long) ElasticDataStoreFactory.MAX_BUCKETS.getDefaultValue();
     }
 
     @Override
@@ -254,12 +254,20 @@ public class ElasticDataStore extends ContentDataStore {
         this.scrollTime = scrollTime;
     }
 
-    public Long getMaxBuckets() {
-        return maxBuckets;
+    public Long getGridSize() {
+        return gridSize;
     }
 
-    public void setMaxBuckets(Long maxBuckets) {
-        this.maxBuckets = maxBuckets;
+    public void setGridSize(Long gridSize) {
+        this.gridSize = gridSize;
+    }
+
+    public Double getGridThreshold() {
+        return gridThreshold;
+    }
+
+    public void setGridThreshold(Double gridThreshold) {
+        this.gridThreshold = gridThreshold;
     }
 
     public Map<String, ElasticLayerConfiguration> getLayerConfigurations() {

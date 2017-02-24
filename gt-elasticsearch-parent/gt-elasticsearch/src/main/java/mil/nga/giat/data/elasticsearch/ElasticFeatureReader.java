@@ -154,7 +154,12 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     }
 
     private String nextAggregation() {
-        builder.set("_aggregation", aggregationIterator.next());
+        final Map<String, Object> aggregation = aggregationIterator.next();
+        try {
+            builder.set("_aggregation", aggregation);
+        } catch (IllegalArgumentException e) {
+            LOGGER.warning("Unable to set aggregation. Try reloading layer.");
+        }
         return null;
     }
 

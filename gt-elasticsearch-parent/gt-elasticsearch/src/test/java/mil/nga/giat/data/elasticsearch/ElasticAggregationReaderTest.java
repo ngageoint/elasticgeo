@@ -35,10 +35,8 @@ public class ElasticAggregationReaderTest {
 
     @Before
     public void setup() throws SchemaException {
-        ContentEntry mockEntry = mock(ContentEntry.class);
-        when(mockEntry.getTypeName()).thenReturn("test");
         SimpleFeatureType featureType = DataUtilities.createType("test", "name:String,_aggregation:java.util.HashMap");
-        state = new ContentState(mockEntry);
+        state = new ContentState(null);
         state.setFeatureType(featureType);
         hits = new ArrayList<>();
         aggregations = new LinkedHashMap<>();

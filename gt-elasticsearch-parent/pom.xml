@@ -16,6 +16,7 @@
     <module>gt-elasticsearch2</module>
     <module>gt-elasticsearch5</module>
     <module>gt-elasticsearch</module>
+    <module>gt-elasticsearch-process</module>
   </modules>
   <build>
     <plugins>

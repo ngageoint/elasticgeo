@@ -70,6 +70,7 @@
                   <filter>
                     <artifact>*:*</artifact>
                     <excludes>
+                      <exclude>META-INF/maven/**</exclude>
                       <exclude>META-INF/*.SF</exclude>
                       <exclude>META-INF/*.DSA</exclude>
                       <exclude>META-INF/*.RSA</exclude>
@@ -95,6 +96,11 @@
       <artifactId>gt-elasticsearch</artifactId>
       <version>${project.version}</version>
       <classifier>es${elasticsearch.major.version}</classifier>
+    </dependency>
+    <dependency>
+      <groupId>mil.nga.giat</groupId>
+      <artifactId>gt-elasticsearch-process</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.geoserver</groupId>

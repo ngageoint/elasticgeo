@@ -22,7 +22,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public static final Param HOSTNAME = new Param("elasticsearch_host", String.class, "Elasticsearch host", false, "localhost");
 
     /** Cluster client port. **/
-    public static final Param HOSTPORT = new Param("elasticsearch_port", Integer.class, "Elasticsearch port", false, 9300);
+    public static final Param HOSTPORT = new Param("elasticsearch_port", Integer.class, 
+            "Elasticsearch port. Use HTTP (e.g. 9200) or transport (e.g. 9300) port based on the desired client type.", false, 9200);
 
     /** Index name. **/
     public static final Param INDEX_NAME = new Param("index_name", String.class, "Index defining type", true);
@@ -43,7 +44,10 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
 
     public static final Param SCROLL_TIME_SECONDS = new Param("scroll_time", Integer.class, "Time to keep the scroll open in seconds (ignored if scroll_enabled=false)", false, 120);
 
-    public static final Param MAX_BUCKETS = new Param("max_buckets", Long.class, "Maximum number of buckets hint for GeoHashGrid aggregations", false, 10000l);
+    public static final Param GRID_SIZE = new Param("grid_size", Long.class, "Hint for Geohash grid size (nrow*ncol)", false, 10000l);
+
+    public static final Param GRID_THRESHOLD = new Param("grid_threshold",  Double.class, 
+            "Geohash grid aggregation precision will be the minimum necessary to satisfy actual_grid_size/grid_size>grid_threshold", false, 0.05);
 
     protected static final Param[] PARAMS = {
             HOSTNAME,
@@ -56,7 +60,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             SCROLL_ENABLED,
             SCROLL_SIZE,
             SCROLL_TIME_SECONDS,
-            MAX_BUCKETS
+            GRID_SIZE,
+            GRID_THRESHOLD
     };
 
     protected static final String DISPLAY_NAME = "Elasticsearch";
@@ -119,7 +124,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));
         dataStore.setScrollSize(((Number)getValue(SCROLL_SIZE, params)).longValue());
         dataStore.setScrollTime((Integer)getValue(SCROLL_TIME_SECONDS, params));
-        dataStore.setMaxBuckets((Long) MAX_BUCKETS.lookUp(params));
+        dataStore.setGridSize((Long) GRID_SIZE.lookUp(params));
+        dataStore.setGridThreshold((Double) GRID_THRESHOLD.lookUp(params));
         return dataStore;
     }
 

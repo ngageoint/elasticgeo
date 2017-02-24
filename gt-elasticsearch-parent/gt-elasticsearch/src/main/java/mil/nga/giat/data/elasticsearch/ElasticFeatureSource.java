@@ -27,6 +27,8 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.sort.SortBy;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
+import com.vividsolutions.jts.geom.Envelope;
+
 /**
  * Provides access to a specific type within the Elasticsearch index described
  * by the associated data store.
@@ -191,11 +193,24 @@ public class ElasticFeatureSource extends ContentFeatureSource {
 
         if (filterToElastic.getAggregations() != null) {
             final Map<String, Map<String, Map<String, Object>>> aggregations = filterToElastic.getAggregations();
-            final ReferencedEnvelope envelope = (ReferencedEnvelope) query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, null);
-            final int precision = GeohashUtil.computePrecision(envelope, dataStore.getMaxBuckets());
+            final Envelope envelope = (Envelope) query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, null);
+            final long gridSize;
+            if (dataStore.getGridSize() != null) {
+                gridSize = dataStore.getGridSize();
+            } else {
+                gridSize = (Long) ElasticDataStoreFactory.GRID_SIZE.getDefaultValue();
+            }
+            final double gridThreshold;
+            if (dataStore.getGridThreshold() != null) {
+                gridThreshold = dataStore.getGridThreshold();
+            } else {
+                gridThreshold = (Double) ElasticDataStoreFactory.GRID_THRESHOLD.getDefaultValue();
+            }
+            final int precision = GeohashUtil.computePrecision(envelope, gridSize, gridThreshold);
             LOGGER.fine("Updating GeoHash grid aggregation precision to " + precision);
             GeohashUtil.updateGridAggregationPrecision(aggregations, precision);
             searchRequest.setAggregations(aggregations);
+            searchRequest.setSize(0);
         }
 
         return searchRequest;
