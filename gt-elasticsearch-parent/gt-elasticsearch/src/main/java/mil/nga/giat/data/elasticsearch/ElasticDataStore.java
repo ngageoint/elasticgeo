@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.elasticsearch.common.joda.Joda;
-import org.geotools.data.FeatureReader;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
 import org.geotools.data.store.ContentDataStore;
@@ -23,8 +22,6 @@ import org.geotools.data.store.ContentEntry;
 import org.geotools.data.store.ContentFeatureSource;
 import org.geotools.feature.NameImpl;
 import org.geotools.util.logging.Logging;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.Name;
 
 import com.vividsolutions.jts.geom.Geometry;
@@ -126,12 +123,6 @@ public class ElasticDataStore extends ContentDataStore {
         featureSource.getEntry().getState(Transaction.AUTO_COMMIT).flush();
 
         return featureSource;
-    }
-
-    @Override
-    public FeatureReader<SimpleFeatureType, SimpleFeature> getFeatureReader(Query query, 
-            Transaction tx) throws IOException {
-        return super.getFeatureReader(query, tx);
     }
 
     public List<ElasticAttribute> getElasticAttributes(Name layerName) throws IOException {

@@ -4,11 +4,13 @@
  */
 package mil.nga.giat.process.elasticsearch;
 
+import java.util.Map;
+
 public class BasicGeoHashGrid extends GeoHashGrid {
 
     @Override
-    public void populate() {
-        buckets.stream().forEach(bucket -> updateCell((String) bucket.get("key"), (Number) bucket.get("doc_count")));
+    public Number computeCellValue(Map<String,Object> bucket) {
+        return (Number) bucket.get("doc_count");
     }
 
 }

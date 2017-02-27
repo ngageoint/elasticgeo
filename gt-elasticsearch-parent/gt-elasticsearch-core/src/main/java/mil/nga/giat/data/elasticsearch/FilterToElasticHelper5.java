@@ -145,5 +145,10 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
     private FilterToElastic5 getDelegate() {
         return (FilterToElastic5) delegate;
     }
+    
+    public static void main(String[] args) {
+        System.out.println(QueryBuilders.geoBoundingBoxQuery("test")
+        .setCorners(90,-180,-90,180));
+    }
 
 }

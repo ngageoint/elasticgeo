@@ -10,8 +10,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -102,7 +105,9 @@ public class RestElasticClient implements ElasticClient {
 
         if (request.getQuery() != null) {
             // TODO: Convert QueryBuilder directly to map or use string directly to avoid unnecessary conversions
-            requestBody.put("query", mapper.readValue(request.getQuery().toString(), new TypeReference<Map<String, Object>>() {}));
+            final Map<String,Object> query = mapper.readValue(request.getQuery().toString(), new TypeReference<Map<String, Object>>() {});
+            makeCompatQuery2(query);
+            requestBody.put("query", query);
         }
 
         if (request.getAggregations() != null) {
@@ -162,6 +167,28 @@ public class RestElasticClient implements ElasticClient {
     @Override
     public void close() throws IOException {
         client.close();
+    }
+
+    private void makeCompatQuery2(final Map<String,Object> data) {
+        // validation_method and ignore_unmapped not supported in 2.x
+        for (final String parent : new String[] {"geo_polygon", "geo_distance", "geo_bounding_box"}) {
+            removeMapping(parent, "validation_method", data, null);
+            removeMapping(parent, "ignore_unmapped", data, null);
+            removeMapping(parent, "boost", data, null);
+            removeMapping(parent, "type", data, null);
+        }
+    }
+
+    public static void removeMapping(String parent, String key, Map<String,Object> data, String currentParent) {
+        Iterator<Entry<String, Object>> it = data.entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<String, Object> entry = it.next();
+            if (Objects.equals(currentParent, parent) && entry.getKey().equals(key)) {
+                it.remove();
+            } else if (entry.getValue() instanceof Map) {
+                removeMapping(parent, key, (Map<String,Object>) entry.getValue(), entry.getKey());
+            }
+        }
     }
 
 }

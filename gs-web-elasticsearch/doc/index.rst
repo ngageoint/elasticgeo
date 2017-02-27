@@ -1,5 +1,5 @@
-Elasticsearch Data Store
-========================
+Elasticsearch GeoServer Data Store
+==================================
 
 Elasticsearch is a popular distributed search and analytics engine that enables complex search features in near real-time. Default field type mappings support string, numeric, boolean and date types and allow complex, hierarchical documents. Custom field type mappings can be defined for geospatial document fields. The ``geo_point`` type supports point geometries that can be specified through a coordinate string, geohash or coordinate array. The ``geo_shape`` type supports Point, LineString,  Polygon, MultiPoint, MultiLineString, MultiPolygon and GeometryCollection GeoJSON types as well as envelope and circle types. Custom options allow configuration of the type and precision of the spatial index.
 
@@ -24,18 +24,19 @@ https://github.com/ngageoint/elasticgeo/releases
 Installation
 ------------
 
-**Warning: Ensure GeoTools, GeoServer and Elasticsearch versions in the plugin configuration are consistent with your environment**
+**Warning: Ensure GeoTools and GeoServer versions in the plugin configuration are consistent with your environment. If using the transport client then also ensure Elasticsearch version is consistent with the server.**
 
-Pre-compiled Binaries
+Plugins built for Elasticsearch 5.x should be compatible with Elasticsearch 2.x servers when the default REST client is used. If any compatibility issues are observed using the REST client please create an issue.
+
+Pre-compiled binaries
 ^^^^^^^^^^^^^^^^^^^^^
 
 Unpack zipfile and copy plugin file(s) to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer. If installing the plugin for Elasticsearch 2.x, remove the old Guava jar (e.g. ``guava-17.0.jar``).
 
-
-Building from Source
+Building from source
 ^^^^^^^^^^^^^^^^^^^^
 
-Build and install a local copy. By default the plugin will be compatible with Elasticsearch 5.x. For compatibility with Elasticsearch 2.x, include the ``elasticsearch2`` Maven profile when building::
+Build and install a local copy. By default the plugin will be compatible with Elasticsearch 5.x (and 2.x via the REST client). For compatibility with Elasticsearch 2.x (via the transport client), include the ``elasticsearch2`` Maven profile when building::
 
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo
@@ -161,7 +162,7 @@ Requests involving spatial filter operators not natively supported by Elasticsea
 Native queries
 ^^^^^^^^^^^^^^
 
-Native Elasticsearch queries can be applied in WFS/WMS feature requests by including ``q:{query_body}`` or ``f:{query_body}`` in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the query is combined with the query derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
+Native Elasticsearch queries can be applied in WFS/WMS feature requests by including the ``q:{query_body}`` or ``f:{query_body}`` key:value pairs in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the query is combined with the query derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
 
 Examples
 ^^^^^^^^
@@ -194,7 +195,7 @@ Aggregations
 
 **Currently supported only when using the REST client with Elasticsearch 5.x**
 
-Elasticsearch aggregations are supported through WFS/WMS requests by including ``a:{aggregation_body}`` in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information)::
+Elasticsearch aggregations are supported through WFS/WMS requests by including the ``a:{aggregation_body}`` key:value pair in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information)::
 
     http://localhost:8080/geoserver/test/ows?service=WFS&version=1.0.0&request=GetFeature
          &typeName=test:active&bbox=0.0,0.0,24.0,44.0
@@ -207,7 +208,7 @@ Geohash grid aggregations
 
 Geohash grid aggregation support includes dynamic precision updating and a custom rendering transformation for visualization. Geohash grid aggregation precision is updated dynamically to approximate the specified ``grid_size`` based on current bbox extent and the additional ``grid_threshold`` parameter as described above.
 
-Geohash grid aggregation visualization is supported in WMS requests through a custom rendering transformation, ``vec:GeoHashGrid``, which translates aggregation response data into a raster for display. By default raster values will correspond to the aggregation bucket ``doc_count`` values. The following shows an example GeoServer style that uses the GeoHashGrid rendering transformation::
+Geohash grid aggregation visualization is supported in WMS requests through a custom rendering transformation, ``vec:GeoHashGrid``, which translates aggregation response data into a raster for display. By default raster values correspond to the aggregation bucket ``doc_count``. The following shows an example GeoServer style that uses the GeoHashGrid rendering transformation::
 
    <StyledLayerDescriptor version="1.0.0"
        xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd"
@@ -290,6 +291,34 @@ Troubleshooting
 * Geometry property name in the SLD RasterSymbolizer must be a valid geometry property in the layer
 * Layers created with earlier (pre-aggregation support) versions of the plugin may need to be reloaded. In this case the layer must be removed and re-added to GeoServer (e.g. a feature type reload will not be sufficient).
 * Aggregations are only supported when using the REST client with Elasticsearch 5.x
+
+Implementing a custom geohash grid computer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default the raster values computed in the geohash grid aggregation rendering transformation correspond to the top level ``doc_count``. Adding an additional strategy for computing the raster values from bucket data currently requires source code updates to the ``gt-elasticsearch-process`` module as described below.
+
+First create a custom implementation of ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` and provide an implementation of the ``computeCellValue`` method, which takes the raw bucket data and returns the raster value. For example the default basic implementation simply returns the doc_count::
+
+    public class BasicGeoHashGrid extends GeoHashGrid {
+        @Override
+        public Number computeCellValue(Map<String,Object> bucket) {
+            return (Number) bucket.get("doc_count");
+        }
+    }
+
+Then update ``mil.nga.giat.process.elasticsearch.GeoHashGridProcess`` and add a new entry to the Strategy enum to point to the custom implementation. 
+
+After deploying the customized plugin the new geohash grid computer can be used by updating the ``gridStrategy`` parameter in the GeoServer style::
+
+   <StyledLayerDescriptor version="1.0.0"
+       ...
+           <Transformation>
+             <ogc:Function name="vec:GeoHashGrid">
+               ...
+               <ogc:Function name="parameter">
+                 <ogc:Literal>gridStrategy</ogc:Literal>
+                 <ogc:Literal>NewName</ogc:Literal>
+               </ogc:Function>
 
 Notes and Known Issues
 ----------------------

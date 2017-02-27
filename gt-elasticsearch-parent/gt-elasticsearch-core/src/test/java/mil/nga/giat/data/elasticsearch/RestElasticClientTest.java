@@ -20,6 +20,7 @@ import static org.mockito.Mockito.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -230,6 +231,37 @@ public class RestElasticClientTest {
     public void testClose() throws IOException {
         client.close();
         verify(mockRestClient).close();
+    }
+
+    @Test
+    public void testRemoveMapping() {
+        Map<String,Object> data = createMap("key", "value");
+        RestElasticClient.removeMapping(null, "key", data, null);
+        assertTrue(data.isEmpty());
+
+        data = createMap("key", "value", "parent", ImmutableMap.of("key", "value"));
+        RestElasticClient.removeMapping(null, "key", data, null);
+        assertEquals(data, ImmutableMap.of("parent", ImmutableMap.of("key", "value")));
+
+        data = ImmutableMap.of("key", "value", "parent", createMap("key", 10));
+        RestElasticClient.removeMapping("parent", "key", data, null);
+        assertEquals(data, ImmutableMap.of("key", "value", "parent", new HashMap<>()));
+
+        data = new HashMap<>();
+        RestElasticClient.removeMapping(null, "key", data, null);
+        assertTrue(data.isEmpty());
+
+        data = ImmutableMap.of("parent", new HashMap<>());
+        RestElasticClient.removeMapping("parent", "key", data, null);
+        assertEquals(data, ImmutableMap.of("parent", new HashMap<>()));
+    }
+
+    private Map<String,Object> createMap(Object... params) {
+        Map<String,Object> data = new HashMap<>();
+        for (int i=0; i<params.length-1; i+=2) {
+            data.put((String) params[i], params[i+1]);
+        }
+        return data;
     }
 
     public class JsonByteArrayEntityMatcher extends ArgumentMatcher<ByteArrayEntity> {

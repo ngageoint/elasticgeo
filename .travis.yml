@@ -4,14 +4,10 @@ jdk:
 - oraclejdk8
 env:
   matrix:
-  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
-  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.2' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
-  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
-  - GEOTOOLS_VERSION='15.3' GEOSERVER_VERSION='2.9.3' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.1' ES_PROFILE_VERSION=5
-  - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
-  - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.2' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
-  - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
-  - GEOTOOLS_VERSION='16.1' GEOSERVER_VERSION='2.10.1' ES2_VERSION='2.4.4' ES2_LUCENE_VERSION='5.5.2' ES5_VERSION='5.1.1' ES_PROFILE_VERSION=5
+  - GEOTOOLS_VERSION='15.4' GEOSERVER_VERSION='2.9.4' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
+  - GEOTOOLS_VERSION='15.4' GEOSERVER_VERSION='2.9.4' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
 cache:
   directories:
   - "$HOME/.m2"
@@ -19,7 +15,6 @@ install:
 - sed -i 's/<geotools.version>.*<\/geotools.version>/<geotools.version>'${GEOTOOLS_VERSION}'<\/geotools.version>/g' pom.xml
 - sed -i 's/<geoserver.version>.*<\/geoserver.version>/<geoserver.version>'${GEOSERVER_VERSION}'<\/geoserver.version>/g' pom.xml
 - sed -i 's/<elasticsearch2.version>.*<\/elasticsearch2.version>/<elasticsearch2.version>'${ES2_VERSION}'<\/elasticsearch2.version>/g' pom.xml
-- sed -i 's/<elasticsearch2.lucene.version>.*<\/elasticsearch2.lucene.version>/<elasticsearch2.lucene.version>'${ES2_LUCENE_VERSION}'<\/elasticsearch2.lucene.version>/g' pom.xml
 - sed -i 's/<elasticsearch5.version>.*<\/elasticsearch5.version>/<elasticsearch5.version>'${ES5_VERSION}'<\/elasticsearch5.version>/g' pom.xml
 - mvn install -DskipTests=true -Pelasticsearch${ES_PROFILE_VERSION}
 script:

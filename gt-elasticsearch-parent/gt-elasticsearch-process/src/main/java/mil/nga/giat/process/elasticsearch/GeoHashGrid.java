@@ -72,12 +72,12 @@ public abstract class GeoHashGrid {
         final int numRow = (int) Math.round((envelope.getMaxY()-envelope.getMinY())/cellHeight+1);
         grid = new float[numRow][numCol];
 
-        populate();
+        buckets.stream().forEach(bucket -> updateCell((String) bucket.get("key"), computeCellValue(bucket)));
 
         return this;
     }
 
-    public abstract void populate();
+    public abstract Number computeCellValue(Map<String,Object> bucket);
 
     protected boolean updateCell(String geohash, Number value) {
         final boolean valid;
