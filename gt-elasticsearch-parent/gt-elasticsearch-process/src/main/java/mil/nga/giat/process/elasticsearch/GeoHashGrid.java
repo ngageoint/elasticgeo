@@ -4,6 +4,7 @@
  */
 package mil.nga.giat.process.elasticsearch;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.operation.TransformException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.geo.GeoHash;
 import com.github.davidmoten.geo.LatLong;
 import com.vividsolutions.jts.geom.Envelope;
@@ -33,8 +36,6 @@ public abstract class GeoHashGrid {
 
     private static final int DEFAULT_PRECISION = 2;
 
-    protected List<Map<String, Object>> buckets;
-
     private double cellWidth;
 
     private double cellHeight;
@@ -42,6 +43,8 @@ public abstract class GeoHashGrid {
     private Envelope envelope;
 
     private ReferencedEnvelope boundingBox;
+
+    private List<Map<String, Object>> buckets;
 
     private float[][] grid;
 
@@ -103,12 +106,20 @@ public abstract class GeoHashGrid {
     }
 
     private List<Map<String, Object>> readFeatures(SimpleFeatureCollection features) {
+        final ObjectMapper mapper = new ObjectMapper();
+
         final List<Map<String, Object>> buckets = new ArrayList<>();
         try (SimpleFeatureIterator iterator = features.features()) {
             while (iterator.hasNext()) {
                 final SimpleFeature feature = iterator.next();
                 if (feature.getAttribute("_aggregation") != null) {
-                    buckets.add((Map<String,Object>) feature.getAttribute("_aggregation"));
+                    final byte[] data = (byte[]) feature.getAttribute("_aggregation");
+                    try {
+                        final Map<String,Object> aggregation = mapper.readValue(data, new TypeReference<Map<String,Object>>() {});
+                        buckets.add(aggregation);
+                    } catch (IOException e) {
+                        LOGGER.fine("Failed to parse aggregation value: " + e);
+                    }
                 }
             }
         }

@@ -4,6 +4,7 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vividsolutions.jts.geom.Geometry;
 
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
@@ -17,6 +18,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -36,6 +38,8 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     private final SimpleFeatureType featureType;
 
     private final float maxScore;
+
+    private final ObjectMapper mapper;
 
     private SimpleFeatureBuilder builder;
 
@@ -57,16 +61,17 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
         this.parserUtil = new ElasticParserUtil();
         this.maxScore = maxScore;
 
-        aggregationIterator = Collections.emptyIterator();
+        this.aggregationIterator = Collections.emptyIterator();
         if (aggregations != null && !aggregations.isEmpty()) {
             String aggregationName = aggregations.keySet().stream().findFirst().orElse(null);
             if (aggregations.size() > 1) {
                 LOGGER.info("Result has multiple aggregations. Using " + aggregationName);
             }
             if (aggregations.get(aggregationName).getBuckets() != null) {
-                aggregationIterator = aggregations.get(aggregationName).getBuckets().iterator();
+                this.aggregationIterator = aggregations.get(aggregationName).getBuckets().iterator();
             }
         }
+        this.mapper = new ObjectMapper();
     }
 
     @Override
@@ -156,8 +161,9 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     private String nextAggregation() {
         final Map<String, Object> aggregation = aggregationIterator.next();
         try {
-            builder.set("_aggregation", aggregation);
-        } catch (IllegalArgumentException e) {
+            final byte[] data = mapper.writeValueAsBytes(aggregation);
+            builder.set("_aggregation", data);
+        } catch (IOException e) {
             LOGGER.warning("Unable to set aggregation. Try reloading layer.");
         }
         return null;

@@ -37,6 +37,16 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.github.davidmoten</groupId>
       <artifactId>geo</artifactId>
       <version>0.7.4</version>

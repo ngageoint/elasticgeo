@@ -17,10 +17,8 @@ import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.junit.Before;
 import org.junit.Test;
-import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
-import org.opengis.referencing.operation.TransformException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.geo.GeoHash;
 import com.github.davidmoten.geo.LatLong;
 import com.google.common.collect.ImmutableList;
@@ -33,15 +31,18 @@ public class GeoHashGridTest {
 
     private GeoHashGrid geohashGrid;
 
+    private ObjectMapper mapper;
+
     @Before
     public void setup() {
         this.geohashGrid = new BasicGeoHashGrid();
+        this.mapper = new ObjectMapper();
     }
 
     @Test
-    public void testGeoHashGrid() throws NoSuchAuthorityCodeException, TransformException, FactoryException {
+    public void testGeoHashGrid() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10))
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10)))
                 ));
         ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,DefaultGeographicCRS.WGS84);
         geohashGrid.initalize(envelope, features);
@@ -59,9 +60,9 @@ public class GeoHashGridTest {
     }
 
     @Test
-    public void testGeoHashGridWithProjectedEnvelope() throws NoSuchAuthorityCodeException, TransformException, FactoryException {
+    public void testGeoHashGridWithProjectedEnvelope() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10))
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10)))
                 ));
         ReferencedEnvelope envelope = new ReferencedEnvelope(-19926188.85,19926188.85,-30240971.96,30240971.96, CRS.decode("EPSG:3857"));
         geohashGrid.initalize(envelope, features);
@@ -70,7 +71,7 @@ public class GeoHashGridTest {
     }
 
     @Test
-    public void testGeoHashGridWithNoFeatures() throws NoSuchAuthorityCodeException, TransformException, FactoryException {
+    public void testGeoHashGridWithNoFeatures() throws Exception {
         features = new DefaultFeatureCollection();
         ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,CRS.decode("EPSG:4326"));
         geohashGrid.initalize(envelope, features);
@@ -78,7 +79,7 @@ public class GeoHashGridTest {
     }
 
     @Test
-    public void testGeoHashGridWithNoAggregations() throws NoSuchAuthorityCodeException, TransformException, FactoryException {
+    public void testGeoHashGridWithNoAggregations() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
                 ImmutableMap.of("aString", UUID.randomUUID().toString())
                 ));
@@ -88,9 +89,9 @@ public class GeoHashGridTest {
     }
 
     @Test
-    public void testGeoHashGridWithNoDocCount() throws NoSuchAuthorityCodeException, TransformException, FactoryException {
+    public void testGeoHashGridWithNoDocCount() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1)))
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1))))
                 ));
         ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,CRS.decode("EPSG:4326"));
         geohashGrid.initalize(envelope, features);
@@ -98,9 +99,9 @@ public class GeoHashGridTest {
     }
 
     @Test
-    public void testGeoHashGridWithInvalidGeohash() throws NoSuchAuthorityCodeException, TransformException, FactoryException {
+    public void testGeoHashGridWithInvalidGeohash() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key","invalid","doc_count",10))
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key","invalid","doc_count",10)))
                 ));
         ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,CRS.decode("EPSG:4326"));
         geohashGrid.initalize(envelope, features);

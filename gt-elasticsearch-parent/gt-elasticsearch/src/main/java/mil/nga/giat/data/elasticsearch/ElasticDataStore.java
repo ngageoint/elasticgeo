@@ -145,7 +145,7 @@ public class ElasticDataStore extends ContentDataStore {
                 add(elasticAttributes, "_type", "string", mapping, false);
                 add(elasticAttributes, "_score", "float", mapping, false);
                 add(elasticAttributes, "_relative_score", "float", mapping, false);
-                add(elasticAttributes, "_aggregation", "map", mapping, false);
+                add(elasticAttributes, "_aggregation", "binary", mapping, false);
 
                 walk(elasticAttributes, mapping, "", false, false);
 
@@ -370,8 +370,8 @@ public class ElasticDataStore extends ContentDataStore {
                 elasticAttribute.setDateFormat(format);
                 binding = Date.class;
                 break;
-            case "map":
-                binding = HashMap.class;
+            case "binary":
+                binding = byte[].class;
                 break;
             default:
                 binding = null;

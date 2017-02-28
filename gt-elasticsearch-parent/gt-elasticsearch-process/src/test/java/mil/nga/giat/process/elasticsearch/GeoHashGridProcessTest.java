@@ -18,6 +18,8 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.operation.TransformException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.davidmoten.geo.GeoHash;
 import com.github.davidmoten.geo.LatLong;
 import com.google.common.collect.ImmutableList;
@@ -31,11 +33,12 @@ public class GeoHashGridProcessTest {
     private double fineDelta;
 
     @Before
-    public void setup() {
+    public void setup() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10)),
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(0.1,0.1),1),"doc_count",10)),
-                ImmutableMap.of("_aggregation", ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(89.9,179.9),1),"doc_count",10))
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10))),
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(0.1,0.1),1),"doc_count",10))),
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(89.9,179.9),1),"doc_count",10)))
                 ));
         fineDelta = 0.45;
     }
