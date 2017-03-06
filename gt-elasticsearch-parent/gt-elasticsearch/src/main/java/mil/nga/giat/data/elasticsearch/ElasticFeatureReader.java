@@ -50,7 +50,7 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     private ElasticParserUtil parserUtil;
 
     public ElasticFeatureReader(ContentState contentState, ElasticResponse response) {
-        this(contentState, response.getResults().getHits(), response.getAggregations(), response.getMaxScore());
+        this(contentState, response.getHits(), response.getAggregations(), response.getMaxScore());
     }
 
     public ElasticFeatureReader(ContentState contentState, List<ElasticHit> hits, Map<String,ElasticAggregation> aggregations, float maxScore) {

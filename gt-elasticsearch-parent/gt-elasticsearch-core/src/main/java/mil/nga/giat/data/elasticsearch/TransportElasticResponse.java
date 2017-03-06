@@ -29,20 +29,25 @@ public class TransportElasticResponse extends ElasticResponse {
     }
 
     @Override
-    public Float getMaxScore() {
+    public float getMaxScore() {
         return response.getHits().getMaxScore();
     }
 
     @Override
     public ElasticResults getResults() {
-        // TODO Might prefer a wrapper iterator here but scroll reader uses sublist to enforce pagination
         final ElasticResults elasticHits = new ElasticResults();
+        elasticHits.setHits(getHits());
+        return elasticHits;
+    }
+
+    @Override
+    public List<ElasticHit> getHits() {
+        // TODO Might prefer a wrapper iterator here but scroll reader uses sublist to enforce pagination
         final List<ElasticHit> hits = new ArrayList<>();
         for (final SearchHit hit : response.getHits().getHits()) {
             hits.add(new TransportElasticHit(hit));
         }
-        elasticHits.setHits(hits);
-        return elasticHits;
+        return hits;
     }
 
     @Override

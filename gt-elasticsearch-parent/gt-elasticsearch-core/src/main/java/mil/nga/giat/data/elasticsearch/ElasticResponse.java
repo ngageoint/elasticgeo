@@ -4,6 +4,8 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -44,16 +46,44 @@ public class ElasticResponse {
         this.scrollId = scrollId;
     }
 
+    public List<ElasticHit> getHits() {
+        final List<ElasticHit> hits;
+        if (results != null) {
+            hits = results.getHits();
+        } else {
+            hits = new ArrayList<>();
+        }
+        return hits;
+    }
+
     public int getNumHits() {
-        return results.getHits().size();
+        final int numHits;
+        if (results != null) {
+            numHits = results.getHits().size();
+        } else {
+            numHits = 0;
+        }
+        return numHits;
     }
 
     public long getTotalNumHits() {
-        return results.getTotal();
+        final long total;
+        if (results != null && results.getTotal() != null) {
+            total = results.getTotal();
+        } else {
+            total = 0l;
+        }
+        return total;
     }
 
-    public Float getMaxScore() {
-        return results.getMaxScore();
+    public float getMaxScore() {
+        final float maxScore;
+        if (results != null && results.getMaxScore() != null) {
+            maxScore = results.getMaxScore();
+        } else {
+            maxScore = 0f;
+        }
+        return maxScore;
     }
 
 }

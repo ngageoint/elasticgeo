@@ -33,7 +33,7 @@ public class ElasticResponseTest {
     @Test
     public void testNullMaxScore() throws IOException {
         ElasticResponse response = mapper.readValue("{\"hits\":{}}", ElasticResponse.class);
-        assertNull(response.getMaxScore());
+        assertEquals(0, response.getMaxScore(), 1e-9);
     }
 
     @Test

@@ -12,6 +12,7 @@ import org.mockito.ArgumentMatcher;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -254,6 +255,10 @@ public class RestElasticClientTest {
         data = ImmutableMap.of("parent", new HashMap<>());
         RestElasticClient.removeMapping("parent", "key", data, null);
         assertEquals(data, ImmutableMap.of("parent", new HashMap<>()));
+
+        data = createMap("key", ImmutableList.of(ImmutableMap.of("key", "value"), ImmutableMap.of("key","value","parent", createMap("key","value","key2","value2"))));
+        RestElasticClient.removeMapping("parent", "key", data, null);
+        assertEquals(data, createMap("key", ImmutableList.of(ImmutableMap.of("key", "value"), ImmutableMap.of("key","value","parent", createMap("key2","value2")))));
     }
 
     private Map<String,Object> createMap(Object... params) {
