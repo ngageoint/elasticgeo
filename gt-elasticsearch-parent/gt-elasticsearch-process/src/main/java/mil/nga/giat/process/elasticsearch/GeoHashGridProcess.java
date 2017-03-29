@@ -20,7 +20,7 @@ public class GeoHashGridProcess implements VectorProcess {
 
     public enum Strategy {
 
-        BASIC(BasicGeoHashGrid.class);
+        BASIC(BasicGeoHashGrid.class), METRIC(MetricGeoHashGrid.class);
 
         private Class<? extends GeoHashGrid> clazz;
 
