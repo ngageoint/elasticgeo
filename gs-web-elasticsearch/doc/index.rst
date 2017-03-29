@@ -292,8 +292,64 @@ Troubleshooting
 * Layers created with earlier (pre-aggregation support) versions of the plugin may need to be reloaded. In this case the layer must be removed and re-added to GeoServer (e.g. a feature type reload will not be sufficient).
 * Aggregations are only supported when using the REST client with Elasticsearch 5.x
 
-Implementing a custom geohash grid computer
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Grid Strategy
+^^^^^^^^^^^^^
+The ``gridStrategy`` parameter identifies the ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` implemenation that will be used to convert each geohashgrid bucket into a raster value (number).
+
+* ``basic``: returns top level ``doc_count``.
+
+    Example Aggregation::
+    
+      {
+        "agg": {
+          "geohash_grid": {
+            "field": "geo"
+          }
+        }
+      }
+    
+   Example bucket::
+ 
+     {
+       "key" : "xv",
+       "doc_count" : 1
+     }
+  
+  Raster value: ``1``
+
+* ``metric``: returns metric value.
+
+    Example Aggregation::
+    
+      {
+        "agg": {
+          "geohash_grid": {
+            "field": "geo"
+          },
+          "aggs": {
+            "metric": {
+              "max": {
+                "field": "magnitude"
+              }
+            }
+          }
+        }
+      }
+
+    Example bucket::
+ 
+      {
+        "key" : "xv",
+        "doc_count" : 1,
+        "metric" : {
+          "value" : 4.9
+        }
+      }
+    
+    Raster value: ``4.9``
+
+Implementing a custom Grid Strateg
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default the raster values computed in the geohash grid aggregation rendering transformation correspond to the top level ``doc_count``. Adding an additional strategy for computing the raster values from bucket data currently requires source code updates to the ``gt-elasticsearch-process`` module as described below.
 
