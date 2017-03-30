@@ -66,7 +66,6 @@ public class GeoHashGridProcess implements VectorProcess {
             final GridCoverage2D croppedCoverage = GridCoverageUtil.crop(scaledCoverage, argOutputEnv);
             return GridCoverageUtil.scale(croppedCoverage, argOutputWidth, argOutputHeight);
         } catch (IllegalArgumentException iae) {
-            iae.printStackTrace();
             return null;
         } catch (Exception e) {
             throw new ProcessException(e);
