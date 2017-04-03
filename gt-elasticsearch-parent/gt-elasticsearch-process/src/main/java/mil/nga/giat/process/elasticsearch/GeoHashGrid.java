@@ -36,6 +36,10 @@ public abstract class GeoHashGrid {
 
     private static final int DEFAULT_PRECISION = 2;
 
+    public static final String BUCKET_NAME_KEY = "key";
+    public static final String BUCKETS_KEY = "buckets";
+    public static final String DOC_COUNT_KEY = "doc_count";
+
     private double cellWidth;
 
     private double cellHeight;
@@ -142,6 +146,58 @@ public abstract class GeoHashGrid {
         return geohash != null && GeoHash.encodeHash(GeoHash.decodeHash(geohash), geohash.length()).equals(geohash);
     }
 
+    protected String pluckBucketName(Map<String,Object> bucket) {
+        if (!bucket.containsKey(BUCKET_NAME_KEY)) {
+          LOGGER.warning("Unable to pluck key, bucket does not contain required field:" + BUCKET_NAME_KEY);
+          throw new IllegalArgumentException();
+        }
+        return (String) bucket.get(BUCKET_NAME_KEY);
+    }
+    
+    protected Number pluckDocCount(Map<String,Object> bucket) {
+        if (!bucket.containsKey(DOC_COUNT_KEY)) {
+            LOGGER.warning("Unable to pluck document count, bucket does not contain required key:" + DOC_COUNT_KEY);
+            throw new IllegalArgumentException();
+        }
+        return (Number) bucket.get(DOC_COUNT_KEY);
+    }
+    
+    protected Number pluckMetricValue(Map<String,Object> bucket, String metricKey, String valueKey) {
+        Number value;
+        if (null == metricKey) {
+            value = pluckDocCount(bucket);
+        } else {
+            if (!bucket.containsKey(metricKey)) {
+                LOGGER.warning("Unable to pluck metric, bucket does not contain required key:" + metricKey);
+                throw new IllegalArgumentException();
+            }
+            Map<String,Object> metric = (Map<String,Object>) bucket.get(metricKey);
+            if (!metric.containsKey(valueKey)) {
+                LOGGER.warning("Unable to pluck value, metric does not contain required key:" + valueKey);
+                throw new IllegalArgumentException();
+            }
+            value = (Number) metric.get(valueKey);
+        }
+        return value;
+    }
+    
+    protected List<Map<String,Object>> pluckAggBuckets(Map<String,Object> parentBucket, String aggKey) {
+        if (!parentBucket.containsKey(aggKey)) {
+          LOGGER.warning("Unable to pluck aggregation results, parent bucket does not contain required key:" + aggKey);
+          throw new IllegalArgumentException();
+        }
+        Map<String,Object> aggResults = (Map<String,Object>) parentBucket.get(aggKey);
+        if (!aggResults.containsKey(BUCKETS_KEY)) {
+          LOGGER.warning("Unable to pluck buckets, aggregation results bucket does not contain required key:" + BUCKETS_KEY);
+          throw new IllegalArgumentException();
+        }
+        return (List<Map<String,Object>>) aggResults.get(BUCKETS_KEY);
+    }
+
+    public void setParams(List<String> params) {
+        //ignore params
+    }
+    
     public double getCellWidth() {
         return cellWidth;
     }

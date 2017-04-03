@@ -4,6 +4,8 @@
  */
 package mil.nga.giat.process.elasticsearch;
 
+import java.util.List;
+
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
 import org.geotools.data.simple.SimpleFeatureCollection;
@@ -20,7 +22,9 @@ public class GeoHashGridProcess implements VectorProcess {
 
     public enum Strategy {
 
-        BASIC(BasicGeoHashGrid.class), METRIC(MetricGeoHashGrid.class);
+        BASIC(BasicGeoHashGrid.class),  
+        METRIC(MetricGeoHashGrid.class),
+        NESTED_AGG(NestedAggGeoHashGrid.class);
 
         private Class<? extends GeoHashGrid> clazz;
 
@@ -42,7 +46,8 @@ public class GeoHashGridProcess implements VectorProcess {
 
             // process parameters
             @DescribeParameter(name = "pixelsPerCell", description = "Resolution used for upsampling (in pixels). Default = 1", defaultValue="1", min = 1) Integer argPixelsPerCell,
-            @DescribeParameter(name = "gridStrategy", description = "GeoHash grid strategy", defaultValue="Basic", min = 1) String argStrategy,
+            @DescribeParameter(name = "gridStrategy", description = "GeoHash grid strategy", defaultValue="Basic", min = 1) String gridStrategy,
+            @DescribeParameter(name = "gridStrategyArgs", description = "grid strategy arguments", min = 0) List<String> gridStrategyArgs,
 
             // output image parameters
             @DescribeParameter(name = "outputBBOX", description = "Bounding box of the output") ReferencedEnvelope argOutputEnv,
@@ -53,7 +58,8 @@ public class GeoHashGridProcess implements VectorProcess {
 
         try {
             // construct and populate grid
-            final GeoHashGrid geoHashGrid = Strategy.valueOf(argStrategy.toUpperCase()).createNewInstance();
+            final GeoHashGrid geoHashGrid = Strategy.valueOf(gridStrategy.toUpperCase()).createNewInstance();
+            geoHashGrid.setParams(gridStrategyArgs);
             geoHashGrid.initalize(argOutputEnv, obsFeatures);
             // convert to grid coverage
             final GridCoverage2D nativeCoverage = geoHashGrid.toGridCoverage2D();
