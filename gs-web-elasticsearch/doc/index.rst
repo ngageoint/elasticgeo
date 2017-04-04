@@ -296,60 +296,170 @@ Grid Strategy
 ^^^^^^^^^^^^^
 The ``gridStrategy`` parameter identifies the ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` implemenation that will be used to convert each geohashgrid bucket into a raster value (number).
 
-* ``basic``: returns top level ``doc_count``.
+Basic
+~~~~~
+Returns top level ``doc_count``.
 
-    Example Aggregation::
+Example Aggregation::
+
+  {
+    "agg": {
+      "geohash_grid": {
+        "field": "geo"
+      }
+    }
+  }
     
-      {
-        "agg": {
-          "geohash_grid": {
-            "field": "geo"
+Example bucket::
+
+ {
+   "key" : "xv",
+   "doc_count" : 1
+ }
+
+Extracted raster value: ``1``
+
+Metric
+~~~~~~
+Returns metric value.
+
+.. list-table::
+   :widths: 20 20 60
+
+   * - Parameter
+     - Default Value
+     - Description
+   * - Metric key
+     - ``metric``
+     - Key used to pluck metric object from top level bucket. Empty string results in plucking doc_count.
+   * - Value key
+     - ``value``
+     - Key used to pluck the value from the metric object.
+
+Example Aggregation::
+
+  {
+    "agg": {
+      "geohash_grid": {
+        "field": "geo"
+      },
+      "aggs": {
+        "metric": {
+          "max": {
+            "field": "magnitude"
           }
         }
       }
-    
-   Example bucket::
- 
-     {
-       "key" : "xv",
-       "doc_count" : 1
-     }
-  
-  Raster value: ``1``
+    }
+  }
 
-* ``metric``: returns metric value.
+Example bucket::
 
-    Example Aggregation::
+  {
+    "key" : "xv",
+    "doc_count" : 1,
+    "metric" : {
+      "value" : 4.9
+    }
+  }
     
-      {
-        "agg": {
-          "geohash_grid": {
-            "field": "geo"
-          },
-          "aggs": {
-            "metric": {
-              "max": {
-                "field": "magnitude"
-              }
-            }
+Extracted raster value: ``4.9``
+
+Nested_agg
+~~~~~~~~~~
+Extract raster value from nested aggregation results.
+
+.. list-table::
+   :widths: 20 20 60
+
+   * - Parameter
+     - Default Value
+     - Description
+   * - Aggregation key
+     - ``nested``
+     - Key used to pluck nested aggregation results from the geogrid bucket.
+   * - Metric key
+     - empty string
+     - Key used to pluck metric object from each nested aggregation bucket. Empty string results in plucking doc_count.
+   * - Value key
+     - ``value``
+     - Key used to pluck the value from the metric object.
+   * - Selection strategy
+     - ``largest``
+     - ``largest`` | ``smallest``. Strategy used to select a bucket from the nested aggregation buckets. The grid cell raster value is extracted from the selected bucket.
+   * - Raster strategy
+     - ``value``
+     - ``key`` | ``value``. Strategy used to extract the raster value from the selected bucket. ``value``: Raster value is the selected bucket's metric value. ``key``: Raster value is the selected bucket's key.
+   * - Token map
+     - null
+     - Map used to convert String keys into numeric values. Use the format ``key1:1;key2:2``. Only utilized when raster strategy is ``key``.
+
+
+Example Aggregation::
+
+  {
+    "agg": {
+      "geohash_grid": {
+        "field": "geo"
+      },
+      "aggs": {
+        "nested": {
+          "histogram": {
+            "field": "magnitude",
+            "interval": 1,
+            "min_doc_count": 1
           }
         }
       }
+    }
+  }
 
-    Example bucket::
- 
-      {
-        "key" : "xv",
-        "doc_count" : 1,
-        "metric" : {
-          "value" : 4.9
+Example Parameters::
+
+  <ogc:Function name="parameter">
+    <ogc:Literal>gridStrategyArgs</ogc:Literal>
+    <ogc:Literal>nested</ogc:Literal>
+    <ogc:Literal></ogc:Literal>
+    <ogc:Literal></ogc:Literal>
+    <ogc:Literal>largest</ogc:Literal>
+    <ogc:Literal>key</ogc:Literal>
+  </ogc:Function>
+
+Example bucket::
+
+  {
+    "key" : "xv",
+    "doc_count" : 1729,
+    "nested" : {
+      "buckets" : [
+        {
+          "key" : 2.0,
+          "doc_count" : 5
+        },
+        {
+          "key" : 3.0,
+          "doc_count" : 107
+        },
+        {
+          "key" : 4.0,
+          "doc_count" : 1506
+        },
+        {
+          "key" : 5.0,
+          "doc_count" : 100
+        },
+        {
+          "key" : 6.0,
+          "doc_count" : 11
         }
-      }
-    
-    Raster value: ``4.9``
+      ]
+    }
+  }
 
-Implementing a custom Grid Strateg
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Extracted raster value: ``4.0``
+
+Implementing a custom Grid Strategy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 By default the raster values computed in the geohash grid aggregation rendering transformation correspond to the top level ``doc_count``. Adding an additional strategy for computing the raster values from bucket data currently requires source code updates to the ``gt-elasticsearch-process`` module as described below.
 
