@@ -143,6 +143,9 @@ public class GeoHashGridTest {
     public void testPluckMetricValue_docCount() {
         Number plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, null, null);
         assertEquals(DOC_COUNT, plucked);
+
+        plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, "", null);
+        assertEquals(DOC_COUNT, plucked);
     }
     
     @Test(expected=IllegalArgumentException.class)

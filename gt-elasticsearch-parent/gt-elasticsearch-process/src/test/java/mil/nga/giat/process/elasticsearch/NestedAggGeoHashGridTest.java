@@ -25,18 +25,18 @@ public class NestedAggGeoHashGridTest {
     }
 
     @Test
-    public void testSetParams() {
+    public void testSetParams_defaults() {
         geohashGrid.setParams(null);
         assertEquals(NestedAggGeoHashGrid.DEFAULT_AGG_KEY, geohashGrid.getNestedAggKey());
-        assertNull(geohashGrid.getMetricKey());
-        assertNull(geohashGrid.getValueKey());
+        assertEquals(NestedAggGeoHashGrid.DEFAULT_METRIC_KEY, geohashGrid.getMetricKey());
+        assertEquals(GeoHashGrid.VALUE_KEY, geohashGrid.getValueKey());
         assertEquals(NestedAggGeoHashGrid.SELECT_LARGEST, geohashGrid.getSelectionStrategy());
         assertEquals(NestedAggGeoHashGrid.RASTER_FROM_VALUE, geohashGrid.getRasterStrategy());
         assertNull(geohashGrid.getTermsMap());
     }
 
     @Test
-    public void testSetParams_withParams() {
+    public void testSetParams() {
         String aggKey = "myagg";
         String metricKey = "mymetric";
         String valueKey = "myvalue";

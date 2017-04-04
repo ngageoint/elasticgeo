@@ -39,6 +39,7 @@ public abstract class GeoHashGrid {
     public static final String BUCKET_NAME_KEY = "key";
     public static final String BUCKETS_KEY = "buckets";
     public static final String DOC_COUNT_KEY = "doc_count";
+    public static final String VALUE_KEY = "key";
 
     private double cellWidth;
 
@@ -164,7 +165,7 @@ public abstract class GeoHashGrid {
     
     protected Number pluckMetricValue(Map<String,Object> bucket, String metricKey, String valueKey) {
         Number value;
-        if (null == metricKey) {
+        if (null == metricKey || metricKey.trim().length() == 0) {
             value = pluckDocCount(bucket);
         } else {
             if (!bucket.containsKey(metricKey)) {
