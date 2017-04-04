@@ -50,4 +50,12 @@ public class MetricGeoHashGridTest {
         assertEquals(metricKey, geohashGrid.getMetricKey());
         assertEquals(GeoHashGrid.VALUE_KEY, geohashGrid.getValueKey());
     }
+    
+    @Test
+    public void testComputeCellValue() {
+    	int value = 5;
+    	Map<String,Object> metricBucket = TestUtil.createMetricBucket(1, MetricGeoHashGrid.DEFAULT_METRIC_KEY, GeoHashGrid.VALUE_KEY, value);
+        Number rasterValue = geohashGrid.computeCellValue(metricBucket);
+        assertEquals(value, rasterValue);
+    }
 }

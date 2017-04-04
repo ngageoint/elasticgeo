@@ -39,7 +39,7 @@ public abstract class GeoHashGrid {
     public static final String BUCKET_NAME_KEY = "key";
     public static final String BUCKETS_KEY = "buckets";
     public static final String DOC_COUNT_KEY = "doc_count";
-    public static final String VALUE_KEY = "key";
+    public static final String VALUE_KEY = "value";
 
     private double cellWidth;
 
@@ -152,7 +152,7 @@ public abstract class GeoHashGrid {
           LOGGER.warning("Unable to pluck key, bucket does not contain required field:" + BUCKET_NAME_KEY);
           throw new IllegalArgumentException();
         }
-        return (String) bucket.get(BUCKET_NAME_KEY);
+        return bucket.get(BUCKET_NAME_KEY) + "";
     }
     
     protected Number pluckDocCount(Map<String,Object> bucket) {

@@ -7,6 +7,7 @@ package mil.nga.giat.process.elasticsearch;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -125,6 +126,15 @@ public class GeoHashGridTest {
     public void testPluckBucketName() {
         String plucked = this.geohashGrid.pluckBucketName(SIMPLE_BUCKET);
         assertEquals(BUCKET_NAME, plucked);
+    }
+    
+    @Test
+    public void testPluckBucketName_doubleKey() {
+        Map<String,Object> bucket = new HashMap<>();
+        bucket.put(GeoHashGrid.BUCKET_NAME_KEY, 2.0);
+        bucket.put("doc_count", DOC_COUNT);
+        String plucked = this.geohashGrid.pluckBucketName(bucket);
+        assertEquals("2.0", plucked);
     }
     
     @Test

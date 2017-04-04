@@ -19,14 +19,14 @@ public class MetricGeoHashGrid extends GeoHashGrid {
 
     @Override
     public void setParams(List<String> params) {
-         if (null != params) {
-              if (params.size() >= 1) {
-                  metricKey = params.get(METRIC_KEY_INDEX);
-              }
-              if (params.size() >= 2) {
-                  valueKey = params.get(VALUE_KEY_INDEX);
-              }
-         }
+        if (null != params) {
+            if (params.size() >= 1) {
+                metricKey = params.get(METRIC_KEY_INDEX);
+            }
+            if (params.size() >= 2) {
+                valueKey = params.get(VALUE_KEY_INDEX);
+            }
+        }
     }
 
     @Override
