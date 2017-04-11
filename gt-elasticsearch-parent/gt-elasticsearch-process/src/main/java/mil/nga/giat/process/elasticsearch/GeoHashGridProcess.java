@@ -48,6 +48,7 @@ public class GeoHashGridProcess implements VectorProcess {
             @DescribeParameter(name = "pixelsPerCell", description = "Resolution used for upsampling (in pixels). Default = 1", defaultValue="1", min = 1) Integer argPixelsPerCell,
             @DescribeParameter(name = "gridStrategy", description = "GeoHash grid strategy", defaultValue="Basic", min = 1) String gridStrategy,
             @DescribeParameter(name = "gridStrategyArgs", description = "grid strategy arguments", min = 0) List<String> gridStrategyArgs,
+            @DescribeParameter(name = "gridStrategyEmptyCellValue", description = "grid strategy empty cell value", min = 0) Float gridStrategyEmptyCellValue,
 
             // output image parameters
             @DescribeParameter(name = "outputBBOX", description = "Bounding box of the output") ReferencedEnvelope argOutputEnv,
@@ -60,6 +61,7 @@ public class GeoHashGridProcess implements VectorProcess {
             // construct and populate grid
             final GeoHashGrid geoHashGrid = Strategy.valueOf(gridStrategy.toUpperCase()).createNewInstance();
             geoHashGrid.setParams(gridStrategyArgs);
+            geoHashGrid.setEmptyCellValue(gridStrategyEmptyCellValue);
             geoHashGrid.initalize(argOutputEnv, obsFeatures);
             // convert to grid coverage
             final GridCoverage2D nativeCoverage = geoHashGrid.toGridCoverage2D();

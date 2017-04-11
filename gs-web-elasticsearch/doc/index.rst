@@ -316,7 +316,9 @@ Grid Strategy
      - yes
      - Extract raster value from nested aggregation results.
 
-``gridStrategyArgs``: Parameter used to specify an optional argument list for the grid strategy.
+``gridStrategyArgs``: (Optional) Parameter used to specify an optional argument list for the grid strategy.
+
+``gridStrategyEmptyCellValue``: (Optional) Parameter used to specify the value for empty grid cells. By default, empty grid cells are set to ``0``.
 
 Basic
 ~~~~~
