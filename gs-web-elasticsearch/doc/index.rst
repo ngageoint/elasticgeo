@@ -294,11 +294,33 @@ Troubleshooting
 
 Grid Strategy
 ^^^^^^^^^^^^^
-The ``gridStrategy`` parameter identifies the ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` implemenation that will be used to convert each geohashgrid bucket into a raster value (number).
+``gridStrategy``: Parameter to identify the ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` implemenation that will be used to convert each geohashgrid bucket into a raster value (number).
+
+.. list-table::
+   :widths: 20 20 20 40
+
+   * - Name
+     - gridStrategy
+     - gridStrategyArgs
+     - Description
+   * - Basic
+     - ``basic``
+     - no
+     - Raster value is geohashgrid bucket ``doc_count``.
+   * - Metric
+     - ``metric``
+     - yes
+     - Raster value is geohashgrid bucket metric value.
+   * - Nested
+     - ``nested_agg``
+     - yes
+     - Extract raster value from nested aggregation results.
+
+``gridStrategyArgs``: Parameter used to specify an optional argument list for the grid strategy.
 
 Basic
 ~~~~~
-Returns top level ``doc_count``.
+Raster value is geohashgrid bucket ``doc_count``.
 
 Example Aggregation::
 
@@ -321,18 +343,18 @@ Extracted raster value: ``1``
 
 Metric
 ~~~~~~
-Returns metric value.
+Raster value is geohashgrid bucket metric value.
 
 .. list-table::
    :widths: 20 20 60
 
-   * - Parameter
+   * - Argument Index
      - Default Value
      - Description
-   * - Metric key
+   * - 0
      - ``metric``
      - Key used to pluck metric object from top level bucket. Empty string results in plucking doc_count.
-   * - Value key
+   * - 1
      - ``value``
      - Key used to pluck the value from the metric object.
 
@@ -365,34 +387,34 @@ Example bucket::
     
 Extracted raster value: ``4.9``
 
-Nested_agg
+Nested
 ~~~~~~~~~~
 Extract raster value from nested aggregation results.
 
 .. list-table::
    :widths: 20 20 60
 
-   * - Parameter
+   * - Argument Index
      - Default Value
      - Description
-   * - Aggregation key
+   * - 0
      - ``nested``
      - Key used to pluck nested aggregation results from the geogrid bucket.
-   * - Metric key
+   * - 1
      - empty string
      - Key used to pluck metric object from each nested aggregation bucket. Empty string results in plucking doc_count.
-   * - Value key
+   * - 2
      - ``value``
      - Key used to pluck the value from the metric object.
-   * - Selection strategy
+   * - 3
      - ``largest``
      - ``largest`` | ``smallest``. Strategy used to select a bucket from the nested aggregation buckets. The grid cell raster value is extracted from the selected bucket.
-   * - Raster strategy
+   * - 4
      - ``value``
      - ``key`` | ``value``. Strategy used to extract the raster value from the selected bucket. ``value``: Raster value is the selected bucket's metric value. ``key``: Raster value is the selected bucket's key.
-   * - Token map
+   * - 5
      - null
-     - Map used to convert String keys into numeric values. Use the format ``key1:1;key2:2``. Only utilized when raster strategy is ``key``.
+     - (Optional) Map used to convert String keys into numeric values. Use the format ``key1:1;key2:2``. Only utilized when raster strategy is ``key``.
 
 
 Example Aggregation::
