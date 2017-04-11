@@ -6,6 +6,7 @@ package mil.nga.giat.process.elasticsearch;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -51,6 +52,8 @@ public abstract class GeoHashGrid {
 
     private List<Map<String, Object>> buckets;
 
+    private float emptyCellValue = 0;
+
     private float[][] grid;
 
     public GeoHashGrid initalize(ReferencedEnvelope srcEnvelope, SimpleFeatureCollection features) throws NoSuchAuthorityCodeException, TransformException, FactoryException {
@@ -79,6 +82,11 @@ public abstract class GeoHashGrid {
         final int numCol = (int) Math.round((envelope.getMaxX()-envelope.getMinX())/cellWidth+1);
         final int numRow = (int) Math.round((envelope.getMaxY()-envelope.getMinY())/cellHeight+1);
         grid = new float[numRow][numCol];
+
+        if (emptyCellValue != 0) {
+            for (float[] row: grid)
+                Arrays.fill(row, emptyCellValue);
+        }
 
         buckets.stream().forEach(bucket -> updateCell((String) bucket.get("key"), computeCellValue(bucket)));
 
@@ -199,6 +207,12 @@ public abstract class GeoHashGrid {
         //ignore params
     }
     
+    public void setEmptyCellValue(Float value) {
+        if (null != value) {
+            this.emptyCellValue = value;
+        }
+    }
+
     public double getCellWidth() {
         return cellWidth;
     }

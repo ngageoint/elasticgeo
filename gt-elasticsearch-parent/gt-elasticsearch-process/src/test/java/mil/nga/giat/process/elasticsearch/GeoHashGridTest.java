@@ -93,6 +93,33 @@ public class GeoHashGridTest {
     }
 
     @Test
+    public void testGeoHashGrid_emptyCellValue() throws Exception {
+        float emptyCellValue = -1.0f;
+        features = new DefaultFeatureCollection();
+        ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,CRS.decode("EPSG:4326"));
+        geohashGrid.setEmptyCellValue(emptyCellValue);
+        geohashGrid.initalize(envelope, features);
+        IntStream.range(0, geohashGrid.getGrid().length).forEach(row-> {
+            IntStream.range(0, geohashGrid.getGrid()[row].length).forEach(column-> {
+              assertEquals(emptyCellValue, geohashGrid.getGrid()[row][column], 0.0);
+            });
+        });
+    }
+
+    @Test
+    public void testGeoHashGrid_nullEmptyCellValue() throws Exception {
+        features = new DefaultFeatureCollection();
+        ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,CRS.decode("EPSG:4326"));
+        geohashGrid.setEmptyCellValue(null);
+        geohashGrid.initalize(envelope, features);
+        IntStream.range(0, geohashGrid.getGrid().length).forEach(row-> {
+            IntStream.range(0, geohashGrid.getGrid()[row].length).forEach(column-> {
+              assertEquals(0.0, geohashGrid.getGrid()[row][column], 0.0);
+            });
+        });
+    }
+
+    @Test
     public void testGeoHashGridWithNoAggregations() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
                 ImmutableMap.of("aString", UUID.randomUUID().toString())
