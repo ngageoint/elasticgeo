@@ -55,7 +55,9 @@ public abstract class GeoHashGrid {
     private float emptyCellValue = 0;
 
     private float[][] grid;
-
+    
+    private RasterScale scale = new RasterScale(null);
+        
     public GeoHashGrid initalize(ReferencedEnvelope srcEnvelope, SimpleFeatureCollection features) throws NoSuchAuthorityCodeException, TransformException, FactoryException {
         this.buckets = readFeatures(features);
 
@@ -87,15 +89,19 @@ public abstract class GeoHashGrid {
             for (float[] row: grid)
                 Arrays.fill(row, emptyCellValue);
         }
-
-        buckets.stream().forEach(bucket -> updateCell((String) bucket.get("key"), computeCellValue(bucket)));
-
+        List<GridCell> cells = new ArrayList<GridCell>();
+        buckets.stream().forEach(bucket -> {
+           Number rasterValue =  computeCellValue(bucket);
+           cells.add(new GridCell((String) bucket.get("key"), rasterValue));
+           scale.prepareScale(rasterValue.floatValue());
+        });
+        cells.stream().forEach(cell -> updateGrid(cell.getGeohash(), cell.getValue()));
         return this;
     }
 
     public abstract Number computeCellValue(Map<String,Object> bucket);
 
-    protected boolean updateCell(String geohash, Number value) {
+    protected boolean updateGrid(String geohash, Number value) {
         final boolean valid;
         if (geohash != null && value != null) {
             final LatLong latLon = GeoHash.decodeHash(geohash);
@@ -105,14 +111,14 @@ public abstract class GeoHashGrid {
             if (valid) {
                 final int row = grid.length-(int) Math.round((lat-envelope.getMinY())/cellHeight)-1;
                 final int col = (int) Math.round((lon-envelope.getMinX())/cellWidth);
-                grid[Math.min(row,grid.length-1)][Math.min(col,grid[0].length-1)] = value.floatValue();
+                grid[Math.min(row,grid.length-1)][Math.min(col,grid[0].length-1)] = scale.scaleValue(value.floatValue());
             }
         } else {
             valid = false;
         }
         return valid;
     }
-
+    
     public GridCoverage2D toGridCoverage2D() {
         final GridCoverageFactory coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(GeoTools.getDefaultHints());
         return coverageFactory.create("geohashGridAgg", grid, boundingBox);
@@ -232,5 +238,8 @@ public abstract class GeoHashGrid {
     public float[][] getGrid() {
         return grid;
     }
-
+    
+    public void setScale(RasterScale scale) {
+        this.scale = scale;
+    }
 }

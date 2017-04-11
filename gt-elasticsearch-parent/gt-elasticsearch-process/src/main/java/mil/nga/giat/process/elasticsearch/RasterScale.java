@@ -11,18 +11,18 @@ public class RasterScale {
     private float scaleMin;
     private float scaleMax;
     
-    public RasterScale(List<Float> scale) {
-        if (null != scale && scale.size() == 1) {
+    public RasterScale(List<Float> range) {
+        if (null != range && range.size() == 1) {
             scaleSet = true;
             scaleMin = 0;
-            scaleMax = scale.get(0);
-        } else if (null != scale && scale.size() == 2) {
+            scaleMax = range.get(0);
+        } else if (null != range && range.size() == 2) {
             scaleSet = true;
-            scaleMax = scale.get(0);
-            scaleMin = scale.get(1);
+            scaleMax = range.get(0);
+            scaleMin = range.get(1);
             if (scaleMin > scaleMax) {
-                scaleMax = scale.get(1);
-                scaleMin = scale.get(0);
+                scaleMax = range.get(1);
+                scaleMin = range.get(0);
             }
         }
         
