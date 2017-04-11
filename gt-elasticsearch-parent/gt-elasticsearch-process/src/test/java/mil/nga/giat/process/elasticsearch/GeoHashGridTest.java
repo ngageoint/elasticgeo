@@ -7,6 +7,9 @@ package mil.nga.giat.process.elasticsearch;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
@@ -27,6 +30,17 @@ import com.vividsolutions.jts.geom.Envelope;
 
 public class GeoHashGridTest {
 
+    private static final String BUCKET_NAME = "bucket1";
+    private static final int DOC_COUNT = 11;
+    private static final int VALUE = 25;
+    private static final String METRIC_KEY = "metric_key";
+    private static final String VALUE_KEY = "value_key";
+    private static final String AGG_KEY = "nested_agg";
+    private static final int[] AGG_RESULTS = {1, 2, 3, 4, 5};
+    private static final Map<String,Object> SIMPLE_BUCKET = TestUtil.createDocCountBucket(BUCKET_NAME, DOC_COUNT);
+    private static final Map<String,Object> METRIC_BUCKET = TestUtil.createMetricBucket(DOC_COUNT, METRIC_KEY, VALUE_KEY, VALUE);
+    private static final Map<String,Object> AGG_BUCKET = TestUtil.createAggBucket(AGG_KEY, AGG_RESULTS);
+    
     private SimpleFeatureCollection features;
 
     private GeoHashGrid geohashGrid;
@@ -88,7 +102,7 @@ public class GeoHashGridTest {
         IntStream.range(0, geohashGrid.getGrid().length).forEach(i->assertTrue(Arrays.equals(new float[geohashGrid.getGrid()[i].length], geohashGrid.getGrid()[i])));
     }
 
-    @Test
+    @Test(expected=IllegalArgumentException.class)
     public void testGeoHashGridWithNoDocCount() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
                 ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1))))
@@ -107,5 +121,61 @@ public class GeoHashGridTest {
         geohashGrid.initalize(envelope, features);
         IntStream.range(0, geohashGrid.getGrid().length).forEach(i->assertTrue(Arrays.equals(new float[geohashGrid.getGrid()[i].length], geohashGrid.getGrid()[i])));
     }
+    
+    @Test
+    public void testPluckBucketName() {
+        String plucked = this.geohashGrid.pluckBucketName(SIMPLE_BUCKET);
+        assertEquals(BUCKET_NAME, plucked);
+    }
+    
+    @Test
+    public void testPluckBucketName_doubleKey() {
+        Map<String,Object> bucket = new HashMap<>();
+        bucket.put(GeoHashGrid.BUCKET_NAME_KEY, 2.0);
+        bucket.put("doc_count", DOC_COUNT);
+        String plucked = this.geohashGrid.pluckBucketName(bucket);
+        assertEquals("2.0", plucked);
+    }
+    
+    @Test
+    public void testPluckDocCount() {
+        Number plucked = this.geohashGrid.pluckDocCount(SIMPLE_BUCKET);
+        assertEquals(DOC_COUNT, plucked);
+    }
+    
+    @Test
+    public void testPluckMetricValue() {
+        Number plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, METRIC_KEY, VALUE_KEY);
+        assertEquals(VALUE, plucked);
+    }
+    
+    @Test
+    public void testPluckMetricValue_docCount() {
+        Number plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, null, null);
+        assertEquals(DOC_COUNT, plucked);
 
+        plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, "", null);
+        assertEquals(DOC_COUNT, plucked);
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testPluckMetricValue_canNotFindMetricKey() {
+        this.geohashGrid.pluckMetricValue(METRIC_BUCKET, "noGonnaFindMe", VALUE_KEY);
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testPluckMetricValue_canNotFindValueKey() {
+        this.geohashGrid.pluckMetricValue(METRIC_BUCKET, METRIC_KEY, "noGonnaFindMe");
+    }
+    
+    @Test
+    public void testPluckAggBuckets() {
+        List<Map<String,Object>> buckets = this.geohashGrid.pluckAggBuckets(AGG_BUCKET, AGG_KEY);
+        assertEquals(AGG_RESULTS.length, buckets.size());
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testPluckAggBuckets_canNotFindAggKey() {
+        this.geohashGrid.pluckAggBuckets(AGG_BUCKET, "noGonnaFindMe");
+    }
 }
