@@ -10,7 +10,7 @@ public class RasterScale {
     private float dataMax;
     private float scaleMin;
     private float scaleMax;
-    
+
     public RasterScale(List<Float> range) {
         if (null != range && range.size() == 1) {
             scaleSet = true;
@@ -32,11 +32,13 @@ public class RasterScale {
     }
     
     public float scaleValue(float value) {
-        float scaledValue = value;
-        if (scaleSet) {
+        if (!scaleSet) {
+            return value;
+        } else if (dataMax == dataMin) {
+            return scaleMax;
+        } else {
             return ((scaleMax - scaleMin) * (value - dataMin) / (dataMax - dataMin)) + scaleMin;
         }
-        return scaledValue;
     }
     
     public void prepareScale(float value) {

@@ -74,6 +74,29 @@ public class GeoHashGridTest {
     }
 
     @Test
+    public void testGeoHashGrid_scaled() throws Exception {
+        features = TestUtil.createAggregationFeatures(ImmutableList.of(
+            ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",20))),
+            ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(89.9,179.9),1),"doc_count",30)))
+        ));
+        ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,DefaultGeographicCRS.WGS84);
+        geohashGrid.setScale(new RasterScale(ImmutableList.of(10.0f, 5.0f)));
+        geohashGrid.initalize(envelope, features);
+        assertEquals(GeoHash.widthDegrees(1), geohashGrid.getCellWidth(), 1e-10);
+        assertEquals(GeoHash.heightDegrees(1), geohashGrid.getCellHeight(), 1e-10);
+        assertEquals(envelope, geohashGrid.getBoundingBox());
+        assertEquals(new Envelope(-180+GeoHash.widthDegrees(1)/2.,180-GeoHash.widthDegrees(1)/2.,-90+GeoHash.heightDegrees(1)/2.,90-GeoHash.heightDegrees(1)/2.), geohashGrid.getEnvelope());
+        int ny = (int) Math.round(180/geohashGrid.getCellHeight());
+        int nx = (int) Math.round(360/GeoHash.widthDegrees(1));
+        assertEquals(ny, geohashGrid.getGrid().length);
+        assertEquals(nx, geohashGrid.getGrid()[0].length);
+        float[][] expected = new float[ny][nx];
+        expected[0][7] = 10;
+        expected[ny-1][0] = 5;
+        IntStream.range(0, ny).forEach(i->assertTrue(Arrays.equals(geohashGrid.getGrid()[i], expected[i])));
+    }
+
+    @Test
     public void testGeoHashGridWithProjectedEnvelope() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
                 ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",10)))

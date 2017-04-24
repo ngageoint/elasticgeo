@@ -4,7 +4,9 @@
  */
 package mil.nga.giat.process.elasticsearch;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
@@ -15,10 +17,13 @@ import org.geotools.process.factory.DescribeParameter;
 import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
 import org.geotools.process.vector.VectorProcess;
+import org.geotools.util.logging.Logging;
 import org.opengis.util.ProgressListener;
 
 @DescribeProcess(title = "geoHashGridAgg", description = "Computes a grid from GeoHash grid aggregation buckets with values corresponding to doc_count values.")
 public class GeoHashGridProcess implements VectorProcess {
+
+    private final static Logger LOGGER = Logging.getLogger(GeoHashGridProcess.class);
 
     public enum Strategy {
 
@@ -49,6 +54,7 @@ public class GeoHashGridProcess implements VectorProcess {
             @DescribeParameter(name = "gridStrategy", description = "GeoHash grid strategy", defaultValue="Basic", min = 1) String gridStrategy,
             @DescribeParameter(name = "gridStrategyArgs", description = "grid strategy arguments", min = 0) List<String> gridStrategyArgs,
             @DescribeParameter(name = "gridStrategyEmptyCellValue", description = "grid strategy empty cell value", min = 0) Float gridStrategyEmptyCellValue,
+            @DescribeParameter(name = "gridStrategyScale", description = "grid strategy scale", min = 0) List<String> gridStrategyScale,
 
             // output image parameters
             @DescribeParameter(name = "outputBBOX", description = "Bounding box of the output") ReferencedEnvelope argOutputEnv,
@@ -62,6 +68,22 @@ public class GeoHashGridProcess implements VectorProcess {
             final GeoHashGrid geoHashGrid = Strategy.valueOf(gridStrategy.toUpperCase()).createNewInstance();
             geoHashGrid.setParams(gridStrategyArgs);
             geoHashGrid.setEmptyCellValue(gridStrategyEmptyCellValue);
+            if (null != gridStrategyScale) {
+                //Geoserver cannot handle List<Float>. Must use List<String> and manually convert to List<Float>
+                List<Float> scaleRange = new ArrayList<Float>();
+                gridStrategyScale.forEach(rangeValue -> {
+                    try {
+                        Float f = new Float(rangeValue);
+                        scaleRange.add(f);
+                    } catch (NumberFormatException e) {
+                        LOGGER.warning("Unable to convert gridStrategyScale value: " + rangeValue + " to number");
+                        throw e;
+                    }
+                    Float f = new Float(rangeValue);
+                    scaleRange.add(f);
+                });
+                geoHashGrid.setScale(new RasterScale(scaleRange));
+            }
             geoHashGrid.initalize(argOutputEnv, obsFeatures);
             // convert to grid coverage
             final GridCoverage2D nativeCoverage = geoHashGrid.toGridCoverage2D();

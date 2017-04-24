@@ -53,9 +53,10 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
+        List<String> scale = null;
 
         GeoHashGridProcess process = new GeoHashGridProcess();
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
         checkEdge(coverage, envelope, fineDelta);
     }
@@ -69,9 +70,10 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
+        List<String> scale = null;
 
         GeoHashGridProcess process = new GeoHashGridProcess();
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
         checkEdge(coverage, envelope, fineDelta);
     }
@@ -85,9 +87,10 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
+        List<String> scale = null;
 
         GeoHashGridProcess process = new GeoHashGridProcess();
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
         checkEdge(coverage, envelope, fineDelta);
     }
@@ -101,9 +104,10 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
+        List<String> scale = null;
 
         GeoHashGridProcess process = new GeoHashGridProcess();
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
     }
 

@@ -320,6 +320,9 @@ Grid Strategy
 
 ``gridStrategyEmptyCellValue``: (Optional) Parameter used to specify the value for empty grid cells. By default, empty grid cells are set to ``0``.
 
+``gridStrategyScale``: (Optional) Parameter used to specify a scale applied to all raster values. Each tile request is scaled according to the min and max values for that tile. It is best to use a non-tited layer with this parameter to avoid confusing results.
+
+
 Basic
 ~~~~~
 Raster value is geohashgrid bucket ``doc_count``.
