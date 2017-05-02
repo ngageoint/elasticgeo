@@ -148,6 +148,11 @@ Logging is configurable through Log4j. The data store includes logging such as t
     log4j.category.mil.nga.giat.data.elasticsearch=DEBUG 
     log4j.category.mil.nga.giat.process.elasticsearch=DEBUG 
 
+The logging configuration file will be in the ``logs`` subdirectory in the GeoServer data directory. Check GeoServer global settings for which file is being used (e.g. ``DEFAULT_LOGGING.properties``, etc.).
+
+.. figure:: images/elasticsearch_logging.png
+   :align: center
+
 Filtering
 ---------
 
