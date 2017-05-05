@@ -79,8 +79,6 @@ public class GeoHashGridProcess implements VectorProcess {
                         LOGGER.warning("Unable to convert gridStrategyScale value: " + rangeValue + " to number");
                         throw e;
                     }
-                    Float f = new Float(rangeValue);
-                    scaleRange.add(f);
                 });
                 geoHashGrid.setScale(new RasterScale(scaleRange));
             }

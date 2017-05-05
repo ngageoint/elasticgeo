@@ -52,11 +52,16 @@ public abstract class GeoHashGrid {
 
     private List<Map<String, Object>> buckets;
 
-    private float emptyCellValue = 0;
+    private float emptyCellValue;
 
     private float[][] grid;
     
-    private RasterScale scale = new RasterScale(null);
+    private RasterScale scale;
+    
+    public GeoHashGrid() {
+        this.emptyCellValue = 0;
+        this.scale = new RasterScale(null);
+    }
         
     public GeoHashGrid initalize(ReferencedEnvelope srcEnvelope, SimpleFeatureCollection features) throws NoSuchAuthorityCodeException, TransformException, FactoryException {
         this.buckets = readFeatures(features);
@@ -118,7 +123,7 @@ public abstract class GeoHashGrid {
         }
         return valid;
     }
-    
+
     public GridCoverage2D toGridCoverage2D() {
         final GridCoverageFactory coverageFactory = CoverageFactoryFinder.getGridCoverageFactory(GeoTools.getDefaultHints());
         return coverageFactory.create("geohashGridAgg", grid, boundingBox);
