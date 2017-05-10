@@ -10,20 +10,31 @@ import java.util.logging.Logger;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
+import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.filter.visitor.SimplifyingFilterVisitor;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.process.ProcessException;
 import org.geotools.process.factory.DescribeParameter;
 import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
 import org.geotools.process.vector.VectorProcess;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.geotools.util.logging.Logging;
+import org.opengis.coverage.grid.GridGeometry;
+import org.opengis.filter.Filter;
+import org.opengis.filter.FilterFactory;
+import org.opengis.filter.expression.PropertyName;
+import org.opengis.filter.spatial.BBOX;
 import org.opengis.util.ProgressListener;
 
 @DescribeProcess(title = "geoHashGridAgg", description = "Computes a grid from GeoHash grid aggregation buckets with values corresponding to doc_count values.")
 public class GeoHashGridProcess implements VectorProcess {
 
     private final static Logger LOGGER = Logging.getLogger(GeoHashGridProcess.class);
+
+    private final static FilterFactory FILTER_FACTORY = CommonFactoryFinder.getFilterFactory(null);
 
     public enum Strategy {
 
@@ -93,11 +104,37 @@ public class GeoHashGridProcess implements VectorProcess {
             // crop (geohash grid envelope will always contain output bbox)
             final GridCoverage2D croppedCoverage = GridCoverageUtil.crop(scaledCoverage, argOutputEnv);
             return GridCoverageUtil.scale(croppedCoverage, argOutputWidth, argOutputHeight);
-        } catch (IllegalArgumentException iae) {
-            return null;
         } catch (Exception e) {
-            throw new ProcessException(e);
+            throw new ProcessException("Error executing GeoHashGridProcess", e);
         }
+    }
+
+    public Query invertQuery(
+            @DescribeParameter(name = "outputBBOX", description = "Georeferenced bounding box of the output") ReferencedEnvelope envelope,
+            Query targetQuery, GridGeometry targetGridGeometry
+            ) throws ProcessException {
+
+        final BBOXRemovingFilterVisitor visitor = new BBOXRemovingFilterVisitor();
+        Filter filter = (Filter) targetQuery.getFilter().accept(visitor, null);
+        final String geometryName = visitor.getGeometryPropertyName();
+        if (geometryName != null) {
+            final BBOX bbox;
+            try {
+                if (envelope.getCoordinateReferenceSystem() != null) {
+                    envelope = envelope.transform(DefaultGeographicCRS.WGS84,false);
+                }
+                bbox = FILTER_FACTORY.bbox(geometryName, envelope.getMinX(), envelope.getMinY(), envelope.getMaxX(), envelope.getMaxY(),  "EPSG:4326");
+            } catch (Exception e) {
+                throw new ProcessException("Unable to create bbox filter for feature source", e);
+            }
+            filter = (Filter) FILTER_FACTORY.and(filter, bbox).accept(new SimplifyingFilterVisitor(), null);
+            targetQuery.setFilter(filter);
+        }
+        
+        final List<PropertyName> properties = new ArrayList<>();
+        properties.add(FILTER_FACTORY.property("_aggregation"));
+        targetQuery.setProperties(properties);
+        return targetQuery;
     }
 
 }

@@ -50,33 +50,33 @@ import com.vividsolutions.jts.geom.impl.PackedCoordinateSequenceFactory;
 public class ElasticGeometryFilterTest extends ElasticTestSupport {
 
     @Test
-    public void testBBOXLimitSplittedFilter() throws Exception {
+    public void testBBOXFilter() throws Exception {
         init();
         FilterFactory ff = dataStore.getFilterFactory();
-        BBOX bbox = ff.bbox("geo", -185, -98, 185, 98, "EPSG:" + SOURCE_SRID);
+        BBOX bbox = ff.bbox("geo", -180, -98, 180, 98, "EPSG:" + SOURCE_SRID);
         SimpleFeatureCollection features = featureSource.getFeatures(bbox);
         assertEquals(11, features.size());
     }
 
     @Test
-    public void testPolygonLimitSplittedFilter() throws Exception {
+    public void testWithinPolygonFilter() throws Exception {
         init();
         FilterFactory2 ff = (FilterFactory2) dataStore.getFilterFactory();
         GeometryFactory gf = new GeometryFactory();
         PackedCoordinateSequenceFactory sf = new PackedCoordinateSequenceFactory();
-        Polygon ls = gf.createPolygon(sf.create(new double[] { -185, -98, 185, -98, 185, 98, -185, 98, -185, -98 }, 2));
+        Polygon ls = gf.createPolygon(sf.create(new double[] { -180, -90, 180, -90, 180, 90, -180, 90, -180, -90 }, 2));
         Within f = ff.within(ff.property("geo"), ff.literal(ls));
         SimpleFeatureCollection features = featureSource.getFeatures(f);
         assertEquals(11, features.size());
     }
 
     @Test
-    public void testClipToWorldFilter() throws Exception {
+    public void testBBOXAndEqualsFilter() throws Exception {
         init();
         FilterFactory ff = dataStore.getFilterFactory();
         PropertyIsEqualTo property = ff.equals(ff.property("standard_ss"),
                 ff.literal("IEEE 802.11b"));
-        BBOX bbox = ff.bbox("geo", -190, -190, 190, 190, "EPSG:" + SOURCE_SRID);
+        BBOX bbox = ff.bbox("geo", -180, -180, 180, 180, "EPSG:" + SOURCE_SRID);
         And filter = ff.and(property, bbox);
         SimpleFeatureCollection features = featureSource.getFeatures(filter);
         assertEquals(7, features.size());
@@ -278,6 +278,24 @@ public class ElasticGeometryFilterTest extends ElasticTestSupport {
         SimpleFeature feature = fsi.next();
         assertEquals(feature.getID(), "not-active.13");
         assertNotNull(feature.getDefaultGeometry());
+    }
+
+    @Test
+    public void testBBOXCoveringDateline() throws Exception {
+        init("not-active","geo");
+        FilterFactory ff = dataStore.getFilterFactory();
+        BBOX bbox = ff.bbox("geo", 178, -98, 182, 98, "EPSG:" + SOURCE_SRID);
+        SimpleFeatureCollection features = featureSource.getFeatures(bbox);
+        assertEquals(2, features.size());
+    }
+
+    @Test
+    public void testBBOXBeyondDateline() throws Exception {
+        init("not-active","geo");
+        FilterFactory ff = dataStore.getFilterFactory();
+        BBOX bbox = ff.bbox("geo", 180.5, -98, 182, 98, "EPSG:" + SOURCE_SRID);
+        SimpleFeatureCollection features = featureSource.getFeatures(bbox);
+        assertEquals(1, features.size());
     }
 
 }

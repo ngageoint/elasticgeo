@@ -62,7 +62,6 @@ public class GeoHashGridTest {
         geohashGrid.initalize(envelope, features);
         assertEquals(GeoHash.widthDegrees(1), geohashGrid.getCellWidth(), 1e-10);
         assertEquals(GeoHash.heightDegrees(1), geohashGrid.getCellHeight(), 1e-10);
-        assertEquals(envelope, geohashGrid.getBoundingBox());
         assertEquals(new Envelope(-180+GeoHash.widthDegrees(1)/2.,180-GeoHash.widthDegrees(1)/2.,-90+GeoHash.heightDegrees(1)/2.,90-GeoHash.heightDegrees(1)/2.), geohashGrid.getEnvelope());
         int ny = (int) Math.round(180/geohashGrid.getCellHeight());
         int nx = (int) Math.round(360/GeoHash.widthDegrees(1));
@@ -84,7 +83,6 @@ public class GeoHashGridTest {
         geohashGrid.initalize(envelope, features);
         assertEquals(GeoHash.widthDegrees(1), geohashGrid.getCellWidth(), 1e-10);
         assertEquals(GeoHash.heightDegrees(1), geohashGrid.getCellHeight(), 1e-10);
-        assertEquals(envelope, geohashGrid.getBoundingBox());
         assertEquals(new Envelope(-180+GeoHash.widthDegrees(1)/2.,180-GeoHash.widthDegrees(1)/2.,-90+GeoHash.heightDegrees(1)/2.,90-GeoHash.heightDegrees(1)/2.), geohashGrid.getEnvelope());
         int ny = (int) Math.round(180/geohashGrid.getCellHeight());
         int nx = (int) Math.round(360/GeoHash.widthDegrees(1));

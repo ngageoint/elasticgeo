@@ -128,10 +128,16 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
             ((FilterToElastic5) delegate).filterBuilder = geoPolygonFilter;
         } else if (filter instanceof BBOX) {
             final Envelope envelope = geometry.getEnvelopeInternal();
-            final double minY = envelope.getMinY();
-            final double minX = envelope.getMinX();
-            final double maxY = envelope.getMaxY();
-            final double maxX = envelope.getMaxX();
+            final double minY = clipLat(envelope.getMinY());
+            final double maxY = clipLat(envelope.getMaxY());
+            final double minX, maxX;
+            if (envelope.getWidth() < 360) {
+                minX = clipLon(envelope.getMinX());
+                maxX = clipLon(envelope.getMaxX());
+            } else {
+                minX = -180;
+                maxX = 180;
+            }
             ((FilterToElastic5) delegate).filterBuilder = QueryBuilders.geoBoundingBoxQuery(key)
                     .setCorners(maxY, minX, minY, maxX);
         } else {
@@ -144,11 +150,6 @@ class FilterToElasticHelper5 extends FilterToElasticHelper {
 
     private FilterToElastic5 getDelegate() {
         return (FilterToElastic5) delegate;
-    }
-    
-    public static void main(String[] args) {
-        System.out.println(QueryBuilders.geoBoundingBoxQuery("test")
-        .setCorners(90,-180,-90,180));
     }
 
 }
