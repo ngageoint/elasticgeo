@@ -120,10 +120,10 @@ class FilterToElasticHelper2 extends FilterToElasticHelper {
             ((FilterToElastic2) delegate).filterBuilder = geoPolygonFilter;
         } else if (filter instanceof BBOX) {
             final Envelope envelope = geometry.getEnvelopeInternal();
-            final double minY = envelope.getMinY();
-            final double minX = envelope.getMinX();
-            final double maxY = envelope.getMaxY();
-            final double maxX = envelope.getMaxX();
+            final double minY = clipLat(envelope.getMinY());
+            final double minX = clipLon(envelope.getMinX());
+            final double maxY = clipLat(envelope.getMaxY());
+            final double maxX = clipLon(envelope.getMaxX());
             ((FilterToElastic2) delegate).filterBuilder = QueryBuilders.geoBoundingBoxQuery(key)
                     .topLeft(maxY, minX)
                     .bottomRight(minY, maxX);

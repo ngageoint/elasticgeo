@@ -19,4 +19,11 @@ public class ElasticAggregation {
         this.buckets = buckets;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder("ElasticAggregation[numBuckets=")
+                .append(buckets != null ? buckets.size() : null)
+                .append("]").toString();
+    }
+
 }

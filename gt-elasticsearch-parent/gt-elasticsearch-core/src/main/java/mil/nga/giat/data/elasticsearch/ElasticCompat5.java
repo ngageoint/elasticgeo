@@ -5,7 +5,6 @@
 package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -15,14 +14,10 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.geo.GeoHashUtils;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.joda.Joda;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import org.geotools.util.logging.Logging;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -62,17 +57,7 @@ public class ElasticCompat5 implements ElasticCompat {
             elasticClient = new RestElasticClient(client);
             LOGGER.info("Created REST client");
         } catch (Exception e) {
-            try {
-                final TransportAddress address;
-                address = new InetSocketTransportAddress(InetAddress.getByName(host), port);
-                final Settings settings = createSettings("cluster.name", clusterName);
-                final TransportClient client = new PreBuiltTransportClient(settings);
-                client.addTransportAddresses(address);
-                elasticClient = new TransportElasticClient(client);
-                LOGGER.info("Created Transport client");
-            } catch (Exception e2) {
-                throw new IOException("Unable to create a REST or Transport client", e2);
-            }
+            throw new IOException("Unable to create REST client", e);
         }
         return elasticClient;
     }

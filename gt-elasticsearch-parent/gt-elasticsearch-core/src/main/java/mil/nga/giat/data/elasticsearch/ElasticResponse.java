@@ -86,4 +86,15 @@ public class ElasticResponse {
         return maxScore;
     }
 
+    @Override
+    public String toString() {
+        return new StringBuilder("ElasticResponse[total=")
+                .append(getTotalNumHits())
+                .append(", hits=").append(getNumHits())
+                .append(", aggregations=").append(aggregations)
+                .append(", scrollId=").append(scrollId)
+                .append(", maxScore=").append(getMaxScore())
+                .append("]").toString();
+    }
+
 }

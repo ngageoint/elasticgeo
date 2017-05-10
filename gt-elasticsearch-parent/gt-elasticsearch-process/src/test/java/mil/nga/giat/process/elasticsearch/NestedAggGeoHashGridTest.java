@@ -81,7 +81,7 @@ public class NestedAggGeoHashGridTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetParams_notEnoughParameters() {
-         geohashGrid.setParams(new ArrayList<String>());
+        geohashGrid.setParams(new ArrayList<String>());
     }
 
     @Test
@@ -160,4 +160,5 @@ public class NestedAggGeoHashGridTest {
         geohashGrid.setParams(params);
         geohashGrid.bucketToRaster("key3", 5.0);
     }
+
 }

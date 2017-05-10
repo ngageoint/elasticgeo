@@ -4,81 +4,85 @@
  */
 package mil.nga.giat.process.elasticsearch;
 
-import java.util.List;
-
 public class RasterScale {
 
-    private boolean isMinMaxInitialized = false;
-    private boolean scaleSet = false;
-    private float dataMin;
-    private float dataMax;
-    private float scaleMin;
-    private float scaleMax;
+    private static final float DEFAULT_SCALE_MIN = 0f;
 
-    public RasterScale(List<Float> range) {
-        if (null != range && range.size() == 1) {
-            scaleSet = true;
-            scaleMin = 0;
-            scaleMax = range.get(0);
-        } else if (null != range && range.size() == 2) {
-            scaleSet = true;
-            scaleMax = range.get(0);
-            scaleMin = range.get(1);
-            if (scaleMin > scaleMax) {
-                scaleMax = range.get(1);
-                scaleMin = range.get(0);
-            }
-        }
-        
-        if (scaleSet && scaleMax == scaleMin) {
+    private final Float scaleMin;
+
+    private final Float scaleMax;
+
+    private  boolean scaleLog;
+
+    private Float dataMin;
+
+    private Float dataMax;
+
+    public RasterScale() {
+        this(null, null, false);
+    }
+
+    public RasterScale(boolean useLog) {
+        this(null, null, useLog);
+    }
+
+    public RasterScale(Float scaleMax) {
+        this(DEFAULT_SCALE_MIN, scaleMax, false);
+    }
+
+    public RasterScale(Float scaleMin, Float scaleMax) {
+        this(scaleMin, scaleMax, false);
+    }
+
+    public RasterScale(Float scaleMin, Float scaleMax, boolean scaleLog) {
+        this.scaleMin = scaleMin;
+        this.scaleMax = scaleMax;
+        this.scaleLog = scaleLog;
+        if (scaleMax != null && (scaleMin == null || scaleMax.floatValue() == scaleMin)) {
             throw new IllegalArgumentException();
         }
     }
-    
+
     public float scaleValue(float value) {
-        if (!scaleSet) {
+        if (scaleLog && value > 0) {
+            value = (float) Math.log10(value);
+        }
+        if (scaleMax == null) {
             return value;
-        } else if (dataMax == dataMin) {
+        } else if (dataMax.floatValue() == dataMin) {
             return scaleMax;
         } else {
             return ((scaleMax - scaleMin) * (value - dataMin) / (dataMax - dataMin)) + scaleMin;
         }
     }
-    
-    public void prepareScale(float value) {
-        if (!scaleSet) return; 
 
-        if (isMinMaxInitialized) {
+    public void prepareScale(float value) {
+        if (scaleLog && value > 0) {
+            value = (float) Math.log10(value);
+        }
+        if (scaleMax != null && dataMin != null) {
             if (value < dataMin) {
                 dataMin = value;
             }
             if (value > dataMax) {
                 dataMax = value;
             }
-        } else {
+        } else if (scaleMax != null) {
             dataMin = value;
             dataMax = value;
-            isMinMaxInitialized = true;
         }
     }
-    
+
     public boolean isScaleSet() {
-        return scaleSet;
+        return scaleMax != null;
     }
 
-    public float getDataMin() {
-        return dataMin;
-    }
-
-    public float getDataMax() {
-        return dataMax;
-    }
-
-    public float getScaleMin() {
+    public Float getScaleMin() {
         return scaleMin;
     }
 
-    public float getScaleMax() {
+    public Float getScaleMax() {
         return scaleMax;
     }
+
 }

@@ -80,11 +80,9 @@ import org.opengis.temporal.Period;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
 
 public class Elastic2FilterTest {
 
@@ -565,22 +563,6 @@ public class Elastic2FilterTest {
     public void testEmptyDisjointGeoShape() throws CQLException {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(ls));
-
-        MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
-
-        builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
-    }
-
-    @Test
-    public void testOutsideWorld() throws CQLException {
-        Polygon poly = gf.createPolygon(new Coordinate[] {
-                new Coordinate(-360,-180), new Coordinate(360,-180),
-                new Coordinate(360,180), new Coordinate(-360,180), new Coordinate(-360,-180)});
-        LineString ls = gf.createLineString(new Coordinate[] {new Coordinate(0,0), new Coordinate(1,1)});
-        GeometryCollection gc = gf.createGeometryCollection(new Geometry[] {poly, ls});
-        Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(gc));
 
         MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
 
