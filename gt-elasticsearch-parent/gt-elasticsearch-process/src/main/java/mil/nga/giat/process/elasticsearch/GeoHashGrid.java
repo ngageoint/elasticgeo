@@ -62,7 +62,7 @@ public abstract class GeoHashGrid {
 
     public GeoHashGrid() {
         this.emptyCellValue = 0;
-        this.scale = new RasterScale(null);
+        this.scale = new RasterScale();
     }
 
     public GeoHashGrid initalize(ReferencedEnvelope srcEnvelope, SimpleFeatureCollection features) throws NoSuchAuthorityCodeException, TransformException, FactoryException {

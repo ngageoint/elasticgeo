@@ -318,10 +318,11 @@ Grid Strategy
 
 ``gridStrategyArgs``: (Optional) Parameter used to specify an optional argument list for the grid strategy.
 
-``gridStrategyEmptyCellValue``: (Optional) Parameter used to specify the value for empty grid cells. By default, empty grid cells are set to ``0``.
+``emptyCellValue``: (Optional) Parameter used to specify the value for empty grid cells. By default, empty grid cells are set to ``0``.
 
-``gridStrategyScale``: (Optional) Parameter used to specify a scale applied to all raster values. Each tile request is scaled according to the min and max values for that tile. It is best to use a non-tited layer with this parameter to avoid confusing results.
+``scaleMin``, ``scaleMax``: (Optional) Parameters used to specify a scale applied to all raster values. Each tile request is scaled according to the min and max values for that tile. It is best to use a non-tited layer with this parameter to avoid confusing results.
 
+``useLog``: (Optional) Flag indicating whether to apply logarithm to raster values (applied prior to scaling, if applicable)
 
 Basic
 ~~~~~

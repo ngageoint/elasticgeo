@@ -66,9 +66,11 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
-        List<String> scale = null;
+        Float scaleMin = 0f;
+        Float scaleMax = null;
+        boolean useLog = false;
 
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scaleMin, scaleMax, useLog, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
         checkEdge(coverage, envelope, fineDelta);
     }
@@ -82,9 +84,11 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
-        List<String> scale = null;
+        Float scaleMin = 0f;
+        Float scaleMax = null;
+        boolean useLog = false;
 
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scaleMin, scaleMax, useLog, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
         checkEdge(coverage, envelope, fineDelta);
     }
@@ -98,9 +102,11 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
-        List<String> scale = null;
+        Float scaleMin = 0f;
+        Float scaleMax = null;
+        boolean useLog = false;
 
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scaleMin, scaleMax, useLog, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
         checkEdge(coverage, envelope, fineDelta);
     }
@@ -114,9 +120,11 @@ public class GeoHashGridProcessTest {
         String strategy = "Basic";
         List<String> strategyArgs = null;
         Float emptyCellValue = null;
-        List<String> scale = null;
+        Float scaleMin = 0f;
+        Float scaleMax = null;
+        boolean useLog = false;
 
-        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scale, envelope, width, height, null);
+        GridCoverage2D coverage = process.execute(features, pixelsPerCell, strategy, strategyArgs, emptyCellValue, scaleMin, scaleMax, useLog, envelope, width, height, null);
         checkInternal(coverage, fineDelta);
     }
 
