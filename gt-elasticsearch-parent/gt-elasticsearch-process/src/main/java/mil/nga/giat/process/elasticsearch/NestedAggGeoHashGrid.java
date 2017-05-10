@@ -16,27 +16,39 @@ public class NestedAggGeoHashGrid extends GeoHashGrid {
     private final static Logger LOGGER = Logging.getLogger(NestedAggGeoHashGrid.class);
 
     public final static int NESTED_KEY_INDEX = 0;
+
     public final static int METRIC_KEY_INDEX = 1;
+
     public final static int VALUE_KEY_INDEX = 2;
+
     public final static int SELECTION_STRATEGY_INDEX = 3;
+
     public final static int RASTER_STRATEGY_INDEX = 4;
+
     public final static int TERMS_MAP_INDEX = 5;
- 
+
     public final static String SELECT_LARGEST = "largest";
+
     public final static String SELECT_SMALLEST = "smallest";
 
     public final static String RASTER_FROM_VALUE = "value";
+
     public final static String RASTER_FROM_KEY = "key";
 
     public final static String DEFAULT_AGG_KEY = "nested";
+
     public final static String DEFAULT_METRIC_KEY = "";
 
     private String nestedAggKey = DEFAULT_AGG_KEY;
 
     private String metricKey = DEFAULT_METRIC_KEY;
+
     private String valueKey = GeoHashGrid.VALUE_KEY;
+
     private String selectionStrategy = SELECT_LARGEST;
+
     private String rasterStrategy = RASTER_FROM_VALUE;
+
     private Map<String, Integer> termsMap = null;
 
     @Override
@@ -50,24 +62,24 @@ public class NestedAggGeoHashGrid extends GeoHashGrid {
             metricKey = params.get(METRIC_KEY_INDEX);
             valueKey = params.get(VALUE_KEY_INDEX);
             switch (params.get(SELECTION_STRATEGY_INDEX)) {
-                case SELECT_SMALLEST: 
-                    selectionStrategy = params.get(SELECTION_STRATEGY_INDEX);
-                    break;
-                case SELECT_LARGEST: 
-                    selectionStrategy = params.get(SELECTION_STRATEGY_INDEX);
-                    break;
-                default:
-                    LOGGER.warning("Unexpected buckets selection strategy parameter; you provided " + params.get(SELECTION_STRATEGY_INDEX) + ", defaulting to: " + selectionStrategy);
+            case SELECT_SMALLEST: 
+                selectionStrategy = params.get(SELECTION_STRATEGY_INDEX);
+                break;
+            case SELECT_LARGEST: 
+                selectionStrategy = params.get(SELECTION_STRATEGY_INDEX);
+                break;
+            default:
+                LOGGER.warning("Unexpected buckets selection strategy parameter; you provided " + params.get(SELECTION_STRATEGY_INDEX) + ", defaulting to: " + selectionStrategy);
             }
             switch (params.get(RASTER_STRATEGY_INDEX)) {
-                case RASTER_FROM_VALUE: 
-                    rasterStrategy = params.get(RASTER_STRATEGY_INDEX);
-                    break;
-                case RASTER_FROM_KEY: 
-                    rasterStrategy = params.get(RASTER_STRATEGY_INDEX);
-                    break;
-                default:
-                    LOGGER.warning("Unexpected raster strategy parameter; you provided " + params.get(RASTER_STRATEGY_INDEX) + ", defaulting to: " + rasterStrategy);
+            case RASTER_FROM_VALUE: 
+                rasterStrategy = params.get(RASTER_STRATEGY_INDEX);
+                break;
+            case RASTER_FROM_KEY: 
+                rasterStrategy = params.get(RASTER_STRATEGY_INDEX);
+                break;
+            default:
+                LOGGER.warning("Unexpected raster strategy parameter; you provided " + params.get(RASTER_STRATEGY_INDEX) + ", defaulting to: " + rasterStrategy);
             }
             if (rasterStrategy.equals(RASTER_FROM_KEY) && params.size() >= 6) {
                 termsMap = new HashMap<String, Integer>();
@@ -89,14 +101,14 @@ public class NestedAggGeoHashGrid extends GeoHashGrid {
         List<Map<String,Object>> aggBuckets = super.pluckAggBuckets(geogridBucket, nestedAggKey);
         Number rasterValue = 0;
         switch (selectionStrategy) {
-            case SELECT_SMALLEST:
-                rasterValue = selectSmallest(aggBuckets);
-                break;
-            case SELECT_LARGEST:
-                rasterValue = selectLargest(aggBuckets);
-                break;
-       }
-       return rasterValue;
+        case SELECT_SMALLEST:
+            rasterValue = selectSmallest(aggBuckets);
+            break;
+        case SELECT_LARGEST:
+            rasterValue = selectLargest(aggBuckets);
+            break;
+        }
+        return rasterValue;
     }
 
     protected Number selectLargest(List<Map<String,Object>> buckets) {
@@ -170,4 +182,5 @@ public class NestedAggGeoHashGrid extends GeoHashGrid {
     public Map<String, Integer> getTermsMap() {
         return termsMap;
     }
+
 }

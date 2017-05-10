@@ -40,7 +40,7 @@ public class GeoHashGridTest {
     private static final Map<String,Object> SIMPLE_BUCKET = TestUtil.createDocCountBucket(BUCKET_NAME, DOC_COUNT);
     private static final Map<String,Object> METRIC_BUCKET = TestUtil.createMetricBucket(DOC_COUNT, METRIC_KEY, VALUE_KEY, VALUE);
     private static final Map<String,Object> AGG_BUCKET = TestUtil.createAggBucket(AGG_KEY, AGG_RESULTS);
-    
+
     private SimpleFeatureCollection features;
 
     private GeoHashGrid geohashGrid;
@@ -107,9 +107,9 @@ public class GeoHashGridTest {
     @Test
     public void testGeoHashGrid_scaled() throws Exception {
         features = TestUtil.createAggregationFeatures(ImmutableList.of(
-            ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",20))),
-            ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(89.9,179.9),1),"doc_count",30)))
-        ));
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(-89.9,-179.9),1),"doc_count",20))),
+                ImmutableMap.of("_aggregation", mapper.writeValueAsBytes(ImmutableMap.of("key",GeoHash.encodeHash(new LatLong(89.9,179.9),1),"doc_count",30)))
+                ));
         ReferencedEnvelope envelope = new ReferencedEnvelope(-180,180,-90,90,DefaultGeographicCRS.WGS84);
         geohashGrid.setScale(new RasterScale(5f, 10f));
         geohashGrid.initalize(envelope, features);
@@ -154,7 +154,7 @@ public class GeoHashGridTest {
         geohashGrid.initalize(envelope, features);
         IntStream.range(0, geohashGrid.getGrid().length).forEach(row-> {
             IntStream.range(0, geohashGrid.getGrid()[row].length).forEach(column-> {
-              assertEquals(emptyCellValue, geohashGrid.getGrid()[row][column], 0.0);
+                assertEquals(emptyCellValue, geohashGrid.getGrid()[row][column], 0.0);
             });
         });
     }
@@ -167,7 +167,7 @@ public class GeoHashGridTest {
         geohashGrid.initalize(envelope, features);
         IntStream.range(0, geohashGrid.getGrid().length).forEach(row-> {
             IntStream.range(0, geohashGrid.getGrid()[row].length).forEach(column-> {
-              assertEquals(0.0, geohashGrid.getGrid()[row][column], 0.0);
+                assertEquals(0.0, geohashGrid.getGrid()[row][column], 0.0);
             });
         });
     }
@@ -201,13 +201,13 @@ public class GeoHashGridTest {
         geohashGrid.initalize(envelope, features);
         IntStream.range(0, geohashGrid.getGrid().length).forEach(i->assertTrue(Arrays.equals(new float[geohashGrid.getGrid()[i].length], geohashGrid.getGrid()[i])));
     }
-    
+
     @Test
     public void testPluckBucketName() {
         String plucked = this.geohashGrid.pluckBucketName(SIMPLE_BUCKET);
         assertEquals(BUCKET_NAME, plucked);
     }
-    
+
     @Test
     public void testPluckBucketName_doubleKey() {
         Map<String,Object> bucket = new HashMap<>();
@@ -216,26 +216,26 @@ public class GeoHashGridTest {
         String plucked = this.geohashGrid.pluckBucketName(bucket);
         assertEquals("2.0", plucked);
     }
-    
+
     @Test(expected=IllegalArgumentException.class)
     public void testPluckBucketName_invalidKey() {
         Map<String,Object> bucket = new HashMap<>();
         bucket.put("invalid", "invalid");
         this.geohashGrid.pluckBucketName(bucket);
     }
-    
+
     @Test
     public void testPluckDocCount() {
         Number plucked = this.geohashGrid.pluckDocCount(SIMPLE_BUCKET);
         assertEquals(DOC_COUNT, plucked);
     }
-    
+
     @Test
     public void testPluckMetricValue() {
         Number plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, METRIC_KEY, VALUE_KEY);
         assertEquals(VALUE, plucked);
     }
-    
+
     @Test
     public void testPluckMetricValue_docCount() {
         Number plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, null, null);
@@ -244,25 +244,26 @@ public class GeoHashGridTest {
         plucked = this.geohashGrid.pluckMetricValue(METRIC_BUCKET, "", null);
         assertEquals(DOC_COUNT, plucked);
     }
-    
+
     @Test(expected=IllegalArgumentException.class)
     public void testPluckMetricValue_canNotFindMetricKey() {
         this.geohashGrid.pluckMetricValue(METRIC_BUCKET, "noGonnaFindMe", VALUE_KEY);
     }
-    
+
     @Test(expected=IllegalArgumentException.class)
     public void testPluckMetricValue_canNotFindValueKey() {
         this.geohashGrid.pluckMetricValue(METRIC_BUCKET, METRIC_KEY, "noGonnaFindMe");
     }
-    
+
     @Test
     public void testPluckAggBuckets() {
         List<Map<String,Object>> buckets = this.geohashGrid.pluckAggBuckets(AGG_BUCKET, AGG_KEY);
         assertEquals(AGG_RESULTS.length, buckets.size());
     }
-    
+
     @Test(expected=IllegalArgumentException.class)
     public void testPluckAggBuckets_canNotFindAggKey() {
         this.geohashGrid.pluckAggBuckets(AGG_BUCKET, "noGonnaFindMe");
     }
+
 }

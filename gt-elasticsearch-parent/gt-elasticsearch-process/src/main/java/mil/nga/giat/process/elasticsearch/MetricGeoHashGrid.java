@@ -10,11 +10,13 @@ import java.util.Map;
 public class MetricGeoHashGrid extends GeoHashGrid {
 
     public final static int METRIC_KEY_INDEX = 0;
+
     public final static int VALUE_KEY_INDEX = 1;
 
     public final static String DEFAULT_METRIC_KEY = "metric";
 
     private String metricKey = DEFAULT_METRIC_KEY;
+
     private String valueKey = GeoHashGrid.VALUE_KEY;
 
     @Override
@@ -41,4 +43,5 @@ public class MetricGeoHashGrid extends GeoHashGrid {
     public String getValueKey() {
         return valueKey;
     }
+
 }

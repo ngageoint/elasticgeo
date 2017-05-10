@@ -171,7 +171,7 @@ public class GeoHashGridProcessTest {
     }
 
     private void checkInternal(GridCoverage2D coverage, double delta) {
-    	assertEquals(10, coverage.evaluate(new Point2D.Double(-135-delta, -45-delta), new float[1])[0],1e-10);
+        assertEquals(10, coverage.evaluate(new Point2D.Double(-135-delta, -45-delta), new float[1])[0],1e-10);
         assertEquals(0, coverage.evaluate(new Point2D.Double(-135+delta, -45+delta), new float[1])[0],1e-10);
 
         assertEquals(0, coverage.evaluate(new Point2D.Double(-delta, -delta), new float[1])[0],1e-10);

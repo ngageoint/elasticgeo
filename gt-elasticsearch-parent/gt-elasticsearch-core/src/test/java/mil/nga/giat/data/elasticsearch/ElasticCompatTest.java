@@ -54,7 +54,6 @@ public class ElasticCompatTest {
         assertFalse(compat.isAnalyzed(ImmutableMap.of("type", "not_valid")));
         assertTrue(compat.isAnalyzed(ImmutableMap.of("type", "text")));
     }
-    
 
     @Test(expected=IOException.class)
     public void testCreateClient() throws IOException {

@@ -9,9 +9,9 @@ import org.opengis.filter.Filter;
 import org.opengis.filter.spatial.BBOX;
 
 public class BBOXRemovingFilterVisitor extends DuplicatingFilterVisitor {
-    
+
     private String geometryPropertyName;
-    
+
     @Override
     public Object visit(BBOX filter, Object extraData) {
         geometryPropertyName = filter.getPropertyName();

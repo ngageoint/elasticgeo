@@ -21,7 +21,7 @@ public class RasterScale {
     public RasterScale() {
         this(null, null, false);
     }
-    
+
     public RasterScale(boolean useLog) {
         this(null, null, useLog);
     }
@@ -42,7 +42,7 @@ public class RasterScale {
             throw new IllegalArgumentException();
         }
     }
-    
+
     public float scaleValue(float value) {
         if (scaleLog && value > 0) {
             value = (float) Math.log10(value);
@@ -55,7 +55,7 @@ public class RasterScale {
             return ((scaleMax - scaleMin) * (value - dataMin) / (dataMax - dataMin)) + scaleMin;
         }
     }
-    
+
     public void prepareScale(float value) {
         if (scaleLog && value > 0) {
             value = (float) Math.log10(value);
@@ -72,7 +72,7 @@ public class RasterScale {
             dataMax = value;
         }
     }
-    
+
     public boolean isScaleSet() {
         return scaleMax != null;
     }
@@ -84,4 +84,5 @@ public class RasterScale {
     public Float getScaleMax() {
         return scaleMax;
     }
+
 }

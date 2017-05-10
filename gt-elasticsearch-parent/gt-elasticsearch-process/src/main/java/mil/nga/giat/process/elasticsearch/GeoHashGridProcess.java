@@ -119,7 +119,7 @@ public class GeoHashGridProcess implements VectorProcess {
             filter = (Filter) FILTER_FACTORY.and(filter, bbox).accept(new SimplifyingFilterVisitor(), null);
             targetQuery.setFilter(filter);
         }
-        
+
         final List<PropertyName> properties = new ArrayList<>();
         properties.add(FILTER_FACTORY.property("_aggregation"));
         targetQuery.setProperties(properties);

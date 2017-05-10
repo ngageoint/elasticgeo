@@ -38,8 +38,11 @@ public abstract class GeoHashGrid {
     private static final int DEFAULT_PRECISION = 2;
 
     public static final String BUCKET_NAME_KEY = "key";
+
     public static final String BUCKETS_KEY = "buckets";
+
     public static final String DOC_COUNT_KEY = "doc_count";
+
     public static final String VALUE_KEY = "value";
 
     private double cellWidth;
