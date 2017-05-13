@@ -12,6 +12,7 @@ import org.mockito.ArgumentMatcher;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -30,7 +31,6 @@ import org.apache.http.StatusLine;
 import org.apache.http.entity.ByteArrayEntity;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.index.query.QueryBuilders;
 
 public class RestElasticClientTest {
 
@@ -115,8 +115,8 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchScroll() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll\":\"10s\"}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{}".getBytes());
+        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search?scroll=10s"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setScroll(10);
@@ -186,11 +186,13 @@ public class RestElasticClientTest {
 
     @Test
     public void testQuery() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"query\":{\"term\":{\"obj1\":{\"value\":\"value1\",\"boost\":1.0}}}}".getBytes());
+        final Map<String,Object> query = ImmutableMap.of("term", ImmutableMap.of("obj1", "value1"));
+        final byte[] data = new ObjectMapper().writeValueAsBytes(ImmutableMap.of("query", query));
+        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher(data);
         when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
-        request.setQuery(QueryBuilders.termQuery("obj1", "value1"));
+        request.setQuery(query);
         client.search("status_s", "active", request);
     }
 

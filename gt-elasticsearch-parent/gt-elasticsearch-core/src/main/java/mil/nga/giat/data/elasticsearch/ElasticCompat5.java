@@ -9,17 +9,19 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.http.HttpHost;
-import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.common.geo.GeoHashUtils;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.joda.Joda;
-import org.elasticsearch.common.settings.Settings;
 import org.geotools.util.logging.Logging;
 import org.joda.time.format.DateTimeFormatter;
+
+import com.github.davidmoten.geo.GeoHash;
+import com.github.davidmoten.geo.LatLong;
+import com.google.common.collect.ImmutableMap;
+import com.vividsolutions.jts.geom.Coordinate;
 
 public class ElasticCompat5 implements ElasticCompat {
 
@@ -31,22 +33,18 @@ public class ElasticCompat5 implements ElasticCompat {
     }
 
     @Override
-    public Settings createSettings(Object... params) {
-        return Settings.builder().put(params).build();
-    }
-
-    @Override
     public String encodeGeohash(double lon, double lat, int level) {
-        return GeoHashUtils.stringEncode(lon, lat, level);
+        return GeoHash.encodeHash(lat, lon, level);
     }
 
     @Override
-    public GeoPoint decodeGeohash(String geohash) {
-        return GeoPoint.fromGeohash(geohash);
+    public Coordinate decodeGeohash(String geohash) {
+        final LatLong latLon = GeoHash.decodeHash(geohash);
+        return new Coordinate(latLon.getLon(), latLon.getLat());
     }
 
     @Override
-    public ElasticClient createClient(String host, int port, String clusterName) throws IOException {
+    public ElasticClient createClient(String host, int port) throws IOException {
         ElasticClient elasticClient = null;
         try {
             final RestClient client = RestClient.builder(new HttpHost(host, port, "http")).build();
@@ -55,7 +53,7 @@ public class ElasticCompat5 implements ElasticCompat {
                 throw new IOException();
             }
             elasticClient = new RestElasticClient(client);
-            LOGGER.info("Created REST client");
+            LOGGER.fine("Created REST client: " + client);
         } catch (Exception e) {
             throw new IOException("Unable to create REST client", e);
         }
@@ -76,11 +74,6 @@ public class ElasticCompat5 implements ElasticCompat {
             analyzed = true;
         }
         return analyzed;
-    }
-
-    @Override
-    public void addField(SearchRequestBuilder builder, String name) {
-        builder.addStoredField(name);
     }
 
 }

@@ -55,13 +55,13 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
     }
 
     @Test
-    public void testFactoryWithTransportClient() throws IOException {
+    public void testFactory() throws IOException {
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, String.valueOf(9300));
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, port);
         map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
@@ -89,7 +89,7 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, String.valueOf(9300));
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, port);
         map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
         map.put(ElasticDataStoreFactory.SEARCH_INDICES.key, "sample1,sample2");
 
@@ -119,7 +119,7 @@ public class ElasticDataStoreFinderTest extends ElasticTestSupport {
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, String.valueOf(9300));
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, port);
         map.put(ElasticDataStoreFactory.SEARCH_INDICES.key, "sample1,sample2");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();

@@ -11,9 +11,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.FilteringFeatureReader;
 import org.geotools.data.Query;
@@ -137,7 +134,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
     }
 
     private ElasticRequest prepareSearchRequest(Query query, boolean scroll) throws IOException {
-        String naturalSortOrder = SortOrder.ASC.toString();
+        String naturalSortOrder = "asc";
         final ElasticRequest searchRequest = new ElasticRequest();
         final ElasticDataStore dataStore = getDataStore();
         final String docType = dataStore.getDocType(entry.getName());
@@ -183,13 +180,13 @@ public class ElasticFeatureSource extends ContentFeatureSource {
             LOGGER.fine("Filter is not fully supported by native Elasticsearch."
                     + " Additional post-query filtering will be performed.");
         }
-        final QueryBuilder filteredQueryBuilder = filterToElastic.getQueryBuilder();
+        final Map<String,Object> filteredQueryBuilder = filterToElastic.getQueryBuilder();
 
-        final QueryBuilder nativeQueryBuilder = filterToElastic.getNativeQueryBuilder();
+        final Map<String,Object> nativeQueryBuilder = filterToElastic.getNativeQueryBuilder();
 
         searchRequest.setQuery(filteredQueryBuilder);
 
-        if (isSort(query) && nativeQueryBuilder.toString().equals(QueryBuilders.matchAllQuery().toString())) {
+        if (isSort(query) && nativeQueryBuilder.equals(ElasticConstants.MATCH_ALL)) {
             searchRequest.addSort("_uid", naturalSortOrder);
         }
 

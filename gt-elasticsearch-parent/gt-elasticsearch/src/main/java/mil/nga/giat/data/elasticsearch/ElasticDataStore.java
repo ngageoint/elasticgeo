@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.elasticsearch.common.joda.Joda;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
 import org.geotools.data.store.ContentDataStore;
@@ -42,8 +41,6 @@ public class ElasticDataStore extends ContentDataStore {
 
     private static ElasticClient client;
 
-    private final ElasticClient managedClient;
-
     private final String indexName;
 
     private final String searchIndices;
@@ -69,7 +66,7 @@ public class ElasticDataStore extends ContentDataStore {
     private Double gridThreshold;
 
     public ElasticDataStore(String searchHost, Integer hostPort, 
-            String indexName, String searchIndices, String clusterName) throws IOException {
+            String indexName, String searchIndices) throws IOException {
 
         LOGGER.fine("Initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
 
@@ -81,11 +78,7 @@ public class ElasticDataStore extends ContentDataStore {
             this.searchIndices = indexName;
         }
 
-        if (client == null) {
-            managedClient = compat.createClient(searchHost, hostPort, clusterName);
-        } else {
-            managedClient = null;
-        }
+        client = compat.createClient(searchHost, hostPort);
 
         final List<String> types = getClient().getTypes(indexName);
         if (!types.isEmpty()) {
@@ -182,13 +175,10 @@ public class ElasticDataStore extends ContentDataStore {
 
     @Override
     public void dispose() {
-        if (managedClient != null) {
-            LOGGER.fine("Closing client");
-            try {
-                managedClient.close();
-            } catch (IOException e) {
-                LOGGER.warning("Error closing client: " + e);
-            }
+        try {
+            client.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error closing client", e);
         }
         super.dispose();
     }
@@ -202,7 +192,7 @@ public class ElasticDataStore extends ContentDataStore {
     }
 
     public ElasticClient getClient() {
-        return client != null ? client : managedClient;
+        return client;
     }
 
     public boolean isSourceFilteringEnabled() {

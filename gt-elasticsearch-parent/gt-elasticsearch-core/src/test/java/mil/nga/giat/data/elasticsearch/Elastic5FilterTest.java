@@ -18,17 +18,10 @@ import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.ANALYZED;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.GEOMETRY_TYPE;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.MATCH_ALL;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.geo.builders.LineStringBuilder;
-import org.elasticsearch.common.geo.builders.PolygonBuilder;
-import org.elasticsearch.common.geo.builders.ShapeBuilders;
-import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.*;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
@@ -77,6 +70,9 @@ import org.opengis.filter.temporal.TEquals;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -196,8 +192,8 @@ public class Elastic5FilterTest {
         Query query = new Query();
         query.setFilter(Filter.INCLUDE);
         builder.encode(query);
-        assertEquals(QueryBuilders.matchAllQuery().toString(), builder.getQueryBuilder().toString());
-        assertEquals(QueryBuilders.matchAllQuery(), builder.getNativeQueryBuilder());
+        assertEquals(MATCH_ALL, builder.getQueryBuilder());
+        assertEquals(MATCH_ALL, builder.getNativeQueryBuilder());
         assertNull(builder.getAggregations());
         assertTrue(builder.getFullySupported());
     }
@@ -205,243 +201,247 @@ public class Elastic5FilterTest {
     @Test
     public void testId() {
         final Id filter = ff.id(ff.featureId("id"));
-        IdsQueryBuilder expected = QueryBuilders.idsQuery().addIds("id");
+        Map<String,Object> expected = ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testAnd() {
         And filter = ff.and(ff.id(ff.featureId("id1")), ff.id(ff.featureId("id2")));
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().must(QueryBuilders.idsQuery().addIds("id1"))
-                .must(QueryBuilders.idsQuery().addIds("id2"));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must",
+                ImmutableList.of(ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))),
+                ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testOr() {
         final Or filter = ff.or(ff.id(ff.featureId("id1")), ff.id(ff.featureId("id2")));
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().should(QueryBuilders.idsQuery().addIds("id1"))
-                .should(QueryBuilders.idsQuery().addIds("id2"));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("should",
+                ImmutableList.of(ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))),
+                ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testNot() {
         Not filter = ff.not(ff.id(ff.featureId("id")));
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.idsQuery().addIds("id"));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",
+                ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id")))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsNull() {
         PropertyIsNull filter = ff.isNull(ff.property("prop"));
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery("prop"));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",
+                ImmutableMap.of("exists", ImmutableMap.of("field", "prop"))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsNotNull() {
         Not filter = ff.not(ff.isNull(ff.property("prop")));
-        ExistsQueryBuilder expected = QueryBuilders.existsQuery("prop");
+        Map<String,Object> expected = ImmutableMap.of("exists", ImmutableMap.of("field", "prop"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsEqualToString() {
         PropertyIsEqualTo filter = ff.equals(ff.property("stringAttr"), ff.literal("value"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("stringAttr", "value");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("stringAttr", "value"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testNestedPropertyIsEqualToString() {
         PropertyIsEqualTo filter = ff.equals(ff.property("nested.hej"), ff.literal("value"));
-        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", QueryBuilders.termQuery("nested.hej", "value"), ScoreMode.None);
+        Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", ImmutableMap.of("term", ImmutableMap.of("nested.hej", "value"))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(),builder.getQueryBuilder().toString());
+        assertEquals(expected,builder.getQueryBuilder());
     }
 
     @Test
     public void testNestedStringIsEqualToProperty() {
         PropertyIsEqualTo filter = ff.equals(ff.literal("value"), ff.property("nested.hej"));
-        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", QueryBuilders.termQuery("nested.hej", "value"), ScoreMode.None);
+        Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", ImmutableMap.of("term", ImmutableMap.of("nested.hej", "value"))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(),builder.getQueryBuilder().toString());
+        assertEquals(expected,builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsNotEqualToString() {
         PropertyIsNotEqualTo filter = ff.notEqual(ff.property("stringAttr"), ff.literal("value"));
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery("stringAttr", "value"));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",ImmutableMap.of("term", ImmutableMap.of("stringAttr", "value"))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsEqualToDouble() {
         PropertyIsEqualTo filter = ff.equals(ff.property("doubleAttr"), ff.literal("4.5"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("doubleAttr", 4.5);
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("doubleAttr", 4.5));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testDoubleIsEqualtoProperty() {
         PropertyIsEqualTo filter = ff.equals(ff.literal("4.5"), ff.property("doubleAttr"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("doubleAttr", 4.5);
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("doubleAttr", 4.5));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsNotEqualToDouble() {
         PropertyIsNotEqualTo filter = ff.notEqual(ff.property("doubleAttr"), ff.literal("4.5"));
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery("doubleAttr", 4.5));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",ImmutableMap.of("term", ImmutableMap.of("doubleAttr", 4.5))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsEqualToFloat() {
         PropertyIsEqualTo filter = ff.equals(ff.property("floatAttr"), ff.literal("4.5"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("floatAttr", 4.5f);
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("floatAttr", 4.5f));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsEqualToInteger() {
         PropertyIsEqualTo filter = ff.equals(ff.property("integerAttr"), ff.literal("4"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("integerAttr", 4);
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("integerAttr", 4));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsEqualToBoolean() {
         PropertyIsEqualTo filter = ff.equals(ff.property("booleanAttr"), ff.literal("true"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("booleanAttr", true);
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("booleanAttr", true));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsGreaterThan() {
         PropertyIsGreaterThan filter = ff.greater(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").gt(4.5);
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("gt", 4.5)));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsLessThan() {
         PropertyIsLessThan filter = ff.less(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").lt(4.5);
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("lt", 4.5)));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsGreaterThanOrEqualTo() {
         PropertyIsGreaterThanOrEqualTo filter = ff.greaterOrEqual(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").gte(4.5);
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("gte", 4.5)));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsLessThanOrEqualTo() {
         PropertyIsLessThanOrEqualTo filter = ff.lessOrEqual(ff.property("doubleAttr"), ff.literal("4.5"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").lte(4.5);
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("lte", 4.5)));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testPropertyIsBetween() {
         PropertyIsBetween filter = ff.between(ff.property("doubleAttr"), ff.literal("4.5"), ff.literal("5.5"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("doubleAttr").gte(4.5).lte(5.5);
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("gte", 4.5, "lte", 5.5)));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testUnknownPropertyIsBetween() {
         PropertyIsBetween filter = ff.between(ff.property("unknownStr"), ff.literal("a"), ff.literal("c"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("unknownStr").gte("a").lte("c");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("unknownStr", ImmutableMap.of("gte", "a", "lte", "c")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testIncludeFilter() {
         IncludeFilter filter = Filter.INCLUDE;
-        MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
+        Map<String,Object> expected = MATCH_ALL;
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testExcludeFilter() {
         ExcludeFilter filter = Filter.EXCLUDE;
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",MATCH_ALL));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -470,32 +470,32 @@ public class Elastic5FilterTest {
     @Test
     public void testPropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("analyzed"), "hello");
-        QueryStringQueryBuilder expected = QueryBuilders.queryStringQuery("hello").defaultField("analyzed");
+        Map<String,Object> expected = ImmutableMap.of("query_string", ImmutableMap.of("query", "hello", "default_field", "analyzed"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testCaseSensitivePropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("analyzed"), "hello", "\\", "*", ".", true);
-        QueryStringQueryBuilder expected = QueryBuilders.queryStringQuery("hello").defaultField("analyzed");
+        Map<String,Object> expected = ImmutableMap.of("query_string", ImmutableMap.of("query", "hello", "default_field", "analyzed"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testNestedPropertyIsLike() {
         PropertyIsLike filter = ff.like(ff.property("nested.hej"), "hello");
-        QueryStringQueryBuilder expectedFilter = QueryBuilders.queryStringQuery("hello").defaultField("nested.hej");
-        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", expectedFilter, ScoreMode.None);
+        Map<String,Object> expectedFilter = ImmutableMap.of("query_string", ImmutableMap.of("query", "hello", "default_field", "nested.hej"));
+        Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", expectedFilter));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(),builder.getQueryBuilder().toString());
+        assertEquals(expected,builder.getQueryBuilder());
     }
 
     @Test
@@ -538,32 +538,39 @@ public class Elastic5FilterTest {
 
     @Test
     public void testGeoShapeBboxFilter() throws ParseException, IOException {
-        BBOX filter = ff.bbox("geom", 0., 0., 1., 1., "EPSG:4326");
-        List<Coordinate> coords = new ArrayList<>();
-        coords.add(new Coordinate(0,0));
-        coords.add(new Coordinate(0,1));
-        coords.add(new Coordinate(1,1));
-        coords.add(new Coordinate(1,0));
-        coords.add(new Coordinate(0,0));
-        PolygonBuilder shape = ShapeBuilders.newPolygon(coords);
-        GeoShapeQueryBuilder expected = QueryBuilders.geoShapeQuery("geom", shape).relation(ShapeRelation.INTERSECTS);
+        BBOX filter = ff.bbox("geom", 0., 0., 1.1, 1.1, "EPSG:4326");
+        List<List<Double>> coords = new ArrayList<>();
+        coords.add(ImmutableList.of(0.,0.));
+        coords.add(ImmutableList.of(0.,1.1));
+        coords.add(ImmutableList.of(1.1,1.1));
+        coords.add(ImmutableList.of(1.1,0.));
+        coords.add(ImmutableList.of(0.,0.));
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", 
+                        ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                                ImmutableMap.of("coordinates", ImmutableList.of(coords), "type", "Polygon"),
+                                "relation", "INTERSECTS")))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
     @Test
     public void testGeoShapeIntersectsFilter() throws CQLException, IOException {
-        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
-        List<Coordinate> coords = new ArrayList<>();
-        coords.add(new Coordinate(0,0));
-        coords.add(new Coordinate(1,1));
-        LineStringBuilder shape = ShapeBuilders.newLineString(coords);
-        GeoShapeQueryBuilder expected = QueryBuilders.geoShapeQuery("geom", shape).relation(ShapeRelation.INTERSECTS);
+        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geom\", LINESTRING(0 0,1.1 1.1))");
+        List<List<Double>> coords = new ArrayList<>();
+        coords.add(ImmutableList.of(0.,0.));
+        coords.add(ImmutableList.of(1.1,1.1));
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", 
+                        ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                                ImmutableMap.of("coordinates", coords, "type", "LineString"),
+                                "relation", "INTERSECTS")))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        // TODO: Why doesn't equality check on objects work here
         assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
@@ -572,11 +579,11 @@ public class Elastic5FilterTest {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Intersects filter = ff.intersects(ff.property("geom"), ff.literal(ls));
 
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(QueryBuilders.matchAllQuery());
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",MATCH_ALL));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -584,66 +591,24 @@ public class Elastic5FilterTest {
         LineString ls = gf.createLineString(new Coordinate[0]);
         Disjoint filter = ff.disjoint(ff.property("geom"), ff.literal(ls));
 
-        MatchAllQueryBuilder expected = QueryBuilders.matchAllQuery();
+        Map<String,Object> expected = MATCH_ALL;
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testGeoShapeIntersectsFilterReversed() throws CQLException, IOException {
-        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(LINESTRING(0 0,1 1), \"geom\")");
-        List<Coordinate> coords = new ArrayList<>();
-        coords.add(new Coordinate(0,0));
-        coords.add(new Coordinate(1,1));
-        LineStringBuilder shape = ShapeBuilders.newLineString(coords);
-        GeoShapeQueryBuilder expected = QueryBuilders.geoShapeQuery("geom", shape).relation(ShapeRelation.INTERSECTS);
-
-        builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
-    }
-
-    @Test
-    public void testAndWithBbox() throws IOException {
-        And filter = ff.and(ff.id(ff.featureId("id1")), ff.bbox("geom", 0., 0., 1., 1., "EPSG:4326"));
-        List<Coordinate> coords = new ArrayList<>();
-        coords.add(new Coordinate(0,0));
-        coords.add(new Coordinate(0,1));
-        coords.add(new Coordinate(1,1));
-        coords.add(new Coordinate(1,0));
-        coords.add(new Coordinate(0,0));
-        PolygonBuilder shape = ShapeBuilders.newPolygon(coords);
-        BoolQueryBuilder expected = QueryBuilders.boolQuery()
-                .must(QueryBuilders.idsQuery().addIds("id1"))
-                .must(QueryBuilders.geoShapeQuery("geom", shape).relation(ShapeRelation.INTERSECTS));
-
-        builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
-    }
-
-    @Test
-    public void testGeoPointBboxFilter() {
-        BBOX filter = ff.bbox("geo_point", 0., 0., 1., 1., "EPSG:4326");
-        GeoBoundingBoxQueryBuilder expected = QueryBuilders.geoBoundingBoxQuery("geo_point").setCorners(1,0,0,1);
-
-        builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));       
-    }
-
-    @Test
-    public void testGeoPolygonFilter() throws CQLException {
-        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geo_point\", POLYGON((0 0, 0 1, 1 1, 1 0, 0 0)))");
-        List<GeoPoint> points = new ArrayList<>();
-        points.add(new GeoPoint(0,0));
-        points.add(new GeoPoint(1,0));
-        points.add(new GeoPoint(1,1));
-        points.add(new GeoPoint(0,1));
-        points.add(new GeoPoint(0,0));
-        GeoPolygonQueryBuilder expected = QueryBuilders.geoPolygonQuery("geo_point", points);
+        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(LINESTRING(0 0,1.1 1.1), \"geom\")");
+        List<List<Double>> coords = new ArrayList<>();
+        coords.add(ImmutableList.of(0.,0.));
+        coords.add(ImmutableList.of(1.1,1.1));
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", 
+                        ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                                ImmutableMap.of("coordinates", coords, "type", "LineString"),
+                                "relation", "INTERSECTS")))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -651,62 +616,122 @@ public class Elastic5FilterTest {
     }
 
     @Test
-    public void testDWithinFilter() throws CQLException {
-        DWithin filter = (DWithin) ECQL.toFilter("DWITHIN(\"geo_point\", POINT(0 1), 1.0, meters)");
-        GeoDistanceQueryBuilder expected = QueryBuilders.geoDistanceQuery("geo_point").point(1,0).distance(1.,
-                DistanceUnit.METERS);
+    public void testAndWithBbox() throws IOException {
+        And filter = ff.and(ff.id(ff.featureId("id1")), ff.bbox("geom", 0., 0., 1.1, 1.1, "EPSG:4326"));
+        List<List<Double>> coords = new ArrayList<>();
+        coords.add(ImmutableList.of(0.,0.));
+        coords.add(ImmutableList.of(0.,1.1));
+        coords.add(ImmutableList.of(1.1,1.1));
+        coords.add(ImmutableList.of(1.1,0.));
+        coords.add(ImmutableList.of(0.,0.));
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must", ImmutableList.of(
+                ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))), ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                                ImmutableMap.of("coordinates", ImmutableList.of(coords), "type", "Polygon"),
+                                "relation", "INTERSECTS")))
+                        )))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));       
+        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
+    }
+
+    @Test
+    public void testGeoPointBboxFilter() {
+        BBOX filter = ff.bbox("geo_point", 0., 0., 1., 1., "EPSG:4326");
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_bounding_box", 
+                        ImmutableMap.of("geo_point", ImmutableMap.of("top_left", ImmutableList.of(0.,1.) ,
+                                "bottom_right", ImmutableList.of(1.,0.))))));
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertEquals(expected, builder.getQueryBuilder());       
+    }
+
+    @Test
+    public void testGeoPolygonFilter() throws CQLException {
+        Intersects filter = (Intersects) ECQL.toFilter("INTERSECTS(\"geo_point\", POLYGON((0 0, 0 1.1, 1.1 1.1, 1.1 0, 0 0)))");
+        List<List<Double>> points = ImmutableList.of(
+                ImmutableList.of(0.,0.),
+                ImmutableList.of(0.,1.1),
+                ImmutableList.of(1.1,1.1),
+                ImmutableList.of(1.1,0.),
+                ImmutableList.of(0.,0.));
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_polygon", 
+                        ImmutableMap.of("geo_point", ImmutableMap.of("points", points)))));
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertEquals(expected, builder.getQueryBuilder());
+    }
+
+    @Test
+    public void testDWithinFilter() throws CQLException {
+        DWithin filter = (DWithin) ECQL.toFilter("DWITHIN(\"geo_point\", POINT(0 1.1), 1.0, meters)");
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_distance", 
+                        ImmutableMap.of("distance", "1.0m",
+                                "geo_point", ImmutableList.of(0.,1.1)))));
+
+        builder.visit(filter, null);
+        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertEquals(expected, builder.getQueryBuilder());       
     }
 
     @Test
     public void testDWithinPolygonFilter() throws CQLException {
         DWithin filter = (DWithin) ECQL.toFilter("DWITHIN(\"geo_point\", POLYGON((0 0, 0 1, 1 1, 1 0, 0 0)), 1.0, meters)");
-        GeoDistanceQueryBuilder expected = QueryBuilders.geoDistanceQuery("geo_point").point(0.5,0.5).distance(1.,
-                DistanceUnit.METERS);
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_distance", 
+                        ImmutableMap.of("distance", "1.0m",
+                                "geo_point", ImmutableList.of(0.5,0.5)))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));       
+        assertEquals(expected, builder.getQueryBuilder());       
     }
 
     @Test
     public void testDBeyondFilter() throws CQLException {
-        Beyond filter = (Beyond) ECQL.toFilter("BEYOND(\"geo_point\", POINT(0 1), 1.0, meters)");
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().mustNot(
-                QueryBuilders.geoDistanceQuery("geo_point").point(1,0).distance(1., DistanceUnit.METERS));
+        Beyond filter = (Beyond) ECQL.toFilter("BEYOND(\"geo_point\", POINT(0 1.1), 1.0, meters)");
+        Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not", ImmutableMap.of("bool", 
+                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_distance", ImmutableMap.of("distance", "1.0m",
+                                "geo_point", ImmutableList.of(0.,1.1)))))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));       
+        assertEquals(expected, builder.getQueryBuilder());       
     }
 
     @Test
-    public void compoundFilter() throws CQLException, IOException {
-        Filter filter = ECQL.toFilter("time > \"1970-01-01\" and INTERSECTS(\"geom\", LINESTRING(0 0,1 1))");
-        RangeQueryBuilder expected1 = QueryBuilders.rangeQuery("time").gt("1970-01-01");
-        List<Coordinate> coords = new ArrayList<>();
-        coords.add(new Coordinate(0,0));
-        coords.add(new Coordinate(1,1));
-        LineStringBuilder shape = ShapeBuilders.newLineString(coords);
-        GeoShapeQueryBuilder expected2 = QueryBuilders.geoShapeQuery("geom", shape).relation(ShapeRelation.INTERSECTS);
-        BoolQueryBuilder expected = QueryBuilders.boolQuery().must(expected1).must(expected2);
+    public void testCompoundFilter() throws CQLException, IOException {
+        Filter filter = ECQL.toFilter("time > \"1970-01-01\" and INTERSECTS(\"geom\", LINESTRING(0 0,1.1 1.1))");
+        List<List<Double>> coords = new ArrayList<>();
+        coords.add(ImmutableList.of(0.,0.));
+        coords.add(ImmutableList.of(1.1,1.1));
+        Map<String,Object> expected = ImmutableMap.of("bool", 
+                ImmutableMap.of("must", ImmutableList.of(ImmutableMap.of("range", ImmutableMap.of("time", ImmutableMap.of("gt", "1970-01-01"))),
+                        ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL, 
+                        "filter", ImmutableMap.of("geo_shape", 
+                        ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                                ImmutableMap.of("coordinates", coords, "type", "LineString"),
+                                "relation", "INTERSECTS"))))))));
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
     @Test
     public void testCql() throws CQLException {
         Filter filter = ECQL.toFilter("\"object.field\"='value'");
-        TermQueryBuilder expected = QueryBuilders.termQuery("object.field", "value");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("object.field", "value"));
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -714,33 +739,17 @@ public class Elastic5FilterTest {
         query.setHints(null);
 
         builder.addViewParams(query);
-        assertTrue(builder.getQueryBuilder().toString().equals(QueryBuilders.matchAllQuery().toString()));
-        assertTrue(builder.nativeQueryBuilder.toString().equals(QueryBuilders.matchAllQuery().toString()));
+        assertEquals(MATCH_ALL, builder.getQueryBuilder());
+        assertEquals(MATCH_ALL, builder.nativeQueryBuilder);
     }
 
     @Test
-    public void testQueryViewParam() {
-        IdsQueryBuilder idsQuery = QueryBuilders.idsQuery("type1");
-        parameters.put("q", idsQuery.toString());
-        byte[] encoded = Base64.encodeBase64(idsQuery.toString().getBytes());
-        final Pattern expected = Pattern.compile(".*\"wrapper\".*\"query\".*\"" + new String(encoded) + ".*", Pattern.MULTILINE|Pattern.DOTALL);
+    public void testQueryViewParam() throws JsonProcessingException {
+        Map<String,Object> idsQuery = ImmutableMap.of("ids", ImmutableMap.of("value", ImmutableList.of("type1")));
+        parameters.put("q", new ObjectMapper().writeValueAsString(idsQuery));
 
         builder.addViewParams(query);
-        assertTrue(builder.filterBuilder.toString().equals(QueryBuilders.matchAllQuery().toString()));
-        assertTrue(expected.matcher(builder.nativeQueryBuilder.toString()).matches());
-    }
-
-    @Test
-    public void testFilterViewParam() {
-        IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
-        parameters.put("f", idsFilter.toString());
-        byte[] encoded = Base64.encodeBase64(idsFilter.toString().getBytes());
-        final Pattern expected = Pattern.compile(".*\"wrapper\".*\"query\".*\"" + new String(encoded) + ".*",
-                Pattern.MULTILINE | Pattern.DOTALL);
-
-        builder.addViewParams(query);
-        assertTrue(expected.matcher(builder.getQueryBuilder().toString()).matches());
-        assertTrue(builder.nativeQueryBuilder.toString().equals(QueryBuilders.matchAllQuery().toString()));
+        assertEquals(idsQuery, builder.nativeQueryBuilder);
     }
 
     @Test
@@ -748,49 +757,49 @@ public class Elastic5FilterTest {
         final String aggregation = "{\"ageohash_grid_agg\":{\"geohash_grid\": {\"field\":\"a_field\",\"precision\":1}}}";
         parameters.put("a", aggregation);
         builder.addViewParams(query);
-        assertTrue(builder.aggregations.equals(ImmutableMap.of("ageohash_grid_agg", ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1)))));
+        assertEquals(ImmutableMap.of("ageohash_grid_agg", ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1))),builder.aggregations);
     }
 
     @Test
-    public void testAndFilterViewParam() {
-        IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
-        builder.filterBuilder = idsFilter;
-        parameters.put("f", idsFilter.toString());
+    public void testAndQueryViewParam() throws JsonProcessingException {
+        Map<String,Object> idsQuery = ImmutableMap.of("ids", ImmutableMap.of("value", ImmutableList.of("id")));
+        builder.filterBuilder = idsQuery;
+        parameters.put("q", new ObjectMapper().writeValueAsString(idsQuery));
 
         builder.addViewParams(query);
-        assertTrue(builder.getQueryBuilder() instanceof BoolQueryBuilder);
+        assertTrue(builder.getQueryBuilder() instanceof Map);
     }
 
     @Test
-    public void testNativeOnlyFilterViewParam() {
+    public void testNativeOnlyQueryViewParam() throws JsonProcessingException {
         parameters.put("native-only", "true");        
-        IdsQueryBuilder idsFilter = QueryBuilders.idsQuery().addIds("id");
-        builder.filterBuilder = idsFilter;
-        parameters.put("f", idsFilter.toString());
+        Map<String,Object> idsQuery = ImmutableMap.of("ids", ImmutableMap.of("value", ImmutableList.of("id")));
+        builder.filterBuilder = idsQuery;
+        parameters.put("q", new ObjectMapper().writeValueAsString(idsQuery));
 
         builder.addViewParams(query);
-        assertEquals(builder.getQueryBuilder().toString(), QueryBuilders.wrapperQuery(idsFilter.toString()).toString());
+        assertEquals(builder.getQueryBuilder(), idsQuery);
     }
 
     @Test
     public void testTemporalStringLiteral() {
         After filter = ff.after(ff.property("dateAttr"), ff.literal("1970-01-01 00:00:00"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-01-01 00:00:00");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-01-01 00:00:00")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
     public void testNestedTemporalStringLiteral() {
         After filter = ff.after(ff.property("nested.datehej"), ff.literal("1970-01-01 00:00:00"));
-        RangeQueryBuilder expectedFilter = QueryBuilders.rangeQuery("nested.datehej").gt("1970-01-01 00:00:00");
-        NestedQueryBuilder expected = QueryBuilders.nestedQuery("nested", expectedFilter, ScoreMode.None);
+        Map<String,Object> expectedFilter = ImmutableMap.of("range", ImmutableMap.of("nested.datehej", ImmutableMap.of("gt", "1970-01-01 00:00:00")));
+        Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", expectedFilter));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -800,11 +809,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttr"), ff.literal(temporalInstant));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T00:00:00.000Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T00:00:00.000Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -815,11 +824,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttrWithFormat"), ff.literal(temporalInstant));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttrWithFormat").gt("1970-07-19");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttrWithFormat", ImmutableMap.of("gt", "1970-07-19")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -830,11 +839,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttrWithFormat"), ff.literal(temporalInstant));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttrWithFormat").gt("19700719T020203.456Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttrWithFormat", ImmutableMap.of("gt", "19700719T020203.456Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -844,11 +853,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.property("dateAttr"), ff.literal(temporalInstant));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T02:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T02:02:03.456Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -858,11 +867,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456-0100");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         After filter = ff.after(ff.literal(temporalInstant), ff.property("dateAttr"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T02:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T02:02:03.456Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -873,11 +882,11 @@ public class Elastic5FilterTest {
         Instant temporalInstant2 = new DefaultInstant(new DefaultPosition(date2));
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
         After filter = ff.after(ff.property("dateAttr"), ff.literal(period));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -888,11 +897,11 @@ public class Elastic5FilterTest {
         Instant temporalInstant2 = new DefaultInstant(new DefaultPosition(date2));
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
         After filter = ff.after(ff.literal(period), ff.property("dateAttr"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T01:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T01:02:03.456Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -900,11 +909,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456Z");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         org.opengis.filter.temporal.Before filter = ff.before(ff.property("dateAttr"), ff.literal(temporalInstant));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T01:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T01:02:03.456Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -916,11 +925,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         org.opengis.filter.temporal.Before filter = ff.before(ff.property("dateAttr"), ff.literal(period));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").lt("1970-07-19T01:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T01:02:03.456Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -932,11 +941,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         org.opengis.filter.temporal.Before filter = ff.before(ff.literal(period), ff.property("dateAttr"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -948,11 +957,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         Begins filter = ff.begins(ff.property("dateAttr"), ff.literal(period));
-        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T01:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T01:02:03.456Z"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -984,11 +993,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         BegunBy filter = ff.begunBy(ff.literal(period), ff.property("dateAttr"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T01:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T01:02:03.456Z"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -1000,12 +1009,12 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         During filter = ff.during(ff.property("dateAttr"), ff.literal(period));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T01:02:03.456Z")
-                .lt("1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", 
+                ImmutableMap.of("gt", "1970-07-19T01:02:03.456Z", "lt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -1017,11 +1026,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         Ends filter = ff.ends(ff.property("dateAttr"), ff.literal(period));
-        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T07:08:09.101Z"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -1033,11 +1042,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         EndedBy filter = ff.endedBy(ff.literal(period), ff.property("dateAttr"));
-        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T07:08:09.101Z"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -1049,11 +1058,11 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         EndedBy filter = ff.endedBy(ff.property("dateAttr"), ff.literal(period));
-        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr","1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr","1970-07-19T07:08:09.101Z"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -1065,12 +1074,12 @@ public class Elastic5FilterTest {
         Period period = new DefaultPeriod(temporalInstant, temporalInstant2);
 
         TContains filter = ff.tcontains(ff.literal(period), ff.property("dateAttr"));
-        RangeQueryBuilder expected = QueryBuilders.rangeQuery("dateAttr").gt("1970-07-19T01:02:03.456Z")
-                .lt("1970-07-19T07:08:09.101Z");
+        Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", 
+                ImmutableMap.of("gt", "1970-07-19T01:02:03.456Z", "lt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test
@@ -1078,11 +1087,11 @@ public class Elastic5FilterTest {
         Date date1 = dateFormat.parse("1970-07-19T01:02:03.456Z");
         Instant temporalInstant = new DefaultInstant(new DefaultPosition(date1));
         TEquals filter = ff.tequals(ff.property("dateAttr"), ff.literal(temporalInstant));
-        TermQueryBuilder expected = QueryBuilders.termQuery("dateAttr", "1970-07-19T01:02:03.456Z");
+        Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T01:02:03.456Z"));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
-        assertTrue(builder.getQueryBuilder().toString().equals(expected.toString()));
+        assertEquals(expected, builder.getQueryBuilder());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -1101,7 +1110,7 @@ public class Elastic5FilterTest {
     @Test
     public void testPropertyNameWithExtraData() {
         builder.visit(ff.property("doubleAttr"), Double.class);
-        assertTrue(builder.field.equals("doubleAttr"));
+        assertEquals("doubleAttr", builder.field);
     }
 
     @Test(expected=UnsupportedOperationException.class)

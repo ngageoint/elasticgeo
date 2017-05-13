@@ -4,9 +4,16 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import java.util.Collections;
+import java.util.Map;
+
+import com.google.common.collect.ImmutableMap;
+
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
 public final class ElasticConstants {
+    
+    public static final Map<String,Object> MATCH_ALL = ImmutableMap.of("match_all", Collections.EMPTY_MAP);
 
     /**
      * Key used in the feature type user data to store the format for date

@@ -20,7 +20,6 @@ package mil.nga.giat.data.elasticsearch;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.elasticsearch.index.query.QueryBuilders;
 import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.store.ContentFeatureCollection;
@@ -29,13 +28,19 @@ import org.junit.Test;
 import org.opengis.filter.FilterFactory;
 import org.opengis.filter.PropertyIsEqualTo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+
 public class ElasticViewParametersFilterTest extends ElasticTestSupport {
 
+    private ObjectMapper mapper = new ObjectMapper();
+
     @Test
-    public void testSinglesQParameters() throws Exception {
+    public void testNativeTermQuery() throws Exception {
         init("not-active");
         Map<String, String> vparams = new HashMap<String, String>();
-        vparams.put("q", QueryBuilders.termQuery("security_ss", "WPA").toString());
+        Map<String,Object> query = ImmutableMap.of("term", ImmutableMap.of("security_ss", "WPA"));
+        vparams.put("q", mapper.writeValueAsString(query));
         Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
         Query q = new Query(featureSource.getSchema().getTypeName());
         q.setHints(hints);
@@ -50,12 +55,13 @@ public class ElasticViewParametersFilterTest extends ElasticTestSupport {
     }
 
     @Test
-    public void testMultipleQParameters() throws Exception {
+    public void testNativeBooleanQuery() throws Exception {
         init();
         Map<String, String> vparams = new HashMap<String, String>();
-        vparams.put("q", QueryBuilders.boolQuery()
-                .must(QueryBuilders.termQuery("security_ss", "WPA"))
-                .mustNot(QueryBuilders.termQuery("modem_b", true)).toString());
+        Map<String,Object> query = ImmutableMap.of("bool", ImmutableMap.of("must", 
+                ImmutableMap.of("term", ImmutableMap.of("security_ss", "WPA")),
+                "must_not", ImmutableMap.of("term", ImmutableMap.of("modem_b", true))));
+        vparams.put("q", mapper.writeValueAsString(query));
         Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
         Query q = new Query(featureSource.getSchema().getTypeName());
         q.setHints(hints);
@@ -69,63 +75,6 @@ public class ElasticViewParametersFilterTest extends ElasticTestSupport {
         assertEquals(fsi.next().getAttribute("modem_b"), false);
         assertTrue(fsi.hasNext());
         assertEquals(fsi.next().getAttribute("modem_b"), false);
-    }
-
-    @Test
-    public void testSinglesFQParameters() throws Exception {
-        init("not-active");
-        Map<String, String> vparams = new HashMap<String, String>();
-        vparams.put("f", QueryBuilders.termQuery("security_ss", "WPA").toString());
-        Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
-        Query q = new Query(featureSource.getSchema().getTypeName());
-        q.setHints(hints);
-        FilterFactory ff = dataStore.getFilterFactory();
-        PropertyIsEqualTo filter = ff.equals(ff.property("speed_is"), ff.literal("300"));
-        q.setFilter(filter);
-        ContentFeatureCollection features = featureSource.getFeatures(q);
-        assertEquals(1, features.size());
-        SimpleFeatureIterator fsi = features.features();
-        assertTrue(fsi.hasNext());
-        assertEquals(fsi.next().getID(), "not-active.12");
-    }
-
-    @Test
-    public void testMultipleFQParameters() throws Exception {
-        init();
-        Map<String, String> vparams = new HashMap<String, String>();
-        vparams.put("f", QueryBuilders.boolQuery()
-                .must(QueryBuilders.termQuery("security_ss", "WPA"))
-                .must(QueryBuilders.termQuery("modem_b", true)).toString());
-        Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
-        Query q = new Query(featureSource.getSchema().getTypeName());
-        q.setHints(hints);
-        FilterFactory ff = dataStore.getFilterFactory();
-        PropertyIsEqualTo filter = ff.equals(ff.property("speed_is"), ff.literal("300"));
-        q.setFilter(filter);
-        ContentFeatureCollection features = featureSource.getFeatures(q);
-        assertEquals(1, features.size());
-        SimpleFeatureIterator fsi = features.features();
-        assertTrue(fsi.hasNext());
-        assertEquals(fsi.next().getAttribute("modem_b"), true);
-    }
-
-    @Test
-    public void testMixQandFQParameters() throws Exception {
-        init();
-        Map<String, String> vparams = new HashMap<String, String>();
-        vparams.put("q", QueryBuilders.termQuery("security_ss", "WPA").toString());
-        vparams.put("f", QueryBuilders.termQuery("modem_b", true).toString());
-        Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
-        Query q = new Query(featureSource.getSchema().getTypeName());
-        q.setHints(hints);
-        FilterFactory ff = dataStore.getFilterFactory();
-        PropertyIsEqualTo filter = ff.equals(ff.property("speed_is"), ff.literal("300"));
-        q.setFilter(filter);
-        ContentFeatureCollection features = featureSource.getFeatures(q);
-        assertEquals(1, features.size());
-        SimpleFeatureIterator fsi = features.features();
-        assertTrue(fsi.hasNext());
-        assertEquals(fsi.next().getAttribute("modem_b"), true);
     }
 
 }

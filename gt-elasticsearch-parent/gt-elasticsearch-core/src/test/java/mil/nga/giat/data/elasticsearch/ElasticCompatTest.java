@@ -8,13 +8,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
+import com.vividsolutions.jts.geom.Coordinate;
 
 import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.HashMap;
-
-import org.elasticsearch.common.geo.GeoPoint;
 
 public class ElasticCompatTest {
 
@@ -43,10 +42,9 @@ public class ElasticCompatTest {
     public void testElasticCompat5() {
         ElasticCompat compat = new ElasticCompat5();
         assertTrue(compat.newFilterToElastic() instanceof FilterToElastic5);
-        assertEquals("value", compat.createSettings("key","value").get("key"));
-        GeoPoint point = compat.decodeGeohash(compat.encodeGeohash(1, 2, 10));
-        assertEquals(2, point.getLat(), 1e-4);
-        assertEquals(1, point.getLon(), 1e-4);
+        Coordinate point = compat.decodeGeohash(compat.encodeGeohash(1, 2, 10));
+        assertEquals(2, point.y, 1e-4);
+        assertEquals(1, point.x, 1e-4);
         assertEquals(86461000, compat.parseDateTime("1970-01-02 00:01:01", "yyyy-mm-dd HH:mm:ss").getTime());
         assertFalse(compat.isAnalyzed(new HashMap<>()));
         assertFalse(compat.isAnalyzed(ImmutableMap.of("type", "keyword")));
@@ -58,7 +56,7 @@ public class ElasticCompatTest {
     @Test(expected=IOException.class)
     public void testCreateClient() throws IOException {
         ElasticCompat compat = new ElasticCompat5();
-        compat.createClient("localhost", 9285, "elasticsearch");
+        compat.createClient("localhost", 9285);
     }
 
 }

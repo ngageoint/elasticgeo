@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,8 +24,8 @@ import java.util.stream.Collectors;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.elasticsearch.client.Response;
+import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.common.unit.TimeValue;
 import org.geotools.util.logging.Logging;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -50,7 +51,15 @@ public class RestElasticClient implements ElasticClient {
 
     @Override
     public List<String> getTypes(String indexName) throws IOException {
-        final Response response = client.performRequest("GET", "/" + indexName + "/_mapping");
+        final Response response;
+        try {
+            response = client.performRequest("GET", "/" + indexName + "/_mapping");
+        } catch (ResponseException e) {
+            if (e.getResponse().getStatusLine().getStatusCode() == 404) {
+                return new ArrayList<>();
+            }
+            throw e;
+        }
         try (final InputStream inputStream = response.getEntity().getContent()) {
             final Map<String,ElasticMappings> values;
             values = mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {});
@@ -65,14 +74,19 @@ public class RestElasticClient implements ElasticClient {
         try (final InputStream inputStream = response.getEntity().getContent()) {
             final Map<String,ElasticMappings> values;
             values = mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {});
-            final Map<String, Mapping> mappings = values.get(indexName).getMappings();
-            return mappings.get(type).getProperties();
+            final Map<String,Object> properties;
+            if (!values.containsKey(indexName) || !values.get(indexName).getMappings().containsKey(type)) {
+                properties = null;
+            } else {
+                properties = values.get(indexName).getMappings().get(type).getProperties();
+            }
+            return properties;
         }
     }
 
     @Override
     public ElasticResponse search(String searchIndices, String type, ElasticRequest request) throws IOException {
-        final String path = "/" + searchIndices + "/" + type + "/_search";
+        final StringBuilder pathBuilder = new StringBuilder("/" + searchIndices + "/" + type + "/_search");
 
         final Map<String,Object> requestBody = new HashMap<>();
 
@@ -85,7 +99,7 @@ public class RestElasticClient implements ElasticClient {
         }
 
         if (request.getScroll() != null) {
-            requestBody.put("scroll", TimeValue.timeValueSeconds(request.getScroll()).toString());
+            pathBuilder.append("?scroll=" + request.getScroll() + "s");
         }
 
         final List<String> sourceIncludes = request.getSourceIncludes();
@@ -104,10 +118,7 @@ public class RestElasticClient implements ElasticClient {
         }
 
         if (request.getQuery() != null) {
-            // TODO: Convert QueryBuilder directly to map or use string directly to avoid unnecessary conversions
-            final Map<String,Object> query = mapper.readValue(request.getQuery().toString(), new TypeReference<Map<String, Object>>() {});
-            makeCompatQuery2(query);
-            requestBody.put("query", query);
+            requestBody.put("query", request.getQuery());
         }
 
         if (request.getAggregations() != null) {
@@ -118,10 +129,10 @@ public class RestElasticClient implements ElasticClient {
             LOGGER.fine("Elasticsearch request:\n" + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(requestBody));
         }
 
-        return parseResponse(performRequest("POST", path, requestBody));
+        return parseResponse(performRequest("POST", pathBuilder.toString(), requestBody));
     }
 
-    private Response performRequest(String method, String path, Map<String,Object> requestBody) throws IOException {
+    Response performRequest(String method, String path, Map<String,Object> requestBody) throws IOException {
         final byte[] data = mapper.writeValueAsBytes(requestBody);
         final HttpEntity entity = new ByteArrayEntity(data);
         final Response response = client.performRequest(
@@ -148,7 +159,7 @@ public class RestElasticClient implements ElasticClient {
 
         final Map<String,Object> requestBody = new HashMap<>();
         requestBody.put("scroll_id", scrollId);
-        requestBody.put("scroll", TimeValue.timeValueSeconds(scrollTime).toString());
+        requestBody.put("scroll", scrollTime + "s");
 
         return parseResponse(performRequest("POST", path, requestBody));
     }
@@ -166,17 +177,8 @@ public class RestElasticClient implements ElasticClient {
 
     @Override
     public void close() throws IOException {
+        LOGGER.fine("Closing client: " + client);
         client.close();
-    }
-
-    private void makeCompatQuery2(final Map<String,Object> data) {
-        // validation_method and ignore_unmapped not supported in 2.x
-        for (final String parent : new String[] {"geo_polygon", "geo_distance", "geo_bounding_box"}) {
-            removeMapping(parent, "validation_method", data, null);
-            removeMapping(parent, "ignore_unmapped", data, null);
-            removeMapping(parent, "boost", data, null);
-            removeMapping(parent, "type", data, null);
-        }
     }
 
     public static void removeMapping(String parent, String key, Map<String,Object> data, String currentParent) {

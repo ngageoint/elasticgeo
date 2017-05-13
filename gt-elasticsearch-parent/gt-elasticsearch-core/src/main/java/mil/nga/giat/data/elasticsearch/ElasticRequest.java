@@ -9,11 +9,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.elasticsearch.index.query.QueryBuilder;
-
 public class ElasticRequest {
 
-    private QueryBuilder query;
+    private Map<String,Object> query;
 
     private Map<String,Map<String,Map<String,Object>>> aggregations;
 
@@ -35,11 +33,11 @@ public class ElasticRequest {
         this.sourceIncludes = new ArrayList<>();
     }
 
-    public QueryBuilder getQuery() {
+    public Map<String,Object> getQuery() {
         return query;
     }
 
-    public void setQuery(QueryBuilder query) {
+    public void setQuery(Map<String,Object> query) {
         this.query = query;
     }
 

@@ -28,6 +28,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -40,13 +42,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.google.common.collect.ImmutableMap;
 
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.http.HttpTransportSettings;
+import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.transport.Netty4Plugin;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
 import org.geotools.temporal.object.DefaultInstant;
@@ -85,6 +90,10 @@ public class ElasticTestSupport extends ESIntegTestCase {
 
     protected static final int numReplicas = 0;
 
+    protected static final ObjectMapper mapper = new ObjectMapper();
+
+    protected static final ObjectReader mapReader = mapper.readerWithView(Map.class).forType(HashMap.class);
+
     protected String layerName = "active";
 
     protected int SOURCE_SRID = 4326;
@@ -111,11 +120,9 @@ public class ElasticTestSupport extends ESIntegTestCase {
 
     protected List<ElasticAttribute> attributes;
 
-    protected Client client;
+    protected RestElasticClient client;
 
     protected static String dataPath;
-
-    protected final static int HTTP_TEST_PORT = 9400;
 
     @BeforeClass
     public static void beforeTestSuite() throws IOException {
@@ -134,8 +141,9 @@ public class ElasticTestSupport extends ESIntegTestCase {
         scrollEnabled = Boolean.valueOf(properties.getProperty("scroll_enabled"));
         scrollSize = Long.valueOf(properties.getProperty("scroll_size"));
 
-        client = ESIntegTestCase.client();
-        ElasticDataStore.setClient(new TransportElasticClient(client));
+        final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
+        port = cluster().httpAddresses()[0].getPort();
+        client = (RestElasticClient) compat.createClient("localhost", port);
         Map<String,Serializable> params = createConnectionParams();
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         dataStore = (ElasticDataStore) factory.createDataStore(params);
@@ -145,36 +153,46 @@ public class ElasticTestSupport extends ESIntegTestCase {
     @After
     public void afterTest() throws Exception {
         dataStore.dispose();
+        client.close();
     }
 
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
-        return Settings.builder().put(super.nodeSettings(nodeOrdinal))
-                .put("path.home", dataPath)
-                .build();
+        int randomPort = randomIntBetween(49152, 65525);
+        
+        Settings.Builder builder = Settings.builder()
+                .put(super.nodeSettings(nodeOrdinal))
+                .put(NetworkModule.HTTP_ENABLED.getKey(), true)
+                .put(HttpTransportSettings.SETTING_HTTP_PORT.getKey(), randomPort)
+                .put("network.host", "127.0.0.1");
+        Settings settings = builder.build();
+        return settings;
+    }
+
+    @Override
+    protected Collection<Class<? extends Plugin>> nodePlugins() {
+        return Arrays.asList(Netty4Plugin.class);
     }
 
     protected void createIndices() throws IOException {
-        final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
-
         // create index and add mappings
-        Settings indexSettings = compat.createSettings("number_of_shards", numShards, 
-                "number_of_replicas", numReplicas);
-        CreateIndexRequestBuilder builder = client.admin().indices().prepareCreate(indexName);
-        builder.setSettings(indexSettings);
+        Map<String,Object> settings = new HashMap<>();
+        settings.put("settings", ImmutableMap.of("number_of_shards", numShards, "number_of_replicas", numReplicas));
+        Map<String,Object> mappings = new HashMap<>();
+        settings.put("mappings", mappings);
         try (Scanner s = new Scanner(ClassLoader.getSystemResourceAsStream(ACTIVE_MAPPINGS_FILE))) {
             s.useDelimiter("\\A");
-            builder.addMapping("active", s.next());
+            Map<String,Object> source = mapReader.readValue(s.next());
+            mappings.put("active", source);
         }
         try (Scanner s = new Scanner(ClassLoader.getSystemResourceAsStream(INACTIVE_MAPPINGS_FILE))) {
             s.useDelimiter("\\A");
-            builder.addMapping("not-active", s.next());
+            Map<String,Object> source = mapReader.readValue(s.next());
+            mappings.put("not-active", source);
         }
-        builder.execute().actionGet();
+        client.performRequest("PUT", "/" + indexName, settings);
 
         // index documents
-        BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
-
         try (InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE); Scanner scanner = new Scanner(inputStream)) {
             String eol = System.getProperty(LINE_SEPARATOR);
             scanner.useDelimiter(eol);
@@ -195,20 +213,20 @@ public class ElasticTestSupport extends ESIntegTestCase {
                     } else {
                         layerName = null;
                     }
-
-                    bulkRequestBuilder.add(client.prepareIndex(indexName, layerName).setSource(line).setId(id));
+                    
+                    Map<String,Object> source = mapReader.readValue(line);
+                    client.performRequest("POST", "/" + indexName + "/" + layerName + "/" + id, source);
                 }
             }
-            bulkRequestBuilder.execute().actionGet();
 
-            client.admin().indices().refresh(new RefreshRequest(indexName)).actionGet();
+            client.performRequest("POST", "/" + indexName + "/_refresh", null);
         }
     }
 
     protected Map<String,Serializable> createConnectionParams() {
         Map<String,Serializable> params = new HashMap<>();
+        params.put(ElasticDataStoreFactory.HOSTPORT.key, port);
         params.put(ElasticDataStoreFactory.INDEX_NAME.key, indexName);
-        params.put(ElasticDataStoreFactory.CLUSTERNAME.key, clusterName);
         params.put(ElasticDataStoreFactory.SCROLL_ENABLED.key, scrollEnabled);
         params.put(ElasticDataStoreFactory.SCROLL_SIZE.key, scrollSize);
         return params;

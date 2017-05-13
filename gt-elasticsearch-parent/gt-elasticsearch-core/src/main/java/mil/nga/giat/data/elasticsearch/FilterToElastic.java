@@ -18,6 +18,7 @@ package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +27,6 @@ import java.util.logging.Logger;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.ANALYZED;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
-import org.elasticsearch.common.geo.builders.ShapeBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
@@ -99,6 +98,7 @@ import org.opengis.filter.temporal.TEquals;
 import org.opengis.filter.temporal.TOverlaps;
 import org.opengis.temporal.Period;
 
+import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -130,7 +130,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
     protected Object field;
 
-    protected ShapeBuilder currentShapeBuilder;
+    protected Map<String,Object> currentShapeBuilder;
 
     protected Boolean fullySupported;
 
@@ -152,7 +152,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
     protected String type;
 
-    protected String[] ids;
+    protected List<String> ids;
 
     protected Period period;
 
@@ -166,7 +166,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
     protected Boolean nativeOnly;
 
-    protected QueryBuilder nativeQueryBuilder;
+    protected Map<String,Object> nativeQueryBuilder;
 
     protected Map<String,Map<String,Map<String,Object>>> aggregations;
 
@@ -608,7 +608,7 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         for (final Identifier id : filter.getIdentifiers()) {
             idList.add(id.toString());
         }
-        ids = idList.toArray(new String[idList.size()]);
+        ids = idList;
 
         return extraData;
     }
@@ -1159,11 +1159,11 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         return fullySupported;
     }
 
-    public QueryBuilder getNativeQueryBuilder() {
+    public Map<String,Object> getNativeQueryBuilder() {
         return nativeQueryBuilder;
     }
 
-    abstract public QueryBuilder getQueryBuilder();
+    abstract public Map<String,Object> getQueryBuilder();
 
     public Map<String,Map<String,Map<String,Object>>> getAggregations() {
         return aggregations;

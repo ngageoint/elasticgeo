@@ -92,7 +92,7 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
 
         final Float score;
         final Float relativeScore;
-        if (!Float.isNaN(hit.getScore()) && maxScore>0) {
+        if (hit.getScore() != null && !Float.isNaN(hit.getScore()) && maxScore>0) {
             score = hit.getScore();
             relativeScore = score / maxScore;
         } else {

@@ -8,26 +8,20 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.common.geo.GeoPoint;
-import org.elasticsearch.common.settings.Settings;
+import com.vividsolutions.jts.geom.Coordinate;
 
 public interface ElasticCompat {
 
     public FilterToElastic newFilterToElastic();
 
-    public Settings createSettings(Object... params);
-
     public String encodeGeohash(double lon, double lat, int level);
 
-    public GeoPoint decodeGeohash(String geohash);
+    public Coordinate decodeGeohash(String geohash);
 
-    public ElasticClient createClient(String host, int port, String clusterName) throws IOException;
+    public ElasticClient createClient(String host, int port) throws IOException;
 
     public Date parseDateTime(String datestring, String format);
 
     public boolean isAnalyzed(Map<String,Object> map);
-
-    public void addField(SearchRequestBuilder builder, String name);
 
 }

@@ -22,10 +22,9 @@ import java.util.Map;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.GEOMETRY_TYPE;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.geo.builders.ShapeBuilder;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.JTS;
+import org.locationtech.spatial4j.shape.SpatialRelation;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.expression.Expression;
 import org.opengis.filter.expression.Literal;
@@ -52,9 +51,9 @@ class FilterToElasticHelper {
 
     protected Literal geometry;
 
-    protected ShapeRelation shapeRelation;
+    protected SpatialRelation shapeRelation;
 
-    protected ShapeBuilder shapeBuilder;
+    protected Map<String,Object> shapeBuilder;
 
     /**
      * Conversion factor from common units to meter
@@ -162,11 +161,11 @@ class FilterToElasticHelper {
             boolean swapped, Object extraData) {
 
         if (filter instanceof Disjoint) {
-            shapeRelation = ShapeRelation.DISJOINT;
+            shapeRelation = SpatialRelation.DISJOINT;
         } else if ((!swapped && filter instanceof Within) || (swapped && filter instanceof Contains)) {
-            shapeRelation = ShapeRelation.WITHIN;
+            shapeRelation = SpatialRelation.WITHIN;
         } else if (filter instanceof Intersects || filter instanceof BBOX) {
-            shapeRelation = ShapeRelation.INTERSECTS;
+            shapeRelation = SpatialRelation.INTERSECTS;
         } else {
             FilterToElastic.LOGGER.fine(filter.getClass().getSimpleName() 
                     + " is unsupported for geo_shape types");
