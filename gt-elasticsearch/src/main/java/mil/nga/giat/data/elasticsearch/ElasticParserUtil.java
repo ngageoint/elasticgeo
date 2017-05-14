@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.github.davidmoten.geo.GeoHash;
+import com.github.davidmoten.geo.LatLong;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
@@ -56,7 +58,8 @@ public class ElasticParserUtil {
                 geometry = geometryFactory.createPoint(new Coordinate(x,y));
             } else {
                 // try geohash
-                Coordinate geoPoint = ElasticCompatLoader.getCompat(null).decodeGeohash((String) obj);
+                final LatLong latLon = GeoHash.decodeHash((String) obj);
+                Coordinate geoPoint = new Coordinate(latLon.getLon(), latLon.getLat());
                 if (geoPoint != null) {
                     final double lat = geoPoint.y;
                     final double lon = geoPoint.x;

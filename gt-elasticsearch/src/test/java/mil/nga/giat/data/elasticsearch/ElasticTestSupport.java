@@ -25,6 +25,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.collect.ImmutableMap;
 
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
 import org.geotools.temporal.object.DefaultInstant;
@@ -118,9 +122,9 @@ public class ElasticTestSupport {
         scrollEnabled = Boolean.valueOf(properties.getProperty("scroll_enabled"));
         scrollSize = Long.valueOf(properties.getProperty("scroll_size"));
 
-        final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
         port = 9200;
-        client = (RestElasticClient) compat.createClient("localhost", port);
+        client = new RestElasticClient(RestClient.builder(new HttpHost("localhost", port, "http")).build());
+
         try {
             client.performRequest("DELETE", "/" + indexName, null);
             client.performRequest("POST", "/_refresh", null);

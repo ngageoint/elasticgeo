@@ -22,6 +22,7 @@ import org.geotools.util.logging.Logging;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.sort.SortBy;
+import org.opengis.filter.sort.SortOrder;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 
 import com.vividsolutions.jts.geom.Envelope;
@@ -134,7 +135,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
     }
 
     private ElasticRequest prepareSearchRequest(Query query, boolean scroll) throws IOException {
-        String naturalSortOrder = "asc";
+        String naturalSortOrder = SortOrder.ASCENDING.toSQL().toLowerCase();
         final ElasticRequest searchRequest = new ElasticRequest();
         final ElasticDataStore dataStore = getDataStore();
         final String docType = dataStore.getDocType(entry.getName());
@@ -143,7 +144,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         if (!scroll) {
             if (query.getSortBy()!=null){
                 for (final SortBy sort : query.getSortBy()) {
-                    final String sortOrder = sort.getSortOrder().toSQL();
+                    final String sortOrder = sort.getSortOrder().toSQL().toLowerCase();
                     if (sort.getPropertyName() != null) {
                         final String name = sort.getPropertyName().getPropertyName();
                         searchRequest.addSort(name, sortOrder);
@@ -171,8 +172,7 @@ public class ElasticFeatureSource extends ContentFeatureSource {
         }
 
         // add query and post filter
-        final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
-        final FilterToElastic filterToElastic = compat.newFilterToElastic();
+        final FilterToElastic filterToElastic = new FilterToElastic();
         filterToElastic.setFeatureType(buildFeatureType());
         filterToElastic.encode(query);
         filterFullySupported = filterToElastic.getFullySupported();

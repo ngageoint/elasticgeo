@@ -19,6 +19,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpEntity;
@@ -44,10 +46,39 @@ public class RestElasticClient implements ElasticClient {
 
     private ObjectMapper mapper;
 
+    private String majorVersion;
+
     public RestElasticClient(RestClient client) {
         this.client = client;
         this.mapper = new ObjectMapper();
         this.mapper.setDateFormat(DATE_FORMAT);
+    }
+
+    @Override
+    public String getMajorVersion() {
+        if (majorVersion != null) {
+            return majorVersion;
+        }
+
+        final Pattern pattern = Pattern.compile("(\\d+)\\.\\d+\\.\\d+");
+        try {
+            final Response response = performRequest("GET", "/", null);
+            try (final InputStream inputStream = response.getEntity().getContent()) {
+                Map<String,Object> info = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
+                Map<String,Object> version = (Map) info.getOrDefault("version", Collections.EMPTY_MAP);
+                final Matcher m = pattern.matcher((String) version.get("number"));
+                if (!m.find() || Integer.valueOf(m.group(1)) < 5) {
+                    majorVersion = "2";
+                } else {
+                    majorVersion = "5";
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warning("Error getting server version: " + e);
+            majorVersion = "2";
+        }
+
+        return majorVersion;
     }
 
     @Override
@@ -111,7 +142,8 @@ public class RestElasticClient implements ElasticClient {
         }
 
         if (!request.getFields().isEmpty()) {
-            requestBody.put("stored_fields", request.getFields());
+            final String key = getMajorVersion().equals("5") ? "stored_fields" : "fields";
+            requestBody.put(key, request.getFields());
         }
 
         if (!request.getSorts().isEmpty()) {
@@ -129,7 +161,6 @@ public class RestElasticClient implements ElasticClient {
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine("Elasticsearch request:\n" + mapper.writerWithDefaultPrettyPrinter().writeValueAsString(requestBody));
         }
-
         return parseResponse(performRequest("POST", pathBuilder.toString(), requestBody));
     }
 

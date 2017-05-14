@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.github.davidmoten.geo.GeoHash;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
@@ -155,7 +156,7 @@ public class ElasticParserUtilTest {
     public void testGeoHash() {
         final double lat = rand.nextDouble()*90-90;
         final double lon = rand.nextDouble()*180-180;
-        String geohash = ElasticCompatLoader.getCompat(null).encodeGeohash(lon, lat, 11);
+        String geohash = GeoHash.encodeHash(lat, lon, 11);
         final Geometry expected = geometryFactory.createPoint(new Coordinate(lon,lat));
         final Geometry actual = parserUtil.createGeometry(geohash);
         assertEquals(0, expected.distance(actual), 1e-5);

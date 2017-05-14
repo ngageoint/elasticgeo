@@ -6,6 +6,7 @@ package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
 import org.geotools.data.store.ContentDataStore;
@@ -37,9 +41,7 @@ public class ElasticDataStore extends ContentDataStore {
 
     private final static Logger LOGGER = Logging.getLogger(ElasticDataStore.class);
 
-    private static ElasticCompat compat = ElasticCompatLoader.getCompat(null);
-
-    private static ElasticClient client;
+    private ElasticClient client;
 
     private final String indexName;
 
@@ -78,7 +80,17 @@ public class ElasticDataStore extends ContentDataStore {
             this.searchIndices = indexName;
         }
 
-        client = compat.createClient(searchHost, hostPort);
+        try {
+            final RestClient restClient = RestClient.builder(new HttpHost(searchHost, hostPort, "http")).build();
+            final Response response = restClient.performRequest("GET", "/", Collections.<String, String>emptyMap());
+            if (response.getStatusLine().getStatusCode() >= 400) {
+                throw new IOException();
+            }
+            client = new RestElasticClient(restClient);
+        } catch (Exception e) {
+            throw new IOException("Unable to create REST client", e);
+        }
+        LOGGER.fine("Created REST client: " + client);
 
         final List<String> types = getClient().getTypes(indexName);
         if (!types.isEmpty()) {
@@ -327,7 +339,7 @@ public class ElasticDataStore extends ContentDataStore {
             case "keyword":
             case "text":
                 binding = String.class;
-                elasticAttribute.setAnalyzed(compat.isAnalyzed(map));
+                elasticAttribute.setAnalyzed(isAnalyzed(map));
                 break;
             case "integer":
                 binding = Integer.class;
@@ -382,8 +394,13 @@ public class ElasticDataStore extends ContentDataStore {
         }
     }
 
-    public static void setClient(ElasticClient client) {
-        ElasticDataStore.client = client;
+    static boolean isAnalyzed(Map<String, Object> map) {
+        boolean analyzed = false;
+        Object value = map.get("type");
+        if (value != null && value instanceof String && ((String) value).equals("text")) {
+            analyzed = true;
+        }
+        return analyzed;
     }
 
 }

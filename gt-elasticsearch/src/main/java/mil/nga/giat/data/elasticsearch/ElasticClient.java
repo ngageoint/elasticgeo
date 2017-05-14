@@ -12,6 +12,8 @@ import java.util.Set;
 
 public interface ElasticClient extends Closeable {
 
+    public String getMajorVersion();
+
     public List<String> getTypes(String indexName) throws IOException;
 
     public Map<String,Object> getMapping(String indexName, String type) throws IOException;

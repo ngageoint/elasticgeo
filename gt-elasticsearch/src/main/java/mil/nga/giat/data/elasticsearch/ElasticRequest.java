@@ -21,7 +21,7 @@ public class ElasticRequest {
 
     private Integer scroll;
 
-    private List<Map<String,String>> sorts;
+    private List<Map<String,Object>> sorts;
 
     private List<String> sourceIncludes;
 
@@ -73,12 +73,12 @@ public class ElasticRequest {
         this.scroll = scroll;
     }
 
-    public List<Map<String, String>> getSorts() {
+    public List<Map<String, Object>> getSorts() {
         return sorts;
     }
 
     public void addSort(String key, String order) {
-        this.sorts.add(Collections.singletonMap(key, order));
+        this.sorts.add(Collections.singletonMap(key, Collections.singletonMap("order",  order)));
     }
 
     public List<String> getSourceIncludes() {

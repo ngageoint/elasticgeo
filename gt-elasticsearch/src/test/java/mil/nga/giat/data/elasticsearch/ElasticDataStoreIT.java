@@ -19,6 +19,7 @@ package mil.nga.giat.data.elasticsearch;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -26,6 +27,9 @@ import org.geotools.data.DataStore;
 import org.geotools.data.store.ContentFeatureSource;
 import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeatureType;
+
+import com.google.common.collect.ImmutableMap;
+
 import static org.junit.Assert.*;
 
 public class ElasticDataStoreIT extends ElasticTestSupport {
@@ -87,6 +91,15 @@ public class ElasticDataStoreIT extends ElasticTestSupport {
         SimpleFeatureType schema = featureSource.getSchema();
         assertTrue(schema.getAttributeCount() > 0);
         assertNotNull(schema.getDescriptor("speed_is"));
+    }
+
+    @Test
+    public void testIsAnalyzed() {
+        assertFalse(ElasticDataStore.isAnalyzed(new HashMap<>()));
+        assertFalse(ElasticDataStore.isAnalyzed(ImmutableMap.of("type", "keyword")));
+        assertFalse(ElasticDataStore.isAnalyzed(ImmutableMap.of("type", ImmutableMap.of("type", "keyword"))));
+        assertFalse(ElasticDataStore.isAnalyzed(ImmutableMap.of("type", "not_valid")));
+        assertTrue(ElasticDataStore.isAnalyzed(ImmutableMap.of("type", "text")));
     }
 
 }

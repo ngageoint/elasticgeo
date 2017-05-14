@@ -20,20 +20,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.ANALYZED;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
+import static mil.nga.giat.data.elasticsearch.ElasticConstants.MATCH_ALL;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
 import org.geotools.filter.FilterCapabilities;
+import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.util.ConverterFactory;
 import org.geotools.util.Converters;
 import org.geotools.util.logging.Logging;
+import org.joda.time.format.DateTimeFormatter;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.And;
@@ -98,6 +103,10 @@ import org.opengis.filter.temporal.TEquals;
 import org.opengis.filter.temporal.TOverlaps;
 import org.opengis.temporal.Period;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.CoordinateSequence;
 import com.vividsolutions.jts.geom.Geometry;
@@ -112,7 +121,7 @@ import com.vividsolutions.jts.geom.LinearRing;
  * 
  * Based on org.geotools.data.jdbc.FilterToSQL in the GeoTools library/jdbc module.
  */
-public abstract class FilterToElastic implements FilterVisitor, ExpressionVisitor {
+public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
     /** Standard java logger */
     protected static Logger LOGGER = Logging.getLogger(FilterToElastic.class);
@@ -170,8 +179,20 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
     protected Map<String,Map<String,Map<String,Object>>> aggregations;
 
+    public static DateTimeFormatter DEFAULT_DATE_FORMATTER = Joda.forPattern("date_optional_time").printer();
+
+    protected Map<String,Object> filterBuilder;
+
+    private DateTimeFormatter dateFormatter;
+
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    private static final ObjectReader mapReader = mapper.readerWithView(Map.class).forType(HashMap.class);
+
     public FilterToElastic() {
-        fullySupported = null;
+        filterBuilder = MATCH_ALL;
+        nativeQueryBuilder = ImmutableMap.of("match_all", Collections.EMPTY_MAP);
+        helper = new FilterToElasticHelper(this);
     }
 
     /**
@@ -281,6 +302,27 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
     // BEGIN IMPLEMENTING org.opengis.filter.FilterVisitor METHODS
 
     /**
+     * Writes the FilterBuilder for the ExcludeFilter.
+     * 
+     * @param filter the filter to be visited
+     */
+    public Object visit(ExcludeFilter filter, Object extraData) {
+        filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", MATCH_ALL));
+        return extraData;
+    }
+
+    /**
+     * Writes the FilterBuilder for the IncludeFilter.
+     * 
+     * @param filter the filter to be visited
+     *  
+     */
+    public Object visit(IncludeFilter filter, Object extraData) {
+        filterBuilder = MATCH_ALL;
+        return extraData;
+    }
+
+    /**
      * Writes the FilterBuilder for the PropertyIsBetween Filter.
      *
      * @param filter the Filter to be visited.
@@ -318,6 +360,11 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
         if(nested) {
             path = extractNestedPath(key);
+        }
+
+        filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("gte", lower, "lte", upper)));
+        if(nested) {
+            filterBuilder = ImmutableMap.of("nested", ImmutableMap.of("path", path, "query", filterBuilder));
         }
 
         return extraData;
@@ -371,6 +418,17 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             path = extractNestedPath(key);
         }
 
+        if (analyzed) {
+            // use query string query for analyzed fields
+            filterBuilder = ImmutableMap.of("query_string", ImmutableMap.of("query", pattern, "default_field", key));
+        } else {
+            // default to regexp query
+            filterBuilder = ImmutableMap.of("regexp", ImmutableMap.of(key, pattern));
+        }
+        if (nested) {
+            filterBuilder = ImmutableMap.of("nested", ImmutableMap.of("path", path, "query", filterBuilder));
+        }
+
         return extraData;
     }
 
@@ -399,6 +457,12 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         } else {
             filter.getFilter().accept(this, extraData);
         }
+
+        if(filter.getFilter() instanceof PropertyIsNull) {
+            filterBuilder = ImmutableMap.of("exists", ImmutableMap.of("field", field));
+        } else {
+            filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", filterBuilder));
+        }
         return extraData;
     }
 
@@ -420,7 +484,21 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
      * @param filter the logic statement.
      * @param extraData extra filter data.  Not modified directly by this method.
      */
-    abstract protected Object visit(BinaryLogicOperator filter, Object extraData);
+    protected Object visit(BinaryLogicOperator filter, Object extraData) {
+        LOGGER.finest("exporting LogicFilter");
+
+        final List<Map<String,Object>> filters = new ArrayList<>();
+        for (final Filter child : filter.getChildren()) {
+            child.accept(this, extraData);
+            filters.add(filterBuilder);
+        }
+        if (extraData.equals("AND")) {
+            filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", filters));
+        } else if (extraData.equals("OR")) {
+            filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("should", filters));
+        }
+        return extraData;
+    }
 
 
 
@@ -568,7 +646,25 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         if (nested) {
             path = extractNestedPath(key);
         }
-    }
+
+        if (type.equals("=")) {
+            filterBuilder = ImmutableMap.of("term", ImmutableMap.of(key, field));
+        } else if (type.equals("!=")) {
+            filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", ImmutableMap.of("term", ImmutableMap.of(key, field))));
+        } else if (type.equals(">")) {
+            filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("gt", field)));
+        } else if (type.equals(">=")) {
+            filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("gte", field)));
+        } else if (type.equals("<")) {
+            filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("lt", field)));
+        } else if (type.equals("<=")) {
+            filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("lte", field)));
+        }
+
+        if (nested) {
+            filterBuilder = ImmutableMap.of("nested", ImmutableMap.of("path", path, "query", filterBuilder));
+        }
+     }
 
     /*
      * determines if the function is a binary expression
@@ -590,6 +686,8 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
         expr.accept(this, extraData);
 
+        filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", ImmutableMap.of("exists", ImmutableMap.of("field", field))));
+
         return extraData;
     }
 
@@ -609,6 +707,8 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             idList.add(id.toString());
         }
         ids = idList;
+
+        filterBuilder = ImmutableMap.of("ids", ImmutableMap.of("values", ids));
 
         return extraData;
     }
@@ -800,6 +900,38 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             path = extractNestedPath(key);
         }
 
+        if (filter instanceof After || filter instanceof Before) {
+            if (period != null) {
+                if ((op.equals(" > ") && !swapped) || (op.equals(" < ") && swapped)) {
+                    filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("gt", end)));
+                } else {
+                    filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("lt", begin)));
+                }
+            }
+            else {
+                if (op.equals(" < ") || swapped) {
+                    filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("lt", field)));
+                } else {
+                    filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("gt", field)));
+                }
+            }
+        }
+        else if (filter instanceof Begins || filter instanceof Ends || 
+                filter instanceof BegunBy || filter instanceof EndedBy ) {
+
+            filterBuilder = ImmutableMap.of("term", ImmutableMap.of(key, field));
+        }
+        else if (filter instanceof During || filter instanceof TContains){
+            filterBuilder = ImmutableMap.of("range", ImmutableMap.of(key, ImmutableMap.of("gt", lower, "lt", field)));
+        }
+        else if (filter instanceof TEquals) {
+            filterBuilder = ImmutableMap.of("term", ImmutableMap.of(key, field));
+        }
+
+        if (nested) {
+            filterBuilder = ImmutableMap.of("nested", ImmutableMap.of("path", path, "query", filterBuilder));
+        }
+
         return extraData;
     }
 
@@ -970,6 +1102,10 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
      */
     protected void writeLiteral(Object literal) {
         field = literal;
+
+        if (Date.class.isAssignableFrom(literal.getClass())) {
+            field = dateFormatter.print(((Date) literal).getTime());
+        }
     } 
 
     protected void visitLiteralTimePeriod(Period expression) {
@@ -1051,6 +1187,9 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             coordinates = linearRing.getCoordinateSequence();
             currentGeometry = factory.createLineString(coordinates);
         }
+
+        final String geoJson = new GeometryJSON().toString(currentGeometry);
+        currentShapeBuilder = mapReader.readValue(geoJson);
     }
 
     protected Object visitBinarySpatialOperator(BinarySpatialOperator filter,
@@ -1072,7 +1211,15 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
 
     // END IMPLEMENTING org.opengis.filter.ExpressionVisitor METHODS
 
-    abstract protected void updateDateFormatter(AttributeDescriptor attType);
+    protected void updateDateFormatter(AttributeDescriptor attType) {
+        dateFormatter = DEFAULT_DATE_FORMATTER;
+        if (attType != null) {
+            final String format = (String) attType.getUserData().get(DATE_FORMAT);
+            if (format != null) {
+                dateFormatter = Joda.forPattern(format).printer();
+            }
+        }
+    }
 
     /*
      * helper to do a safe convesion of expression to a number
@@ -1094,6 +1241,33 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
             for (final Map.Entry<String, String> entry : parameters.entrySet()) {
                 if (entry.getKey().equalsIgnoreCase("native-only")) {
                     nativeOnly = Boolean.valueOf(entry.getValue());
+                }
+            }
+        }
+
+        if (parameters != null) {
+            if (nativeOnly) {
+                LOGGER.fine("Ignoring GeoServer filter (Elasticsearch native query/post filter only)");
+                filterBuilder = MATCH_ALL;
+            }
+            for (final Map.Entry<String, String> entry : parameters.entrySet()) {
+                if (entry.getKey().equalsIgnoreCase("q")) {
+                    final String value = entry.getValue();
+                    try {
+                        nativeQueryBuilder = mapReader.readValue(value);
+                    } catch (IOException e) {
+                        throw new FilterToElasticException("Unable to read query view parameter",e);
+                    }
+                }
+                if (entry.getKey().equalsIgnoreCase("a")) {
+                    final ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        final TypeReference<Map<String, Map<String,Map<String,Object>>>> type;
+                        type = new TypeReference<Map<String, Map<String,Map<String,Object>>>>() {};
+                        this.aggregations = mapper.readValue(entry.getValue(), type);
+                    } catch (IOException e) {
+                        throw new FilterToElasticException("Unable to parse aggregation",e);
+                    }
                 }
             }
         }
@@ -1163,7 +1337,17 @@ public abstract class FilterToElastic implements FilterVisitor, ExpressionVisito
         return nativeQueryBuilder;
     }
 
-    abstract public Map<String,Object> getQueryBuilder();
+    public Map<String,Object> getQueryBuilder() {
+        final Map<String,Object> queryBuilder;
+        if (nativeQueryBuilder.equals(MATCH_ALL)) {
+            queryBuilder = filterBuilder;
+        } else if (filterBuilder.equals(MATCH_ALL)) {
+            queryBuilder = nativeQueryBuilder;
+        } else {
+            queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", ImmutableList.of(nativeQueryBuilder, filterBuilder)));
+        }
+        return queryBuilder;
+    }
 
     public Map<String,Map<String,Map<String,Object>>> getAggregations() {
         return aggregations;

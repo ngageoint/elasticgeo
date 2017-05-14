@@ -80,9 +80,9 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 
-public class Elastic5FilterTest {
+public class ElasticFilterTest {
 
-    private FilterToElastic5 builder;
+    private FilterToElastic builder;
 
     private FilterFactory2 ff;
 
@@ -167,7 +167,7 @@ public class Elastic5FilterTest {
     }
 
     private void setFilterBuilder() {
-        builder = new FilterToElastic5();
+        builder = new FilterToElastic();
         builder.setFeatureType(featureType);
     }
 

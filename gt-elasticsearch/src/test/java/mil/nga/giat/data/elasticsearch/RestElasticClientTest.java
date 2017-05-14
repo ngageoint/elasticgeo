@@ -12,7 +12,6 @@ import org.mockito.ArgumentMatcher;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -146,7 +145,7 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchStoredFields() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"stored_fields\":[\"obj1\"]}".getBytes());
+        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"fields\":[\"obj1\"]}".getBytes());
         when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
@@ -156,7 +155,7 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSort() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":\"asc\"}]}".getBytes());
+        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}}]}".getBytes());
         when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
@@ -166,7 +165,7 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSort2() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":\"asc\"},{\"obj2\":\"desc\"}]}".getBytes());
+        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}},{\"obj2\":{\"order\":\"desc\"}}]}".getBytes());
         when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();

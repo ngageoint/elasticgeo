@@ -14,6 +14,7 @@ import org.geotools.data.FeatureReader;
 import org.geotools.data.store.ContentState;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.util.logging.Logging;
+import org.joda.time.format.DateTimeFormatter;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
@@ -138,7 +139,9 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                     builder.set(name, new Date((long) dataVal));
                 } else {
                     final String format = (String) descriptor.getUserData().get(DATE_FORMAT);
-                    Date date = ElasticCompatLoader.getCompat(null).parseDateTime((String) dataVal, format);
+                    final DateTimeFormatter dateFormatter = Joda.forPattern(format).parser();
+
+                    Date date = dateFormatter.parseDateTime((String) dataVal).toDate();
                     builder.set(name, date);
                 }
             } else if (values.size() == 1) {
