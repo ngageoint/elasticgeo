@@ -30,6 +30,7 @@ import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.MATCH_ALL;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
+import org.elasticsearch.common.joda.Joda;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;

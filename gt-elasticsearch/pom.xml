@@ -10,7 +10,7 @@
   <artifactId>gt-elasticsearch</artifactId>
   <version>2.10-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>GeoTools Elasticsearch</name>
+  <name>GeoTools Elasticsearch DataStore</name>
   <dependencies>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
@@ -21,16 +21,6 @@
       <groupId>org.locationtech.spatial4j</groupId>
       <artifactId>spatial4j</artifactId>
       <version>0.6</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.7</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.7</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -115,6 +105,50 @@
     </resources>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+        <executions>
+          <execution>
+            <id>unpack</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <overWriteReleases>true</overWriteReleases>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.elasticsearch</groupId>
+                  <artifactId>elasticsearch</artifactId>
+                  <version>5.4.0</version>
+                  <includes>**/Joda.java,**/FormatDateTimeFormatter.java,**/StrictISODateTimeFormat.java</includes>
+                  <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
+                  <classifier>sources</classifier>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>io.fabric8</groupId>
         <artifactId>docker-maven-plugin</artifactId>
         <version>0.18.1</version>
@@ -161,6 +195,10 @@
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.19.1</version>
+        <configuration>
+          <argLine>${failsafeArgLine}</argLine>
+          <skipTests>${skip.integration.tests}</skipTests>
+        </configuration>
         <executions>
           <execution>
             <goals>

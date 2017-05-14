@@ -63,17 +63,9 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.18.1</version>
           <configuration>
-            <systemPropertyVariables>
-              <tests.security.manager>false</tests.security.manager>
-              <tests.es.logger.level>error</tests.es.logger.level>
-              <tests.locale>en</tests.locale>
-              <tests.timezone>utc</tests.timezone>
-            </systemPropertyVariables>
             <argLine>${surefireArgLine}</argLine>
           </configuration>
         </plugin>
-        <!--This plugin's configuration is used to store Eclipse m2e settings
-			only. It has no influence on the Maven build itself. -->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
@@ -81,6 +73,19 @@
           <configuration>
             <lifecycleMappingMetadata>
               <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <versionRange>[${2.10},)</versionRange>
+                    <goals>
+                      <goal>unpack</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <execute></execute>
+                  </action>
+                </pluginExecution>
                 <pluginExecution>
                   <pluginExecutionFilter>
                     <groupId>org.jacoco</groupId>
@@ -114,6 +119,12 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>**/org/joda/**</exclude>
+            <exclude>**/org/elasticsearch/**</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <id>pre-unit-test</id>
@@ -136,6 +147,57 @@
               <outputDirectory>${project.reporting.outputDirectory}/jacoco-ut</outputDirectory>
             </configuration>
           </execution>
+          <execution>
+            <id>pre-integration-test</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+            <configuration>
+              <destFile>${project.build.directory}/coverage-reports/jacoco-it.exec</destFile>
+              <propertyName>failsafeArgLine</propertyName>
+            </configuration>
+          </execution>
+          <execution>
+            <id>post-integration-test</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <dataFile>${project.build.directory}/coverage-reports/jacoco-it.exec</dataFile>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>merge-results</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>merge</goal>
+            </goals>
+            <configuration>
+              <fileSets>
+                <fileSet>
+                  <directory>${project.build.directory}/coverage-reports</directory>
+                  <includes>
+                    <include>*.exec</include>
+                  </includes>
+                </fileSet>
+              </fileSets>
+              <destFile>${project.build.directory}/coverage-reports/aggregate.exec</destFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>post-merge-report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <dataFile>${project.build.directory}/coverage-reports/aggregate.exec</dataFile>
+              <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate</outputDirectory>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -144,7 +206,7 @@
         <version>3.1.0</version>
         <configuration>
           <jacocoReports>
-            <jacocoReport>${project.basedir}/gt-elasticsearch/target/site/jacoco-ut/jacoco.xml</jacocoReport>
+            <jacocoReport>${project.basedir}/gt-elasticsearch/target/site/jacoco-aggregate/jacoco.xml</jacocoReport>
             <jacocoReport>${project.basedir}/gt-elasticsearch-process/target/site/jacoco-ut/jacoco.xml</jacocoReport>
           </jacocoReports>
         </configuration>

@@ -10,6 +10,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.DATE_FORMAT;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.FULL_NAME;
 
+import org.elasticsearch.common.joda.Joda;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.store.ContentState;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
