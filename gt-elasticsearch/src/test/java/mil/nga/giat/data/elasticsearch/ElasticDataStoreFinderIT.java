@@ -32,11 +32,12 @@ import org.geotools.data.DataStoreFactorySpi;
 import org.geotools.factory.FactoryCreator;
 import org.geotools.factory.FactoryRegistry;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
-public class ElasticDataStoreFinderTest extends ElasticTestSupport {
+public class ElasticDataStoreFinderIT extends ElasticTestSupport {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
-            .getLogger(ElasticDataStoreFinderTest.class);
+            .getLogger(ElasticDataStoreFinderIT.class);
 
     private DataStore source;
 

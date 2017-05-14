@@ -25,13 +25,14 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.store.ContentFeatureCollection;
 import org.geotools.factory.Hints;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.opengis.filter.FilterFactory;
 import org.opengis.filter.PropertyIsEqualTo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
-public class ElasticViewParametersFilterTest extends ElasticTestSupport {
+public class ElasticViewParametersFilterIT extends ElasticTestSupport {
 
     private ObjectMapper mapper = new ObjectMapper();
 

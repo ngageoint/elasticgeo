@@ -28,9 +28,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <geotools.version>16.2</geotools.version>
     <geoserver.version>2.10.2</geoserver.version>
-    <elasticsearch2.version>2.4.4</elasticsearch2.version>
-    <elasticsearch2.lucene.version>5.5.2</elasticsearch2.lucene.version>
-    <elasticsearch5.version>5.1.2</elasticsearch5.version>
+    <es.rest.client.version>5.4.0</es.rest.client.version>
+    <es.test.version>5.4.0</es.test.version>
     <jackson.version>2.8.1</jackson.version>
     <joda.version>2.9.5</joda.version>
     <guava.version>17.0</guava.version>

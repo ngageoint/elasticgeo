@@ -22,6 +22,7 @@ import javax.measure.unit.SI;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
@@ -47,7 +48,7 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.impl.PackedCoordinateSequenceFactory;
 
-public class ElasticGeometryFilterTest extends ElasticTestSupport {
+public class ElasticGeometryFilterIT extends ElasticTestSupport {
 
     @Test
     public void testBBOXFilter() throws Exception {

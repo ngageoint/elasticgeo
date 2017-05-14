@@ -271,7 +271,7 @@ public class RestElasticClientTest {
         return data;
     }
 
-    public class JsonByteArrayEntityMatcher extends ArgumentMatcher<ByteArrayEntity> {
+    public class JsonByteArrayEntityMatcher implements ArgumentMatcher<ByteArrayEntity> {
 
         private Map<String,Object> data;
 
@@ -281,7 +281,7 @@ public class RestElasticClientTest {
         }
 
         @Override
-        public boolean matches(Object argument) {
+        public boolean matches(ByteArrayEntity argument) {
             ByteArrayInputStream inputStream = (ByteArrayInputStream) ((ByteArrayEntity) argument).getContent();
             ObjectMapper mapper = new ObjectMapper();
             try {

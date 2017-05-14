@@ -18,18 +18,13 @@
 package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
-import java.io.File;
 import java.io.InputStream;
 import java.io.Serializable;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -41,17 +36,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.collect.ImmutableMap;
 
-import org.elasticsearch.common.network.NetworkModule;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.http.HttpTransportSettings;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.transport.Netty4Plugin;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.NameImpl;
 import org.geotools.temporal.object.DefaultInstant;
@@ -59,13 +47,11 @@ import org.geotools.temporal.object.DefaultPeriod;
 import org.geotools.temporal.object.DefaultPosition;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.temporal.Instant;
 import org.opengis.temporal.Period;
 
-@ThreadLeakScope(ThreadLeakScope.Scope.NONE)
-public class ElasticTestSupport extends ESIntegTestCase {
+public class ElasticTestSupport {
 
     protected static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticTestSupport.class);
@@ -122,15 +108,6 @@ public class ElasticTestSupport extends ESIntegTestCase {
 
     protected RestElasticClient client;
 
-    protected static String dataPath;
-
-    @BeforeClass
-    public static void beforeTestSuite() throws IOException {
-        Path baseDir = Paths.get("target" + File.separator + "elasticsearch");
-        baseDir.toFile().mkdirs();
-        dataPath = Files.createTempDirectory(baseDir, null).toAbsolutePath().toString();
-    }
-
     @Before
     public void beforeTest() throws Exception {
         Properties properties = new Properties();
@@ -142,8 +119,14 @@ public class ElasticTestSupport extends ESIntegTestCase {
         scrollSize = Long.valueOf(properties.getProperty("scroll_size"));
 
         final ElasticCompat compat = ElasticCompatLoader.getCompat(null);
-        port = cluster().httpAddresses()[0].getPort();
+        port = 9200;
         client = (RestElasticClient) compat.createClient("localhost", port);
+        try {
+            client.performRequest("DELETE", "/" + indexName, null);
+            client.performRequest("POST", "/_refresh", null);
+        } catch (IOException e) {
+            LOGGER.fine("Unable to clear test index (may not exist");
+        }
         Map<String,Serializable> params = createConnectionParams();
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         dataStore = (ElasticDataStore) factory.createDataStore(params);
@@ -154,24 +137,6 @@ public class ElasticTestSupport extends ESIntegTestCase {
     public void afterTest() throws Exception {
         dataStore.dispose();
         client.close();
-    }
-
-    @Override
-    protected Settings nodeSettings(int nodeOrdinal) {
-        int randomPort = randomIntBetween(49152, 65525);
-        
-        Settings.Builder builder = Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(NetworkModule.HTTP_ENABLED.getKey(), true)
-                .put(HttpTransportSettings.SETTING_HTTP_PORT.getKey(), randomPort)
-                .put("network.host", "127.0.0.1");
-        Settings settings = builder.build();
-        return settings;
-    }
-
-    @Override
-    protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Arrays.asList(Netty4Plugin.class);
     }
 
     protected void createIndices() throws IOException {

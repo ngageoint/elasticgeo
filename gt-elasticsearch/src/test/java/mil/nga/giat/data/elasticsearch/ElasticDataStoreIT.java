@@ -26,8 +26,9 @@ import org.geotools.data.DataStore;
 import org.geotools.data.store.ContentFeatureSource;
 import org.junit.Test;
 import org.opengis.feature.simple.SimpleFeatureType;
+import static org.junit.Assert.*;
 
-public class ElasticDataStoreTest extends ElasticTestSupport {
+public class ElasticDataStoreIT extends ElasticTestSupport {
 
     @Test
     public void testGetNames() throws IOException {

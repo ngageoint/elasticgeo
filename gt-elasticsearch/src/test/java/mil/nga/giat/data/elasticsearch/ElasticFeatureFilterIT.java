@@ -31,6 +31,7 @@ import org.geotools.feature.NameImpl;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.junit.Ignore;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
@@ -55,7 +56,7 @@ import org.opengis.filter.sort.SortBy;
 import org.opengis.filter.sort.SortOrder;
 import org.opengis.filter.spatial.BBOX;
 
-public class ElasticFeatureFilterTest extends ElasticTestSupport {
+public class ElasticFeatureFilterIT extends ElasticTestSupport {
 
     @Test
     public void testSchema() throws Exception {

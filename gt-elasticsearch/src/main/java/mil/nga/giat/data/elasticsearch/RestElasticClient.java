@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
@@ -134,7 +135,7 @@ public class RestElasticClient implements ElasticClient {
 
     Response performRequest(String method, String path, Map<String,Object> requestBody) throws IOException {
         final byte[] data = mapper.writeValueAsBytes(requestBody);
-        final HttpEntity entity = new ByteArrayEntity(data);
+        final HttpEntity entity = new ByteArrayEntity(data, ContentType.APPLICATION_JSON);
         final Response response = client.performRequest(
                 method,
                 path,
