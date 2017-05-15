@@ -25,6 +25,7 @@ import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.store.ContentFeatureCollection;
 import org.geotools.factory.Hints;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 import org.opengis.filter.FilterFactory;
 import org.opengis.filter.PropertyIsEqualTo;
@@ -76,6 +77,23 @@ public class ElasticViewParametersFilterIT extends ElasticTestSupport {
         assertEquals(fsi.next().getAttribute("modem_b"), false);
         assertTrue(fsi.hasNext());
         assertEquals(fsi.next().getAttribute("modem_b"), false);
+    }
+
+    @Test
+    public void testNativeAggregation() throws Exception {
+        init();
+        Map<String, String> vparams = new HashMap<String, String>();
+        Map<String,Object> query = ImmutableMap.of("agg", ImmutableMap.of("geohash_grid", 
+                ImmutableMap.of("field", "geo", "precision", 3)));
+        vparams.put("a", mapper.writeValueAsString(query));
+        Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
+        Query q = new Query(featureSource.getSchema().getTypeName());
+        q.setHints(hints);
+        ContentFeatureCollection features = featureSource.getFeatures(q);
+        assertFalse(features.isEmpty());
+        SimpleFeatureIterator fsi = features.features();
+        assertTrue(fsi.hasNext());
+        assertNotNull(fsi.next().getAttribute("_aggregation"));
     }
 
 }

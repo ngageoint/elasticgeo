@@ -11,7 +11,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import mil.nga.giat.data.elasticsearch.FilterToElastic;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
@@ -21,7 +20,6 @@ import static mil.nga.giat.data.elasticsearch.ElasticConstants.GEOMETRY_TYPE;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.MATCH_ALL;
 import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
-import org.apache.commons.codec.binary.Base64;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
@@ -213,7 +211,7 @@ public class ElasticFilterTest {
         And filter = ff.and(ff.id(ff.featureId("id1")), ff.id(ff.featureId("id2")));
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must",
                 ImmutableList.of(ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))),
-                ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
+                        ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -225,7 +223,7 @@ public class ElasticFilterTest {
         final Or filter = ff.or(ff.id(ff.featureId("id1")), ff.id(ff.featureId("id2")));
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("should",
                 ImmutableList.of(ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))),
-                ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
+                        ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -626,10 +624,10 @@ public class ElasticFilterTest {
         coords.add(ImmutableList.of(0.,0.));
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must", ImmutableList.of(
                 ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))), ImmutableMap.of("bool", 
-                ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                        ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", ImmutableMap.of("geom", ImmutableMap.of("shape", 
                                 ImmutableMap.of("coordinates", ImmutableList.of(coords), "type", "Polygon"),
                                 "relation", "INTERSECTS")))
-                        )))));
+                                )))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -698,7 +696,7 @@ public class ElasticFilterTest {
         Beyond filter = (Beyond) ECQL.toFilter("BEYOND(\"geo_point\", POINT(0 1.1), 1.0, meters)");
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not", ImmutableMap.of("bool", 
                 ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_distance", ImmutableMap.of("distance", "1.0m",
-                                "geo_point", ImmutableList.of(0.,1.1)))))));
+                        "geo_point", ImmutableList.of(0.,1.1)))))));
 
         builder.visit(filter, null);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -714,10 +712,10 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("bool", 
                 ImmutableMap.of("must", ImmutableList.of(ImmutableMap.of("range", ImmutableMap.of("time", ImmutableMap.of("gt", "1970-01-01"))),
                         ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL, 
-                        "filter", ImmutableMap.of("geo_shape", 
-                        ImmutableMap.of("geom", ImmutableMap.of("shape", 
-                                ImmutableMap.of("coordinates", coords, "type", "LineString"),
-                                "relation", "INTERSECTS"))))))));
+                                "filter", ImmutableMap.of("geo_shape", 
+                                        ImmutableMap.of("geom", ImmutableMap.of("shape", 
+                                                ImmutableMap.of("coordinates", coords, "type", "LineString"),
+                                                "relation", "INTERSECTS"))))))));
 
         builder.encode(filter);
         assertTrue(builder.createFilterCapabilities().fullySupports(filter));
@@ -763,7 +761,7 @@ public class ElasticFilterTest {
     @Test
     public void testAndQueryViewParam() throws JsonProcessingException {
         Map<String,Object> idsQuery = ImmutableMap.of("ids", ImmutableMap.of("value", ImmutableList.of("id")));
-        builder.filterBuilder = idsQuery;
+        builder.queryBuilder = idsQuery;
         parameters.put("q", new ObjectMapper().writeValueAsString(idsQuery));
 
         builder.addViewParams(query);
@@ -774,7 +772,7 @@ public class ElasticFilterTest {
     public void testNativeOnlyQueryViewParam() throws JsonProcessingException {
         parameters.put("native-only", "true");        
         Map<String,Object> idsQuery = ImmutableMap.of("ids", ImmutableMap.of("value", ImmutableList.of("id")));
-        builder.filterBuilder = idsQuery;
+        builder.queryBuilder = idsQuery;
         parameters.put("q", new ObjectMapper().writeValueAsString(idsQuery));
 
         builder.addViewParams(query);

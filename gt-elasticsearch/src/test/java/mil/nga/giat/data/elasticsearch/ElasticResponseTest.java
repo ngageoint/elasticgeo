@@ -25,6 +25,14 @@ public class ElasticResponseTest {
     }
 
     @Test
+    public void testDefaults() {
+        ElasticResponse response = new ElasticResponse();
+        assertEquals(0, response.getTotalNumHits());
+        assertEquals(0, response.getNumHits());
+        assertTrue(response.getHits().isEmpty());
+    }
+
+    @Test
     public void testTotalHits() throws IOException {
         ElasticResponse response = mapper.readValue("{\"hits\":{\"total\":10}}", ElasticResponse.class);
         assertEquals(10, response.getTotalNumHits());
@@ -115,6 +123,15 @@ public class ElasticResponseTest {
     public void testMissingAggregation() throws IOException {
         ElasticResponse response = mapper.readValue("{}", ElasticResponse.class);
         assertNull(response.getAggregations());
+    }
+
+    @Test
+    public void testToString() throws IOException {
+        ElasticResponse response = mapper.readValue("{\"hits\":{\"hits\":[{\"_source\": {\"tags\":[\"red\"]}}]}, " + 
+                "\"aggregations\":{\"first\":{\"buckets\": [{\"key\":\"0\",\"doc_count\":10}]}}}", ElasticResponse.class);
+        String responseStr = response.toString();
+        assertTrue(responseStr.contains("hits=1"));
+        assertTrue(responseStr.contains("numBuckets=1"));
     }
 
 }

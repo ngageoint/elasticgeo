@@ -22,7 +22,7 @@ public class ElasticAggregation {
     @Override
     public String toString() {
         return new StringBuilder("ElasticAggregation[numBuckets=")
-                .append(buckets != null ? buckets.size() : null)
+                .append(buckets != null ? buckets.size() : 0)
                 .append("]").toString();
     }
 

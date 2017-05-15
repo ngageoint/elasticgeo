@@ -180,11 +180,11 @@ public class ElasticFeatureSource extends ContentFeatureSource {
             LOGGER.fine("Filter is not fully supported by native Elasticsearch."
                     + " Additional post-query filtering will be performed.");
         }
-        final Map<String,Object> filteredQueryBuilder = filterToElastic.getQueryBuilder();
+        final Map<String,Object> queryBuilder = filterToElastic.getQueryBuilder();
 
         final Map<String,Object> nativeQueryBuilder = filterToElastic.getNativeQueryBuilder();
 
-        searchRequest.setQuery(filteredQueryBuilder);
+        searchRequest.setQuery(queryBuilder);
 
         if (isSort(query) && nativeQueryBuilder.equals(ElasticConstants.MATCH_ALL)) {
             searchRequest.addSort("_uid", naturalSortOrder);

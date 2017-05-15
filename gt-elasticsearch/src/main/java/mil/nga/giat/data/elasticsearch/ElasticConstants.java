@@ -12,7 +12,7 @@ import com.google.common.collect.ImmutableMap;
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
 
 public final class ElasticConstants {
-    
+
     public static final Map<String,Object> MATCH_ALL = ImmutableMap.of("match_all", Collections.EMPTY_MAP);
 
     /**

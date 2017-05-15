@@ -62,7 +62,7 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, port);
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
         map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
@@ -90,7 +90,7 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, port);
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
         map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
         map.put(ElasticDataStoreFactory.SEARCH_INDICES.key, "sample1,sample2");
 
@@ -120,7 +120,7 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, port);
+        map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
         map.put(ElasticDataStoreFactory.SEARCH_INDICES.key, "sample1,sample2");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();

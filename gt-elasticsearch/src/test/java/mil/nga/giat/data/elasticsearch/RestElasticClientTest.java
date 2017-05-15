@@ -176,7 +176,6 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchResponse() throws IOException {
-        //InputStream inputStream = new ByteArrayInputStream("{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{}, {}]}}".getBytes());
         InputStream inputStream = new ByteArrayInputStream("{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{\"_index\": \"index_name\"}, {}]}}".getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
         when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), any(HttpEntity.class))).thenReturn(mockResponse);

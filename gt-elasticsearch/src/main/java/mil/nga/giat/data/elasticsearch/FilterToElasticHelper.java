@@ -56,15 +56,15 @@ import com.vividsolutions.jts.geom.Polygon;
 
 class FilterToElasticHelper {
 
-    protected double lat, lon, distance;
+    private double lat, lon, distance;
 
-    protected String key;
+    private String key;
 
-    protected Literal geometry;
+    private Literal geometry;
 
-    protected SpatialRelation shapeRelation;
+    private SpatialRelation shapeRelation;
 
-    protected Map<String,Object> shapeBuilder;
+    private Map<String,Object> shapeBuilder;
 
     /**
      * Conversion factor from common units to meter
@@ -127,13 +127,13 @@ class FilterToElasticHelper {
         final String inputUnits = filter.getDistanceUnits();
         distance = Double.valueOf(toMeters(inputDistance, inputUnits));
 
-        delegate.filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
+        delegate.queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
                 "filter", ImmutableMap.of("geo_distance", 
                         ImmutableMap.of("distance", distance+SI.METER.toString(), key, ImmutableList.of(lon,lat)))));
 
         if ((filter instanceof DWithin && swapped)
                 || (filter instanceof Beyond && !swapped)) {
-            delegate.filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", delegate.filterBuilder));
+            delegate.queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", delegate.queryBuilder));
         }
     }
 
@@ -165,13 +165,13 @@ class FilterToElasticHelper {
         if(isCurrentGeography()) {
             if(isWorld(this.geometry)) {
                 // nothing to filter in this case
-                delegate.filterBuilder = MATCH_ALL;
+                delegate.queryBuilder = MATCH_ALL;
                 return;
             } else if(isEmpty(this.geometry)) {
                 if(!(filter instanceof Disjoint)) {
-                    delegate.filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", MATCH_ALL));
+                    delegate.queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must_not", MATCH_ALL));
                 } else {
-                    delegate.filterBuilder = MATCH_ALL;
+                    delegate.queryBuilder = MATCH_ALL;
                 }
                 return;
             }
@@ -219,11 +219,11 @@ class FilterToElasticHelper {
         }
 
         if (shapeRelation != null && shapeBuilder != null) {
-            delegate.filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
+            delegate.queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
                     "filter", ImmutableMap.of("geo_shape", 
                             ImmutableMap.of(key, ImmutableMap.of("shape", shapeBuilder, "relation", shapeRelation)))));
         } else {
-            delegate.filterBuilder = MATCH_ALL;
+            delegate.queryBuilder = MATCH_ALL;
         }
     }
 
@@ -245,7 +245,7 @@ class FilterToElasticHelper {
             for (final Coordinate coordinate : polygon.getCoordinates()) {
                 points.add(ImmutableList.of(coordinate.x, coordinate.y));
             }
-            delegate.filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
+            delegate.queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
                     "filter", ImmutableMap.of("geo_polygon", 
                             ImmutableMap.of(key, ImmutableMap.of("points", points)))));
         } else if (filter instanceof BBOX) {
@@ -260,7 +260,7 @@ class FilterToElasticHelper {
                 minX = -180;
                 maxX = 180;
             }
-            delegate.filterBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
+            delegate.queryBuilder = ImmutableMap.of("bool", ImmutableMap.of("must", MATCH_ALL,
                     "filter", ImmutableMap.of("geo_bounding_box", ImmutableMap.of(key, 
                             ImmutableMap.of("top_left", ImmutableList.of(minX, maxY), 
                                     "bottom_right", ImmutableList.of(maxX, minY))))));
@@ -268,7 +268,7 @@ class FilterToElasticHelper {
             FilterToElastic.LOGGER.fine(filter.getClass().getSimpleName() 
                     + " is unsupported for geo_point types");
             delegate.fullySupported = false;
-            delegate.filterBuilder = MATCH_ALL;
+            delegate.queryBuilder = MATCH_ALL;
         }
     }
 

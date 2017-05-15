@@ -1,32 +1,37 @@
-sudo: false
+sudo: true
+services:
+- docker
 language: java
 jdk:
 - oraclejdk8
 env:
   matrix:
-  - GEOTOOLS_VERSION='15.4' GEOSERVER_VERSION='2.9.4' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=2
-  - GEOTOOLS_VERSION='15.4' GEOSERVER_VERSION='2.9.4' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES2_VERSION='2.4.4' ES5_VERSION='5.1.2' ES_PROFILE_VERSION=5
+  - GEOTOOLS_VERSION='15.4' GEOSERVER_VERSION='2.9.4' ES_VERSION='5.4.0'
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='2.4.4'
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.0.2'
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.1.2'
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.2.2'
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.3.2'
+  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.4.0'
+  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='2.4.4'
+  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.0.2'
+  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.1.2'
+  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.2.2'
+  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.3.2'
+  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.4.0'
 cache:
   directories:
   - "$HOME/.m2"
 install:
-- sed -i 's/<geotools.version>.*<\/geotools.version>/<geotools.version>'${GEOTOOLS_VERSION}'<\/geotools.version>/g' pom.xml
-- sed -i 's/<geoserver.version>.*<\/geoserver.version>/<geoserver.version>'${GEOSERVER_VERSION}'<\/geoserver.version>/g' pom.xml
-- sed -i 's/<elasticsearch2.version>.*<\/elasticsearch2.version>/<elasticsearch2.version>'${ES2_VERSION}'<\/elasticsearch2.version>/g' pom.xml
-- sed -i 's/<elasticsearch5.version>.*<\/elasticsearch5.version>/<elasticsearch5.version>'${ES5_VERSION}'<\/elasticsearch5.version>/g' pom.xml
-- mvn install -DskipTests=true -Pelasticsearch${ES_PROFILE_VERSION}
+- travis_retry mvn install -DskipTests=true -Dskip.integration.tests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION}
 script:
-- mvn verify -Pelasticsearch${ES_PROFILE_VERSION}
+- sudo sysctl -w vm.max_map_count=262144
+- travis_retry mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION}
 after_success:
-- mvn coveralls:report -Pelasticsearch${ES_PROFILE_VERSION}
-- mvn package assembly:assembly -pl gs-web-elasticsearch -Pelasticsearch${ES_PROFILE_VERSION}
+- mvn coveralls:report
 before_deploy:
-  - if [ ${ES_PROFILE_VERSION} == "2" ];
-    then export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES2_VERSION}.zip)";
-    else export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*gs${GEOSERVER_VERSION}-es${ES5_VERSION}.zip)";
-    fi
+  - mvn assembly:assembly -pl gs-web-elasticsearch
+  - export PLUGIN_FILE="$(ls gs-web-elasticsearch/target/elasticgeo*.zip)";
   - echo "Deploying $PLUGIN_FILE to GitHub releases"
 deploy:
   provider: releases

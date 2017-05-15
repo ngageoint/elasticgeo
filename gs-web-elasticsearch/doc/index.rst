@@ -10,46 +10,46 @@ This data store allows features from an Elasticsearch index to be published thro
 Compatibility
 -------------
 
-* Java JDK (>=1.8)
+* Java: 1.8
 * GeoServer: 2.9.x, 2.10.x
-* Elasticsearch: >=2.1.x (supports transport client), >=5.1.x (supports transport and REST clients)
+* Elasticsearch: 2.4.x, 5.0.x, 5.1.x, 5.2.x, 5.3.x, 5.4.x
 
 Downloads
 ---------
 
-Pre-compiled binaries for supported GeoServer and Elasticsearch versions can be found on the GitHub releases page. 
-
-https://github.com/ngageoint/elasticgeo/releases
+Pre-compiled binaries can be found on the `GitHub releases page <https://github.com/ngageoint/elasticgeo/releases>`_.
 
 Installation
 ------------
 
-**Warning: Ensure GeoTools and GeoServer versions in the plugin configuration are consistent with your environment. If using the transport client then also ensure Elasticsearch version is consistent with the server.**
-
-Plugins built for Elasticsearch 5.x should be compatible with Elasticsearch 2.x servers when the default REST client is used. If any compatibility issues are observed using the REST client please create an issue.
-
 Pre-compiled binaries
 ^^^^^^^^^^^^^^^^^^^^^
 
-Unpack zipfile and copy plugin file(s) to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer. If installing the plugin for Elasticsearch 2.x, remove the old Guava jar (e.g. ``guava-17.0.jar``).
+Unpack zipfile and copy plugin file to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer.
 
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
 
-Build and install a local copy. By default the plugin will be compatible with Elasticsearch 5.x (and 2.x via the REST client). For compatibility with Elasticsearch 2.x (via the transport client), include the ``elasticsearch2`` Maven profile when building::
+Build plugin::
 
     $ git clone git@github.com:ngageoint/elasticgeo.git
     $ cd elasticgeo
-    $ mvn clean install [-Pelasticsearch2]
+    $ mvn clean install -DskipTests=true -Dskip.integration.tests=true
 
-Copy the ElasticGeo GeoServer plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer::
+Copy the plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer::
 
     $ cp gs-web-elasticsearch/target/elasticgeo*.jar GEOSERVER_HOME/WEB_INF/lib
 
-If installing the plugin for Elasticsearch 2.x, replace the Guava library in the GeoServer installation with Guava 18.0 or later::
+Running tests
+^^^^^^^^^^^^^
 
-    $ rm GEOSERVER_HOME/WEB_INF/lib/guava*.jar
-    $ cp gs-web-elasticsearch/target/lib/guava-18.0.jar GEOSERVER_HOME/WEB_INF/lib
+Integration testing through the Maven command line requires that Docker is installed. Docker is used to build and start a local Elasticsearch instance.
+
+Running integration tests in an IDE development environment requires manually starting a local Elasticsearch instance (see `Elasticsearch documentation <https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html>`_). Note that integration tests will connect to Elasticsearch over HTTP port 9200 and the test index, ``status_s``, will be deleted during testing.
+
+Integration tests can be skipped using the ``skip.integration.tests`` property::
+
+    $ mvn clean install -Dskip.integration.tests=true
 
 Configuration
 -------------
@@ -77,7 +77,7 @@ The Elasticsearch data store configuration panel includes standard connection pa
    * - elasticsearch_host
      - Host (IP) for connecting to Elasticsearch
    * - elasticsearch_port
-     - Port for connecting to Elasticsearch. When plugin is built for Elasticsearch 5.x use the HTTP port (e.g. 9200) for the REST client. Otherwise use the transport port (e.g. 9300).
+     - HTTP port for connecting to Elasticsearch
    * - index_name
      - Index name
    * - search_indices
@@ -198,8 +198,6 @@ Note that commas in native queries must be escaped with a backslash.
 Aggregations
 ------------
 
-**Currently supported only when using the REST client with Elasticsearch 5.x**
-
 Elasticsearch aggregations are supported through WFS/WMS requests by including the ``a:{aggregation_body}`` key:value pair in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information)::
 
     http://localhost:8080/geoserver/test/ows?service=WFS&version=1.0.0&request=GetFeature
@@ -295,7 +293,6 @@ Troubleshooting
 * Commas in the aggregation body must be escaped with a backslash. Additionally body may need to be URL encoded.
 * Geometry property name in the SLD RasterSymbolizer must be a valid geometry property in the layer
 * Layers created with earlier (pre-aggregation support) versions of the plugin may need to be reloaded. In this case the layer must be removed and re-added to GeoServer (e.g. a feature type reload will not be sufficient).
-* Aggregations are only supported when using the REST client with Elasticsearch 5.x
 
 Grid Strategy
 ^^^^^^^^^^^^^
