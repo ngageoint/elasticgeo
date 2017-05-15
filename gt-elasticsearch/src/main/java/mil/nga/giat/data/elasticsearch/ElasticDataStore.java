@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.common.joda.Joda;
 import org.geotools.data.Query;
 import org.geotools.data.Transaction;
 import org.geotools.data.store.ContentDataStore;
@@ -32,6 +31,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
 
 import mil.nga.giat.data.elasticsearch.ElasticAttribute.ElasticGeometryType;
+import mil.nga.giat.shaded.es.common.joda.Joda;
 
 /**
  * A data store for an Elasticsearch index containing geo_point or geo_shape

@@ -13,9 +13,20 @@
   <name>GeoTools Elasticsearch DataStore</name>
   <dependencies>
     <dependency>
+      <groupId>mil.nga.giat</groupId>
+      <artifactId>joda-shaded</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>rest</artifactId>
-      <version>${es.rest.client.version}</version>
+      <version>${es.version}</version>
     </dependency>
     <dependency>
       <groupId>org.locationtech.spatial4j</groupId>
@@ -41,11 +52,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <version>${joda.version}</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -105,51 +111,6 @@
     </resources>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <version>2.10</version>
-        <executions>
-          <execution>
-            <id>unpack</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <overWriteReleases>true</overWriteReleases>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.elasticsearch</groupId>
-                  <artifactId>elasticsearch</artifactId>
-                  <version>5.4.0</version>
-                  <includes>**/Joda.java,**/FormatDateTimeFormatter.java,**/StrictISODateTimeFormat.java</includes>
-                  <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
-                  <classifier>sources</classifier>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.0.0</version>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.build.directory}/generated-sources</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.19.1</version>
         <configuration>
@@ -175,6 +136,9 @@
           <name>!skip.integration.tests</name>
         </property>
       </activation>
+      <properties>
+        <docker.removeAll>true</docker.removeAll>
+      </properties>
       <build>
         <plugins>
           <plugin>
@@ -194,8 +158,9 @@
                       <port>9200:9200</port>
                     </ports>
                     <wait>
+                      <time>60000</time>
                       <http>
-                        <url>http://localhost:9200/_cluster/health?wait_for_status=yellow&amp;timeout=30s</url>
+                        <url>http://localhost:9200/_cluster/health?wait_for_status=yellow&amp;timeout=60s</url>
                         <method>GET</method>
                         <status>200</status>
                       </http>
@@ -212,11 +177,12 @@
                   <goal>start</goal>
                 </goals>
               </execution>
-              <execution>
+               <execution>
                 <id>docker-stop</id>
                 <phase>post-integration-test</phase>
                 <goals>
                   <goal>stop</goal>
+                  <goal>remove</goal>
                 </goals>
               </execution>
             </executions>
