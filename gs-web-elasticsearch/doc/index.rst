@@ -11,7 +11,7 @@ Compatibility
 -------------
 
 * Java: 1.8
-* GeoServer: 2.9.x, 2.10.x
+* GeoServer: 2.9.x, 2.10.x, 2.11.x
 * Elasticsearch: 2.4.x, 5.0.x, 5.1.x, 5.2.x, 5.3.x, 5.4.x
 
 Downloads
@@ -27,29 +27,27 @@ Pre-compiled binaries
 
 Unpack zipfile and copy plugin file to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer.
 
-Building from source
-^^^^^^^^^^^^^^^^^^^^
+Building
+^^^^^^^^
 
-Build plugin::
+Clone project::
 
     $ git clone git@github.com:ngageoint/elasticgeo.git
-    $ cd elasticgeo
+
+Build and install plugin (requires GeoServer restart)::
+
     $ mvn clean install -DskipTests=true -Dskip.integration.tests=true
-
-Copy the plugin to the ``WEB_INF/lib`` directory of your GeoServer installation and then restart GeoServer::
-
     $ cp gs-web-elasticsearch/target/elasticgeo*.jar GEOSERVER_HOME/WEB_INF/lib
 
-Running tests
-^^^^^^^^^^^^^
+Run default tests::
 
-Integration testing through the Maven command line requires that Docker is installed. Docker is used to build and start a local Elasticsearch instance.
+    $ mvn verify -Dskip.integration.tests=true
 
-Running integration tests in an IDE development environment requires manually starting a local Elasticsearch instance (see `Elasticsearch documentation <https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html>`_). Note that integration tests will connect to Elasticsearch over HTTP port 9200 and the test index, ``status_s``, will be deleted during testing.
+Run default and integration tests (requires `Docker <https://docs.docker.com/engine/installation/>`_)::
 
-Integration tests can be skipped using the ``skip.integration.tests`` property::
+    $ mvn verify
 
-    $ mvn clean install -Dskip.integration.tests=true
+Note running integration tests in an IDE development environment requires that a local Elasticsearch instance is running and accepting HTTP connections over port 9200 (see `Elasticsearch documentation <https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html>`_).
 
 Configuration
 -------------
@@ -59,15 +57,27 @@ Configuring data store
 
 Once the Elasticsearch GeoServer extension is installed, ``Elasticsearch index`` will be an available vector data source format when creating a new data store.
 
-.. figure:: images/elasticsearch_store.png
-   :align: center
+.. |new_store| image:: images/elasticsearch_store.png
+   :scale: 100%
+   :align: middle
+
++-------------+
+| |new_store| |
++-------------+
 
 .. _config_elasticsearch:
 
 The Elasticsearch data store configuration panel includes standard connection parameters and search settings.
 
-.. figure:: images/elasticsearch_configuration.png
-   :align: center
+.. |store_config| image:: images/elasticsearch_configuration.png
+   :scale: 100%
+   :align: middle
+
++----------------+
+| |store_config| |
++----------------+
+
+Available data store configuration parameters are summarized in the following table:
 
 .. list-table::
    :widths: 20 80
@@ -82,8 +92,6 @@ The Elasticsearch data store configuration panel includes standard connection pa
      - Index name
    * - search_indices
      - Indices to use when searching. Enables multi/cross index searches.
-   * - cluster_name
-     - Cluster name
    * - default_max_features
      - Default used when maxFeatures is unlimited
    * - source_filtering_enabled
@@ -105,13 +113,18 @@ Configuring layer
 
 The initial layer configuration panel for an Elasticsearch layer will include an additional pop-up showing a table of available fields.
 
-.. figure:: images/elasticsearch_fieldlist.png
-   :align: center
+.. |field_list| image:: images/elasticsearch_fieldlist.png
+   :scale: 100%
+   :align: middle
+
++--------------+
+| |field_list| |
++--------------+
 
 .. list-table::
    :widths: 20 80
 
-   * - Column
+   * - Item
      - Description
    * - ``Use All``
      - Use all fields in the layer feature type
@@ -137,8 +150,13 @@ The initial layer configuration panel for an Elasticsearch layer will include an
 
 To return to the field table after it has been closed, click the "Configure Elasticsearch fields" button below the "Feature Type Details" panel on the layer configuration page.
 
-.. figure:: images/elasticsearch_fieldlist_edit.png
-   :align: center
+.. |field_list_edit| image:: images/elasticsearch_fieldlist_edit.png
+   :scale: 100%
+   :align: middle
+
++-------------------+
+| |field_list_edit| |
++-------------------+
 
 Configuring logging
 ^^^^^^^^^^^^^^^^^^^
@@ -150,8 +168,13 @@ Logging is configurable through Log4j. The data store includes logging such as t
 
 The logging configuration file will be in the ``logs`` subdirectory in the GeoServer data directory. Check GeoServer global settings for which file is being used (e.g. ``DEFAULT_LOGGING.properties``, etc.).
 
-.. figure:: images/elasticsearch_logging.png
-   :align: center
+.. |logging| image:: images/elasticsearch_logging.png
+   :scale: 100%
+   :align: middle
+
++-----------+
+| |logging| |
++-----------+
 
 Filtering
 ---------
@@ -204,7 +227,7 @@ Elasticsearch aggregations are supported through WFS/WMS requests by including t
          &typeName=test:active&bbox=0.0,0.0,24.0,44.0
          &viewparams=a:{"agg": {"geohash_grid": {"field": "geo"\, "precision": 3}}}
 
-Aggregation WFS features will include a single attribute, ``_aggregation``, containing the raw aggregation content. Note that size is set to zero when an aggregation is supplied so only aggregation features are returned (e.g. maxFeatures is ignored and there will be no search hit results).
+Aggregation WFS features will include a single attribute, ``_aggregation``, containing the raw aggregation content. Note that size is set to zero when an aggregation is supplied so only aggregation features are returned (e.g. maxFeatures is ignored and there will be no search hit results). See FAQ_ for common issues using aggregations.
 
 Geohash grid aggregations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -287,16 +310,9 @@ Example WMS request including Geohash grid aggregation with the above custom sty
          &width=418&height=768&format=application/openlayers
          &viewparams=a:{"agg": {"geohash_grid": {"field": "geo"\, "precision": 3}}}
 
-Troubleshooting
-^^^^^^^^^^^^^^^
-
-* Commas in the aggregation body must be escaped with a backslash. Additionally body may need to be URL encoded.
-* Geometry property name in the SLD RasterSymbolizer must be a valid geometry property in the layer
-* Layers created with earlier (pre-aggregation support) versions of the plugin may need to be reloaded. In this case the layer must be removed and re-added to GeoServer (e.g. a feature type reload will not be sufficient).
-
 Grid Strategy
 ^^^^^^^^^^^^^
-``gridStrategy``: Parameter to identify the ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` implemenation that will be used to convert each geohashgrid bucket into a raster value (number).
+``gridStrategy``: Parameter to identify the ``mil.nga.giat.process.elasticsearch.GeoHashGrid`` implementation that will be used to convert each geohashgrid bucket into a raster value (number).
 
 .. list-table::
    :widths: 20 20 20 40
@@ -322,7 +338,7 @@ Grid Strategy
 
 ``emptyCellValue``: (Optional) Parameter used to specify the value for empty grid cells. By default, empty grid cells are set to ``0``.
 
-``scaleMin``, ``scaleMax``: (Optional) Parameters used to specify a scale applied to all raster values. Each tile request is scaled according to the min and max values for that tile. It is best to use a non-tited layer with this parameter to avoid confusing results.
+``scaleMin``, ``scaleMax``: (Optional) Parameters used to specify a scale applied to all raster values. Each tile request is scaled according to the min and max values for that tile. It is best to use a non-tiled layer with this parameter to avoid confusing results.
 
 ``useLog``: (Optional) Flag indicating whether to apply logarithm to raster values (applied prior to scaling, if applicable)
 
@@ -516,9 +532,14 @@ After deploying the customized plugin the new geohash grid computer can be used 
                  <ogc:Literal>NewName</ogc:Literal>
                </ogc:Function>
 
-Notes and Known Issues
-----------------------
+.. _FAQ:
 
+FAQ
+---
+
+- When updating from pre-2.11.0 versions of the plugin it may be necessary to reload older layers to enable full aggregation and time support. Missing aggregation data or errors of the form ``IllegalArgumentException: Illegal pattern component`` indicate a layer reload is necessary. In this case the layer must be removed and re-added to GeoServer (e.g. a feature type reload will not be sufficient).
+- Commas in the native query and aggregation body must be escaped with a backslash. Additionally body may need to be URL encoded.
+- Geometry property name in the aggregation SLD RasterSymbolizer must be a valid geometry property in the layer
 - ``PropertyIsEqualTo`` maps to an Elasticsearch term query, which will return documents that contain the supplied term. When searching on an analyzed string field, ensure that the search values are consistent with the analyzer used in the index. For example, values may need to be lowercase when querying fields analyzed with the default analyzer. See the Elasticsearch term query documentation for more information.
 - ``PropertyIsLike`` maps to either a query string query or a regexp query, depending on whether the field is analyzed or not. Reserved characters should be escaped as applicable. Note case sensitive and insensitive searches may not be supported for analyzed and not analyzed fields, respectively. See Elasticsearch query string and regexp query documentation for more information.
 - Date conversions are handled using the date format from the associated type mapping, or ``date_optional_time`` if not found. Note that UTC timezone is used for both parsing and printing of dates.
@@ -528,3 +549,4 @@ Notes and Known Issues
 
 - Filtering on Elasticsearch ``nested`` types is supported only for non-geospatial fields.
 - Circle geometries are not currently supported
+- The ``joda-shaded`` module may need to be excluded when importing the project into Eclipse. Otherwise modules may have build errors of the form ``DateTimeFormatter cannot be resolved to a type``.
