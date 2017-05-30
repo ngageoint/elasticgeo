@@ -7,6 +7,7 @@ package mil.nga.giat.data.elasticsearch;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vividsolutions.jts.geom.Geometry;
 
+import mil.nga.giat.data.elasticsearch.ElasticDataStore.ArrayEncoding;
 import mil.nga.giat.shaded.es.common.joda.Joda;
 import mil.nga.giat.shaded.joda.time.format.DateTimeFormatter;
 
@@ -22,12 +23,16 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * FeatureReader access to the Elasticsearch index.
@@ -43,6 +48,8 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
     private final float maxScore;
 
     private final ObjectMapper mapper;
+
+    private final ArrayEncoding arrayEncoding;
 
     private SimpleFeatureBuilder builder;
 
@@ -74,6 +81,15 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                 this.aggregationIterator = aggregations.get(aggregationName).getBuckets().iterator();
             }
         }
+
+        if (contentState.getEntry() != null && contentState.getEntry().getDataStore() != null) {
+            final ElasticDataStore dataStore;
+            dataStore = (ElasticDataStore) contentState.getEntry().getDataStore();
+            this.arrayEncoding = dataStore.getArrayEncoding();
+        } else {
+            this.arrayEncoding = ArrayEncoding.valueOf((String) ElasticDataStoreFactory.ARRAY_ENCODING.getDefaultValue());
+        }
+
         this.mapper = new ObjectMapper();
     }
 
@@ -148,15 +164,17 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
                 }
             } else if (values.size() == 1) {
                 builder.set(name, values.get(0));
-            } else if (String.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                final StringBuilder valueBuilder = new StringBuilder();
-                for (final Object value : values) {
-                    valueBuilder.append(valueBuilder.length()>0 ? ";" : "");
-                    valueBuilder.append(value);
-                }
-                builder.set(name, valueBuilder.toString());
             } else if (!name.equals("_aggregation")) {
-                builder.set(name, values);
+                Object value = null;
+                switch (arrayEncoding) {
+                    case CSV:
+                        value = values.stream().map(i -> parserUtil.urlEncode(String.valueOf(i)))
+                            .collect(Collectors.joining(","));
+                        break;
+                    default:
+                        value = values;
+                }
+                builder.set(name, value);
             }
         }
 

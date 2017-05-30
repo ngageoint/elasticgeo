@@ -7,6 +7,8 @@ package mil.nga.giat.data.elasticsearch;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
 
+import mil.nga.giat.data.elasticsearch.ElasticDataStore.ArrayEncoding;
+
 import java.awt.RenderingHints.Key;
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,6 +43,9 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
 
     public static final Param SCROLL_TIME_SECONDS = new Param("scroll_time", Integer.class, "Time to keep the scroll open in seconds (ignored if scroll_enabled=false)", false, 120);
 
+    public static final Param ARRAY_ENCODING = new Param("array_encoding", String.class, "Array encoding strategy. Allowed values are \"JSON\" (keep arrays) " 
+            + " and \"CSV\" (URL encode and join array elements).", false, "JSON");
+
     public static final Param GRID_SIZE = new Param("grid_size", Long.class, "Hint for Geohash grid size (nrow*ncol)", false, 10000l);
 
     public static final Param GRID_THRESHOLD = new Param("grid_threshold",  Double.class, 
@@ -56,6 +61,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             SCROLL_ENABLED,
             SCROLL_SIZE,
             SCROLL_TIME_SECONDS,
+            ARRAY_ENCODING,
             GRID_SIZE,
             GRID_THRESHOLD
     };
@@ -112,6 +118,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final Integer hostPort = (Integer) getValue(HOSTPORT, params);
         final String indexName = (String) INDEX_NAME.lookUp(params);
         final String searchIndices = (String) SEARCH_INDICES.lookUp(params);
+        final String arrayEncoding = (String) getValue(ARRAY_ENCODING, params);
 
         final ElasticDataStore dataStore = new ElasticDataStore(searchHost, hostPort, indexName, searchIndices);
         dataStore.setDefaultMaxFeatures((Integer) getValue(DEFAULT_MAX_FEATURES, params));
@@ -119,6 +126,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));
         dataStore.setScrollSize(((Number)getValue(SCROLL_SIZE, params)).longValue());
         dataStore.setScrollTime((Integer)getValue(SCROLL_TIME_SECONDS, params));
+        dataStore.setArrayEncoding(ArrayEncoding.valueOf(arrayEncoding.toUpperCase()));
         dataStore.setGridSize((Long) GRID_SIZE.lookUp(params));
         dataStore.setGridThreshold((Double) GRID_THRESHOLD.lookUp(params));
         return dataStore;

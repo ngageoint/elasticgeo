@@ -17,6 +17,8 @@
 
 package mil.nga.giat.data.elasticsearch;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +57,8 @@ import org.opengis.filter.identity.FeatureId;
 import org.opengis.filter.sort.SortBy;
 import org.opengis.filter.sort.SortOrder;
 import org.opengis.filter.spatial.BBOX;
+
+import mil.nga.giat.data.elasticsearch.ElasticDataStore.ArrayEncoding;
 
 public class ElasticFeatureFilterIT extends ElasticTestSupport {
 
@@ -273,9 +277,46 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
             assertEquals(2, feature.getAttributeCount());
             String st = (String) feature.getAttribute("standard_ss");
             // changed from "IEEE 802.11b" in SolrFeatureSourceTest
-            assertTrue(st.startsWith("IEEE 802.11"));
+            assertTrue(st.contains("IEEE 802.11b"));
         } finally {
             iterator.close();
+        }
+    }
+
+    @Test
+    public void testReadStringArrayWithCsvStrategy() throws Exception {
+        init();
+        dataStore.setArrayEncoding(ArrayEncoding.CSV);
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsEqualTo filter = ff.equals(ff.property("modem_b"), ff.literal(true));
+
+        SimpleFeatureCollection features = featureSource.getFeatures(filter);
+        assertEquals(8, features.size());
+
+        SimpleFeatureIterator iterator = features.features();
+        try {
+            assertTrue(iterator.hasNext());
+            SimpleFeature feature = iterator.next();
+            String st = (String) feature.getAttribute("standard_ss");
+            // changed from "IEEE 802.11b" in SolrFeatureSourceTest
+            assertTrue(URLDecoder.decode(st, StandardCharsets.UTF_8.toString()).startsWith("IEEE 802.11"));
+        } finally {
+            iterator.close();
+        }
+    }
+
+    @Test
+    public void testReadNumericArrayWithCsvStrategy() throws Exception {
+        init();
+        dataStore.setArrayEncoding(ArrayEncoding.CSV);
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsBetween between = ff.between(ff.property("speed_is"), ff.literal(160), ff.literal(300));
+        SimpleFeatureCollection features = featureSource.getFeatures(between);
+        assertEquals(5, features.size());
+        SimpleFeatureIterator iterator = features.features();
+        while (iterator.hasNext()) {
+            SimpleFeature f = iterator.next();
+            assertFalse(f.getAttribute("speed_is") instanceof List);
         }
     }
 

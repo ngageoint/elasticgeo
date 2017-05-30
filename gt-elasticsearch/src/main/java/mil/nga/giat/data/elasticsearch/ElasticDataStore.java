@@ -64,9 +64,25 @@ public class ElasticDataStore extends ContentDataStore {
 
     private Integer scrollTime;
 
+    private ArrayEncoding arrayEncoding;
+
     private Long gridSize;
 
     private Double gridThreshold;
+
+    public enum ArrayEncoding {
+
+        /**
+         * Return all arrays without encoding.
+         */
+        JSON,
+
+        /**
+         * URL encode and join string array elements.
+         */
+        CSV
+
+    }
 
     public ElasticDataStore(String searchHost, Integer hostPort, 
             String indexName, String searchIndices) throws IOException {
@@ -102,6 +118,8 @@ public class ElasticDataStore extends ContentDataStore {
 
         layerConfigurations = new ConcurrentHashMap<>();
         docTypes = new HashMap<>();
+
+        arrayEncoding = ArrayEncoding.JSON;
     }
 
     @Override
@@ -246,6 +264,14 @@ public class ElasticDataStore extends ContentDataStore {
 
     public void setScrollTime(Integer scrollTime) {
         this.scrollTime = scrollTime;
+    }
+
+    public ArrayEncoding getArrayEncoding() {
+        return arrayEncoding;
+    }
+
+    public void setArrayEncoding(ArrayEncoding arrayEncoding) {
+        this.arrayEncoding = arrayEncoding;
     }
 
     public Long getGridSize() {
