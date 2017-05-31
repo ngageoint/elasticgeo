@@ -4,12 +4,18 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.geotools.util.logging.Logging;
 
 import com.github.davidmoten.geo.GeoHash;
 import com.github.davidmoten.geo.LatLong;
@@ -28,6 +34,8 @@ import com.vividsolutions.jts.geom.Polygon;
  */
 public class ElasticParserUtil {
 
+    private final static Logger LOGGER = Logging.getLogger(ElasticParserUtil.class);
+
     private static final Pattern GEO_POINT_PATTERN;
     static {
         GEO_POINT_PATTERN = Pattern.compile("(-*\\d*\\.*\\d*?),(-*\\d*\\.*\\d*?)");
@@ -35,8 +43,11 @@ public class ElasticParserUtil {
 
     private final GeometryFactory geometryFactory;
 
+    private boolean unsupportedEncodingMessage;
+
     public ElasticParserUtil() {
         this.geometryFactory = new GeometryFactory();
+        this.unsupportedEncodingMessage = false;
     }
 
     /**
@@ -272,4 +283,15 @@ public class ElasticParserUtil {
         return result;
     }
 
+    public String urlEncode(String value) {
+        try {
+            value = URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            if (!unsupportedEncodingMessage) {
+                LOGGER.warning("Unable to encode value(s): " + e);
+                unsupportedEncodingMessage = true;
+            }
+        }
+        return value;
+    }
 }
