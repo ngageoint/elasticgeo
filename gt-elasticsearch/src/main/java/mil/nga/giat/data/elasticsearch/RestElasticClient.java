@@ -102,7 +102,13 @@ public class RestElasticClient implements ElasticClient {
 
     @Override
     public Map<String, Object> getMapping(String indexName, String type) throws IOException {
-        final Response response = client.performRequest("GET", "/" + indexName + "/_mapping/" + type);
+        final Response response;
+        try {
+            response = client.performRequest("GET", "/" + indexName + "/_mapping/" + type);
+        } catch (ResponseException e) {
+            LOGGER.warning("Requested index/type (" + indexName + "/" + type + ") not found");
+            return null;
+        }
         try (final InputStream inputStream = response.getEntity().getContent()) {
             final Map<String,ElasticMappings> values;
             values = mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {});
@@ -114,6 +120,7 @@ public class RestElasticClient implements ElasticClient {
             }
             return properties;
         }
+
     }
 
     @Override
