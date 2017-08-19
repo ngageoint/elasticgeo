@@ -1251,17 +1251,27 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                     try {
                         nativeQueryBuilder = mapReader.readValue(value);
                     } catch (Exception e) {
-                        throw new FilterToElasticException("Unable to parse native query",e);
+                        // retry with decoded value
+                        try {
+                            nativeQueryBuilder = mapReader.readValue(ElasticParserUtil.urlDecode(value));
+                        } catch (Exception e2) {
+                            throw new FilterToElasticException("Unable to parse native query", e);
+                        }
                     }
                 }
                 if (entry.getKey().equalsIgnoreCase("a")) {
                     final ObjectMapper mapper = new ObjectMapper();
+                    final TypeReference<Map<String, Map<String,Map<String,Object>>>> type;
+                    type = new TypeReference<Map<String, Map<String,Map<String,Object>>>>() {};
+                    final String value = entry.getValue();
                     try {
-                        final TypeReference<Map<String, Map<String,Map<String,Object>>>> type;
-                        type = new TypeReference<Map<String, Map<String,Map<String,Object>>>>() {};
-                        this.aggregations = mapper.readValue(entry.getValue(), type);
+                        this.aggregations = mapper.readValue(value, type);
                     } catch (Exception e) {
-                        throw new FilterToElasticException("Unable to parse aggregation",e);
+                        try {
+                            this.aggregations = mapper.readValue(ElasticParserUtil.urlDecode(value), type);
+                        } catch (Exception e2) {
+                            throw new FilterToElasticException("Unable to parse aggregation", e);
+                        }
                     }
                 }
             }
