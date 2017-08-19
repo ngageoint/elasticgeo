@@ -45,6 +45,17 @@ public class ElasticDataStoreIT extends ElasticTestSupport {
     }
 
     @Test
+    public void testGetNamesByAlias() throws IOException {
+        Map<String,Serializable> params = createConnectionParams();
+        params.put(ElasticDataStoreFactory.INDEX_NAME.key, indexName + "_alias");
+
+        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+        DataStore dataStore = factory.createDataStore(params);
+        String[] typeNames = dataStore.getTypeNames();
+        assertTrue(new HashSet<String>(Arrays.asList(typeNames)).contains(("active")));
+    }
+
+    @Test
     public void testDefaultSearchIndices() throws IOException {
         Map<String,Serializable> params = createConnectionParams();
 

@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import org.apache.http.HttpHost;
@@ -134,6 +135,10 @@ public class ElasticTestSupport {
             mappings.put("not-active", source);
         }
         client.performRequest("PUT", "/" + indexName, settings);
+
+        // add alias
+        Map<String,Object> aliases = ImmutableMap.of("actions", ImmutableList.of(ImmutableMap.of("index", indexName, "alias", indexName + "_alias")));
+        client.performRequest("PUT", "/_alias", aliases);
 
         // index documents
         try (InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE); Scanner scanner = new Scanner(inputStream)) {

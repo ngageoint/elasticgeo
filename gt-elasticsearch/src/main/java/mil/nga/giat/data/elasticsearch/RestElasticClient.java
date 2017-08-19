@@ -92,10 +92,22 @@ public class RestElasticClient implements ElasticClient {
             }
             throw e;
         }
+
         try (final InputStream inputStream = response.getEntity().getContent()) {
             final Map<String,ElasticMappings> values;
             values = mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {});
-            final Map<String, Mapping> mappings = values.get(indexName).getMappings();
+            final Map<String, Mapping> mappings;
+            if (values.containsKey(indexName)) {
+                mappings = values.get(indexName).getMappings();
+            } else {
+                final String aliasedIndex = getIndices(indexName).stream().findFirst().orElse(null);
+                if (values.containsKey(aliasedIndex)) {
+                    mappings = values.get(aliasedIndex).getMappings();
+                } else {
+                    LOGGER.severe("No types found for index/alias " + indexName);
+                    mappings = Collections.EMPTY_MAP;
+                }
+            }
             return mappings.keySet().stream().map(key -> (String) key).collect(Collectors.toList());
         }
     }
@@ -236,4 +248,16 @@ public class RestElasticClient implements ElasticClient {
         }
     }
 
+    private Set<String> getIndices(String alias) {
+        Set<String> indices = null;
+        try {
+            final Response response = performRequest("GET", "/_alias/" + alias, null);
+            try (final InputStream inputStream = response.getEntity().getContent()) {
+                final Map<String,Object> result = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
+                indices = result.keySet();
+            }
+        } catch (IOException e) {
+        }
+        return indices;
+    }
 }
