@@ -192,7 +192,7 @@ Requests involving spatial filter operators not natively supported by Elasticsea
 Native queries
 ^^^^^^^^^^^^^^
 
-Native Elasticsearch queries can be applied in WFS/WMS feature requests by including the ``q:{query_body}`` or ``f:{query_body}`` key:value pairs in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the query is combined with the query derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
+Native Elasticsearch queries can be applied in WFS/WMS feature requests by including the ``q:{query_body}`` key:value pair in the ``viewparams`` parameter (see GeoServer SQL Views documentation for more information). If supplied, the query is combined with the query derived from the request bbox, CQL or OGC filter using the AND logical binary operator.
 
 Examples
 ^^^^^^^^
@@ -209,7 +209,7 @@ BBOX and native query::
     http://localhost:8080/geoserver/test/wms?service=WMS&version=1.1.0&request=GetMap
          &layers=test:active&styles=&bbox=-1,-1,10,10&width=279&height=512
          &srs=EPSG:4326&format=application/openlayers&maxFeatures=1000
-         &viewparams=f:{"term":{"standard_ss":"IEEE 802.11b"}}
+         &viewparams=q:{"term":{"standard_ss":"IEEE 802.11b"}}
 
 Native query with BBOX filter::
 

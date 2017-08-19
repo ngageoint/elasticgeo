@@ -118,8 +118,7 @@ import mil.nga.giat.shaded.joda.time.format.DateTimeFormatter;
 /**
  * Encodes an OGC {@link Filter} and creates a filter for an Elasticsearch query.
  * Optionally applies SQL View parameters from {@link Query} defining Elasticsearch 
- * {@link QueryBuilder} ("Q") and filter ("F") directly. If provided, specified filter is added to 
- * the generated filter.
+ * query directly.
  * 
  * Based on org.geotools.data.jdbc.FilterToSQL in the GeoTools library/jdbc module.
  */
@@ -212,7 +211,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     /**
      * Performs the encoding.
      * If SQL View parameters are provided in the query hints, they will be used
-     * to define and/or update the {@link FilteredQueryBuilder}.
+     * to define and/or update the query.
      *
      * @param query the Query to be encoded.
      *
