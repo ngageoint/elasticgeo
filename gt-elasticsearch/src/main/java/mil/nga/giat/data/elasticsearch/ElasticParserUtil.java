@@ -5,6 +5,7 @@
 package mil.nga.giat.data.elasticsearch;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -294,4 +295,14 @@ public class ElasticParserUtil {
         }
         return value;
     }
+
+    public static String urlDecode(String value) {
+        try {
+            value = URLDecoder.decode(value, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException e) {
+            LOGGER.warning("Unable to encode value(s): " + e);
+        }
+        return value;
+    }
+
 }

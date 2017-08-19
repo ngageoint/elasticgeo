@@ -17,6 +17,7 @@
 
 package mil.nga.giat.data.elasticsearch;
 
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +44,25 @@ public class ElasticViewParametersFilterIT extends ElasticTestSupport {
         Map<String, String> vparams = new HashMap<String, String>();
         Map<String,Object> query = ImmutableMap.of("term", ImmutableMap.of("security_ss", "WPA"));
         vparams.put("q", mapper.writeValueAsString(query));
+        Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
+        Query q = new Query(featureSource.getSchema().getTypeName());
+        q.setHints(hints);
+        FilterFactory ff = dataStore.getFilterFactory();
+        PropertyIsEqualTo filter = ff.equals(ff.property("speed_is"), ff.literal("300"));
+        q.setFilter(filter);
+        ContentFeatureCollection features = featureSource.getFeatures(q);
+        assertEquals(1, features.size());
+        SimpleFeatureIterator fsi = features.features();
+        assertTrue(fsi.hasNext());
+        assertEquals(fsi.next().getID(), "not-active.12");
+    }
+
+    @Test
+    public void testEncodedNativeTermQuery() throws Exception {
+        init("not-active");
+        Map<String, String> vparams = new HashMap<String, String>();
+        Map<String,Object> query = ImmutableMap.of("term", ImmutableMap.of("security_ss", "WPA"));
+        vparams.put("q", URLEncoder.encode(mapper.writeValueAsString(query), "UTF-8"));
         Hints hints = new Hints(Hints.VIRTUAL_TABLE_PARAMETERS, vparams);
         Query q = new Query(featureSource.getSchema().getTypeName());
         q.setHints(hints);
