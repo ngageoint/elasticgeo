@@ -103,7 +103,7 @@ Available data store configuration parameters are summarized in the following ta
    * - scroll_time
      - Search context timeout when using the scroll API
    * - array_encoding
-     - Array encoding strategy. Allowed values are ``JSON`` (keep arrays) and ``CSV`` (URL encode and join array elements).
+     - Array encoding strategy. Allowed values are ``JSON`` (keep arrays) and ``CSV`` (keep first array element).
    * - grid_size 
      - Hint for Geohash grid size (numRows*numCols)
    * - grid_threshold
@@ -539,7 +539,7 @@ After deploying the customized plugin the new geohash grid computer can be used 
 FAQ
 ---
 
-- By default arrays are returned directly, which is suitable for many output formats including GeoJSON. When using CSV output format with layers containing numeric arrays it's necessary to set the ``array_encoding`` store parameter to ``CSV``. Note however when using the ``CSV`` array encoding that only the first value will be returned by GeoServer in the case of numeric arrays. 
+- By default arrays are returned directly, which is suitable for many output formats including GeoJSON. When using CSV output format with layers containing arrays it's necessary to set the ``array_encoding`` store parameter to ``CSV``. Note however when using the ``CSV`` array encoding that only the first value will be returned.
 - When updating from pre-2.11.0 versions of the plugin it may be necessary to reload older layers to enable full aggregation and time support. Missing aggregation data or errors of the form ``IllegalArgumentException: Illegal pattern component`` indicate a layer reload is necessary. In this case the layer must be removed and re-added to GeoServer (e.g. a feature type reload will not be sufficient).
 - Commas in the native query and aggregation body must be escaped with a backslash. Additionally body may need to be URL encoded.
 - Geometry property name in the aggregation SLD RasterSymbolizer must be a valid geometry property in the layer

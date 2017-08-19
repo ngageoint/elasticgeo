@@ -165,11 +165,11 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             } else if (values.size() == 1) {
                 builder.set(name, values.get(0));
             } else if (!name.equals("_aggregation")) {
-                Object value = null;
+                final Object value;
                 switch (arrayEncoding) {
                     case CSV:
-                        value = values.stream().map(i -> parserUtil.urlEncode(String.valueOf(i)))
-                            .collect(Collectors.joining(","));
+                        // only include first array element when using CSV array encoding
+                        value = values.get(0);
                         break;
                     default:
                         value = values;
