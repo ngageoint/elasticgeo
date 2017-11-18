@@ -42,11 +42,13 @@ public class RestElasticClient implements ElasticClient {
 
     private final static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
+    private final static int DEFAULT_MAJOR_VERSION = 5;
+
     private RestClient client;
 
     private ObjectMapper mapper;
 
-    private String majorVersion;
+    private Integer majorVersion;
 
     public RestElasticClient(RestClient client) {
         this.client = client;
@@ -55,7 +57,7 @@ public class RestElasticClient implements ElasticClient {
     }
 
     @Override
-    public String getMajorVersion() {
+    public int getMajorVersion() {
         if (majorVersion != null) {
             return majorVersion;
         }
@@ -67,15 +69,15 @@ public class RestElasticClient implements ElasticClient {
                 Map<String,Object> info = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
                 Map<String,Object> version = (Map) info.getOrDefault("version", Collections.EMPTY_MAP);
                 final Matcher m = pattern.matcher((String) version.get("number"));
-                if (!m.find() || Integer.valueOf(m.group(1)) < 5) {
-                    majorVersion = "2";
+                if (!m.find()) {
+                    majorVersion = DEFAULT_MAJOR_VERSION;
                 } else {
-                    majorVersion = "5";
+                    majorVersion = Integer.valueOf(m.group(1));
                 }
             }
         } catch (Exception e) {
             LOGGER.warning("Error getting server version: " + e);
-            majorVersion = "2";
+            majorVersion = DEFAULT_MAJOR_VERSION;
         }
 
         return majorVersion;
@@ -161,7 +163,7 @@ public class RestElasticClient implements ElasticClient {
         }
 
         if (!request.getFields().isEmpty()) {
-            final String key = getMajorVersion().equals("5") ? "stored_fields" : "fields";
+            final String key = getMajorVersion() > 2 ? "stored_fields" : "fields";
             requestBody.put(key, request.getFields());
         }
 
