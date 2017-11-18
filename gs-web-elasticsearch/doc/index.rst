@@ -12,7 +12,7 @@ Compatibility
 
 * Java: 1.8
 * GeoServer: 2.9.x, 2.10.x, 2.11.x
-* Elasticsearch: 2.4.x, 5.0.x, 5.1.x, 5.2.x, 5.3.x, 5.4.x
+* Elasticsearch: 2.4.x, 5.x
 
 Downloads
 ---------
@@ -89,7 +89,11 @@ Available data store configuration parameters are summarized in the following ta
    * - elasticsearch_port
      - HTTP port for connecting to Elasticsearch
    * - index_name
-     - Index name
+     - Index name or alias
+   * - ssl_enabled
+     - Whether to enable SSL for https connections
+   * - reject_unauthorized
+     - Whether to verify server certificate when SSL is enabled 
    * - search_indices
      - Indices to use when searching. Enables multi/cross index searches.
    * - default_max_features
@@ -108,6 +112,15 @@ Available data store configuration parameters are summarized in the following ta
      - Hint for Geohash grid size (numRows*numCols)
    * - grid_threshold
      - Geohash grid aggregation precision will be the minimum necessary so that actual_grid_size/grid_size > grid_threshold
+
+Configuring SSL/TLS
+^^^^^^^^^^^^^^^^^^^
+
+System properties are supported for SSL/TLS configuration. See `HttpClientBuilder <https://hc.apache.org/httpcomponents-client-ga/httpclient/apidocs/org/apache/http/impl/client/HttpClientBuilder.html>`_  documentation for available properties.
+
+For example use ``javax.net.ssl.trustStore[Password]`` to validate server certificate::
+
+    $ export JAVA_OPTS="-Djavax.net.ssl.trustStore=/path/to/truststore.jks -Djavax.net.ssl.trustStorePassword=changeme $JAVA_OPTS "
 
 
 Configuring layer

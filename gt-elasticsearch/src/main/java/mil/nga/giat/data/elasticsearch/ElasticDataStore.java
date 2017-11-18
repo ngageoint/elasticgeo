@@ -84,10 +84,12 @@ public class ElasticDataStore extends ContentDataStore {
 
     }
 
-    public ElasticDataStore(String searchHost, Integer hostPort, 
-            String indexName, String searchIndices) throws IOException {
+    public ElasticDataStore(String searchHost, Integer hostPort,  String indexName, String searchIndices) throws IOException {
+        this(RestClient.builder(new HttpHost(searchHost, hostPort, "http")).build(), indexName, searchIndices);
+    }
 
-        LOGGER.fine("Initializing data store " + searchHost + ":" + hostPort + "/" + indexName);
+    public ElasticDataStore(RestClient restClient, String indexName, String searchIndices) throws IOException {
+        LOGGER.fine("Initializing data store for " + indexName);
 
         this.indexName = indexName;
 
@@ -98,7 +100,6 @@ public class ElasticDataStore extends ContentDataStore {
         }
 
         try {
-            final RestClient restClient = RestClient.builder(new HttpHost(searchHost, hostPort, "http")).build();
             final Response response = restClient.performRequest("GET", "/", Collections.<String, String>emptyMap());
             if (response.getStatusLine().getStatusCode() >= 400) {
                 throw new IOException();

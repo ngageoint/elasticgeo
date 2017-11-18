@@ -182,7 +182,6 @@
                 <phase>post-integration-test</phase>
                 <goals>
                   <goal>stop</goal>
-                  <goal>remove</goal>
                 </goals>
               </execution>
             </executions>
