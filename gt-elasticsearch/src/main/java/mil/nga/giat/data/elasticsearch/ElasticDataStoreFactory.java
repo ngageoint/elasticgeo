@@ -44,9 +44,6 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     /** Index name. **/
     public static final Param INDEX_NAME = new Param("index_name", String.class, "Index defining type", true);
 
-    /** Index name. **/
-    public static final Param SEARCH_INDICES = new Param("search_indices", String.class, "Indices for search (default is index_name)", false);
-
     public static final Param DEFAULT_MAX_FEATURES = new Param("default_max_features", Integer.class, "Default max features", false, 100);
 
     public static final Param SOURCE_FILTERING_ENABLED = new Param("source_filtering_enabled", Boolean.class, "Enable source field filtering", false, false);
@@ -71,7 +68,6 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             SSL_ENABLED,
             SSL_REJECT_UNAUTHORIZED,
             INDEX_NAME,
-            SEARCH_INDICES,
             DEFAULT_MAX_FEATURES,
             SOURCE_FILTERING_ENABLED,
             SCROLL_ENABLED,
@@ -133,7 +129,6 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final String searchHost = (String) getValue(HOSTNAME, params);
         final Integer hostPort = (Integer) getValue(HOSTPORT, params);
         final String indexName = (String) INDEX_NAME.lookUp(params);
-        final String searchIndices = (String) SEARCH_INDICES.lookUp(params);
         final String arrayEncoding = (String) getValue(ARRAY_ENCODING, params);
         final Boolean sslEnabled = (Boolean) getValue(SSL_ENABLED, params);
         final Boolean sslRejectUnauthorized = (Boolean) getValue(SSL_REJECT_UNAUTHORIZED, params);
@@ -159,7 +154,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             });
         }
 
-        final ElasticDataStore dataStore = new ElasticDataStore(builder.build(), indexName, searchIndices);
+        final ElasticDataStore dataStore = new ElasticDataStore(builder.build(), indexName);
         dataStore.setDefaultMaxFeatures((Integer) getValue(DEFAULT_MAX_FEATURES, params));
         dataStore.setSourceFilteringEnabled((Boolean) getValue(SOURCE_FILTERING_ENABLED, params));
         dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));

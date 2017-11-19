@@ -46,8 +46,6 @@ public class ElasticDataStore extends ContentDataStore {
 
     private final String indexName;
 
-    private final String searchIndices;
-
     private final List<Name> baseTypeNames;
 
     private final Map<Name, String> docTypes;
@@ -84,20 +82,14 @@ public class ElasticDataStore extends ContentDataStore {
 
     }
 
-    public ElasticDataStore(String searchHost, Integer hostPort,  String indexName, String searchIndices) throws IOException {
-        this(RestClient.builder(new HttpHost(searchHost, hostPort, "http")).build(), indexName, searchIndices);
+    public ElasticDataStore(String searchHost, Integer hostPort,  String indexName) throws IOException {
+        this(RestClient.builder(new HttpHost(searchHost, hostPort, "http")).build(), indexName);
     }
 
-    public ElasticDataStore(RestClient restClient, String indexName, String searchIndices) throws IOException {
+    public ElasticDataStore(RestClient restClient, String indexName) throws IOException {
         LOGGER.fine("Initializing data store for " + indexName);
 
         this.indexName = indexName;
-
-        if (searchIndices != null) {
-            this.searchIndices = searchIndices;
-        } else {
-            this.searchIndices = indexName;
-        }
 
         try {
             final Response response = restClient.performRequest("GET", "/", Collections.<String, String>emptyMap());
@@ -217,10 +209,6 @@ public class ElasticDataStore extends ContentDataStore {
 
     public String getIndexName() {
         return indexName;
-    }
-
-    public String getSearchIndices() {
-        return searchIndices;
     }
 
     public ElasticClient getClient() {

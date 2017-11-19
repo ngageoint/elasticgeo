@@ -91,11 +91,9 @@ Available data store configuration parameters are summarized in the following ta
    * - index_name
      - Index name or alias
    * - ssl_enabled
-     - Whether to enable SSL for https connections
+     - Whether to enable SSL (HTTPS)
    * - reject_unauthorized
      - Whether to verify server certificate when SSL is enabled 
-   * - search_indices
-     - Indices to use when searching. Enables multi/cross index searches.
    * - default_max_features
      - Default used when maxFeatures is unlimited
    * - source_filtering_enabled
