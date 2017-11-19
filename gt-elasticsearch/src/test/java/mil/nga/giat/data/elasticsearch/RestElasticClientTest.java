@@ -145,6 +145,14 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchStoredFields() throws IOException {
+        final Response mockResponse2 = mock(Response.class);
+        final HttpEntity mockEntity2 = mock(HttpEntity.class);
+        when(mockResponse2.getEntity()).thenReturn(mockEntity2);
+        when(mockResponse2.getStatusLine()).thenReturn(mockStatusLine);
+        byte[] data = "{\"version\": {\"number\": \"2.4.4\"}}".getBytes();
+        final InputStream inputStream = new ByteArrayInputStream(data);
+        when(mockEntity2.getContent()).thenReturn(inputStream);
+        when(mockRestClient.performRequest(eq("GET"), eq("/"), anyMap(), any(HttpEntity.class))).thenReturn(mockResponse2);
         ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"fields\":[\"obj1\"]}".getBytes());
         when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
 

@@ -513,7 +513,7 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
                 attribute.setUse(false);
             }
         }
-        featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(layerName);
+        featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(TYPE_NAME);
 
         assertEquals(11, featureSource.getCount(Query.ALL));
 
@@ -552,7 +552,7 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
                 attribute.setUse(false);
             }
         }
-        featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(layerName);
+        featureSource = (ElasticFeatureSource) dataStore.getFeatureSource(TYPE_NAME);
 
         assertEquals(11, featureSource.getCount(Query.ALL));
 

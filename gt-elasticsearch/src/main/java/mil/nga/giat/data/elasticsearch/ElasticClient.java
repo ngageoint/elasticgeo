@@ -12,7 +12,7 @@ import java.util.Set;
 
 public interface ElasticClient extends Closeable {
 
-    public String getMajorVersion();
+    public int getMajorVersion();
 
     public List<String> getTypes(String indexName) throws IOException;
 

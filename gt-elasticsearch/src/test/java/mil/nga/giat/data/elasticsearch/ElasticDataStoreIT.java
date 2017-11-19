@@ -56,17 +56,6 @@ public class ElasticDataStoreIT extends ElasticTestSupport {
     }
 
     @Test
-    public void testDefaultSearchIndices() throws IOException {
-        Map<String,Serializable> params = createConnectionParams();
-
-        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
-        DataStore dataStore = factory.createDataStore(params);
-        String indexName = ((ElasticDataStore) dataStore).getIndexName();
-        String searchIndices = ((ElasticDataStore) dataStore).getSearchIndices();
-        assertTrue(searchIndices.equals(indexName));
-    }
-
-    @Test
     public void testLayerConfigClone() {
         ElasticLayerConfiguration layerConfig = new ElasticLayerConfiguration("d");
         layerConfig.setLayerName("ln");

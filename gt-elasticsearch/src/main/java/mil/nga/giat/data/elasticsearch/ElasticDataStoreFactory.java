@@ -4,6 +4,11 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import org.apache.http.HttpHost;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
 
@@ -12,6 +17,10 @@ import mil.nga.giat.data.elasticsearch.ElasticDataStore.ArrayEncoding;
 import java.awt.RenderingHints.Key;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 /**
@@ -27,11 +36,13 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public static final Param HOSTPORT = new Param("elasticsearch_port", Integer.class, 
             "Elasticsearch HTTP port", false, 9200);
 
-    /** Index name. **/
-    public static final Param INDEX_NAME = new Param("index_name", String.class, "Index defining type", true);
+    public static final Param SSL_ENABLED = new Param("ssl_enabled", Boolean.class, "Enable SSL. Use system properties to configure SSL. For example \"javax.net.ssl.trustStore\", "
+            + "\"javax.net.ssl.trustStorePassword\", etc..", false, false);
+
+    public static final Param SSL_REJECT_UNAUTHORIZED = new Param("ssl_reject_unauthorized", Boolean.class, "Whether to validate server certificate (ignored if ssl_enabled=false)", false, false);
 
     /** Index name. **/
-    public static final Param SEARCH_INDICES = new Param("search_indices", String.class, "Indices for search (default is index_name)", false);
+    public static final Param INDEX_NAME = new Param("index_name", String.class, "Index defining type", true);
 
     public static final Param DEFAULT_MAX_FEATURES = new Param("default_max_features", Integer.class, "Default max features", false, 100);
 
@@ -54,8 +65,9 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     protected static final Param[] PARAMS = {
             HOSTNAME,
             HOSTPORT,
+            SSL_ENABLED,
+            SSL_REJECT_UNAUTHORIZED,
             INDEX_NAME,
-            SEARCH_INDICES,
             DEFAULT_MAX_FEATURES,
             SOURCE_FILTERING_ENABLED,
             SCROLL_ENABLED,
@@ -117,10 +129,32 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final String searchHost = (String) getValue(HOSTNAME, params);
         final Integer hostPort = (Integer) getValue(HOSTPORT, params);
         final String indexName = (String) INDEX_NAME.lookUp(params);
-        final String searchIndices = (String) SEARCH_INDICES.lookUp(params);
         final String arrayEncoding = (String) getValue(ARRAY_ENCODING, params);
+        final Boolean sslEnabled = (Boolean) getValue(SSL_ENABLED, params);
+        final Boolean sslRejectUnauthorized = (Boolean) getValue(SSL_REJECT_UNAUTHORIZED, params);
 
-        final ElasticDataStore dataStore = new ElasticDataStore(searchHost, hostPort, indexName, searchIndices);
+        final String scheme = sslEnabled ? "https" : "http";
+        final RestClientBuilder builder = RestClient.builder(new HttpHost(searchHost, hostPort, scheme));
+
+        if (sslEnabled) {
+            builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                @Override
+                public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+                    httpClientBuilder.useSystemProperties();
+                    if (!sslRejectUnauthorized) {
+                        httpClientBuilder.setSSLHostnameVerifier((host,session) -> true);
+                        try {
+                            httpClientBuilder.setSSLContext(SSLContextBuilder.create().loadTrustMaterial((chain,authType) -> true).build());
+                        } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+                            throw new UncheckedIOException(new IOException("Unable to create SSLContext", e));
+                        }
+                    }
+                    return httpClientBuilder;
+                }
+            });
+        }
+
+        final ElasticDataStore dataStore = new ElasticDataStore(builder.build(), indexName);
         dataStore.setDefaultMaxFeatures((Integer) getValue(DEFAULT_MAX_FEATURES, params));
         dataStore.setSourceFilteringEnabled((Boolean) getValue(SOURCE_FILTERING_ENABLED, params));
         dataStore.setScrollEnabled((Boolean)getValue(SCROLL_ENABLED, params));

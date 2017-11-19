@@ -6,27 +6,20 @@ jdk:
 - oraclejdk8
 env:
   matrix:
-  - GEOTOOLS_VERSION='15.4' GEOSERVER_VERSION='2.9.4' ES_VERSION='5.4.0'
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='2.4.4'
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.0.2'
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.1.2'
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.2.2'
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.3.2'
-  - GEOTOOLS_VERSION='16.2' GEOSERVER_VERSION='2.10.2' ES_VERSION='5.4.0'
-  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='2.4.4'
-  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.0.2'
-  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.1.2'
-  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.2.2'
-  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.3.2'
-  - GEOTOOLS_VERSION='17.0' GEOSERVER_VERSION='2.11.0' ES_VERSION='5.4.0'
+  - GEOTOOLS_VERSION='17.3' GEOSERVER_VERSION='2.11.3' ES_VERSION='6.0.0'
+  - GEOTOOLS_VERSION='17.3' GEOSERVER_VERSION='2.11.3' ES_VERSION='5.6.4' ARGS='-Ddocker.image=elasticsearch'
+  - GEOTOOLS_VERSION='17.3' GEOSERVER_VERSION='2.11.3' ES_VERSION='2.4.4' ARGS='-Ddocker.image=elasticsearch'
+  - GEOTOOLS_VERSION='18.0' GEOSERVER_VERSION='2.12.0' ES_VERSION='6.0.0'
+  - GEOTOOLS_VERSION='18.0' GEOSERVER_VERSION='2.12.0' ES_VERSION='5.6.4' ARGS='-Ddocker.image=elasticsearch'
+  - GEOTOOLS_VERSION='18.0' GEOSERVER_VERSION='2.12.0' ES_VERSION='2.4.4' ARGS='-Ddocker.image=elasticsearch'
 cache:
   directories:
   - "$HOME/.m2"
 install:
-- travis_retry mvn install -DskipTests=true -Dskip.integration.tests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION}
+- travis_retry mvn install -DskipTests=true -Dskip.integration.tests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION} ${ARGS}
 script:
 - sudo sysctl -w vm.max_map_count=262144
-- travis_retry mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION}
+- travis_retry mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION} ${ARGS}
 after_success:
 - mvn coveralls:report
 before_deploy:

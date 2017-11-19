@@ -20,7 +20,8 @@
         }
       },
       "id": {
-        "type": "keyword"
+        "type": "string",
+        "index": "not_analyzed"
       },
       "installed_tdt": {
         "type": "date",
@@ -34,7 +35,8 @@
         "store": "true"
       },
       "security_ss": {
-        "type": "keyword",
+        "type": "string",
+        "index": "not_analyzed",
         "store": "true"
       },
       "speed_is": {
@@ -42,13 +44,16 @@
         "store": "true"
       },
       "standard_ss": {
-        "type": "keyword"
+        "type": "string",
+        "index": "not_analyzed"
       },
       "status_s": {
-        "type": "keyword"
+        "type": "string",
+        "index": "not_analyzed"
       },
       "vendor_s": {
-        "type": "keyword"
+        "type": "string",
+        "index": "not_analyzed"
       },
       "object": {
         "properties": {
@@ -67,7 +72,8 @@
             "type": "nested",
             "properties": {
               "child": {
-                "type": "keyword"
+                "type": "string",
+                "index": "not_analyzed"
               }
             }
           }

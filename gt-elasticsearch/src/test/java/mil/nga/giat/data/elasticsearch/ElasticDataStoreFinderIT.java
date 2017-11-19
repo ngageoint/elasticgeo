@@ -84,36 +84,6 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
     }
 
     @Test
-    public void testFactoryWithSearchIndices() throws IOException {
-        assertTrue(new ElasticDataStoreFactory().isAvailable());
-        scanForPlugins();
-
-        Map<String,Serializable> map = new HashMap<>();
-        map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
-        map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
-        map.put(ElasticDataStoreFactory.SEARCH_INDICES.key, "sample1,sample2");
-
-        Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
-        ElasticDataStoreFactory fac;
-        while (ps.hasNext()) {
-            fac = (ElasticDataStoreFactory) ps.next();
-
-            try {
-                if (fac.canProcess(map)) {
-                    source = fac.createDataStore(map);
-                }
-            } catch (Throwable t) {
-                LOGGER.log(Level.WARNING, "Could not acquire " + fac.getDescription() + ":" + t, t);
-            }
-        }
-
-        assertNotNull(source);
-        assertTrue(source instanceof ElasticDataStore);
-        assertTrue(((ElasticDataStore) source).getSearchIndices().equals("sample1,sample2"));
-    }
-
-    @Test
     public void testFactoryWithMissingRequired() throws IOException {
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
@@ -121,7 +91,6 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
         map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
-        map.put(ElasticDataStoreFactory.SEARCH_INDICES.key, "sample1,sample2");
 
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
         ElasticDataStoreFactory fac;
