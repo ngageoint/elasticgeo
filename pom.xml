@@ -31,9 +31,9 @@
     <geotools.version>17.2</geotools.version>
     <geoserver.version>2.11.2</geoserver.version>
     <!-- Elasticsearch version for HTTP client and select Joda classes -->
-    <es.version>5.5.1</es.version>
+    <es.version>6.0.0</es.version>
     <!-- Elasticsearch version used for integration testing -->
-    <es.test.version>5.5.1</es.test.version>
+    <es.test.version>6.0.0</es.test.version>
     <jackson.version>2.8.1</jackson.version>
     <joda.version>2.9.5</joda.version>
     <guava.version>17.0</guava.version>

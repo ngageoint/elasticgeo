@@ -54,7 +54,7 @@ public class ElasticViewParametersFilterIT extends ElasticTestSupport {
         assertEquals(1, features.size());
         SimpleFeatureIterator fsi = features.features();
         assertTrue(fsi.hasNext());
-        assertEquals(fsi.next().getID(), "not-active.12");
+        assertEquals(fsi.next().getID(), "active.12");
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ElasticViewParametersFilterIT extends ElasticTestSupport {
         assertEquals(1, features.size());
         SimpleFeatureIterator fsi = features.features();
         assertTrue(fsi.hasNext());
-        assertEquals(fsi.next().getID(), "not-active.12");
+        assertEquals(fsi.next().getID(), "active.12");
     }
 
     @Test

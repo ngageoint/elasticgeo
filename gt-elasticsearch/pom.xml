@@ -11,6 +11,9 @@
   <version>2.11-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>GeoTools Elasticsearch DataStore</name>
+  <properties>
+    <docker.image>docker.elastic.co/elasticsearch/elasticsearch</docker.image>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>mil.nga.giat</groupId>
@@ -25,7 +28,7 @@
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
-      <artifactId>rest</artifactId>
+      <artifactId>elasticsearch-rest-client</artifactId>
       <version>${es.version}</version>
     </dependency>
     <dependency>
@@ -149,10 +152,11 @@
               <images>
                 <image>
                   <alias>elasticsearch</alias>
-                  <name>elasticsearch:${es.test.version}</name>
+                  <name>${docker.image}:${es.test.version}</name>
                   <run>
                     <env>
-                      <ES_JAVA_OPTS>-Xmx512m -Xms512m</ES_JAVA_OPTS>
+                        <ES_JAVA_OPTS>-Xmx512m -Xms512m</ES_JAVA_OPTS>
+                        <discovery.type>single-node</discovery.type>
                     </env>
                     <ports>
                       <port>9200:9200</port>
