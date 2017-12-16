@@ -34,7 +34,7 @@
     <es.version>6.0.0</es.version>
     <!-- Elasticsearch version used for integration testing -->
     <es.test.version>6.0.0</es.test.version>
-    <jackson.version>2.8.1</jackson.version>
+    <jackson.version>2.5.0</jackson.version>
     <joda.version>2.9.5</joda.version>
     <guava.version>17.0</guava.version>
     <jacoco.version>0.7.9</jacoco.version>
