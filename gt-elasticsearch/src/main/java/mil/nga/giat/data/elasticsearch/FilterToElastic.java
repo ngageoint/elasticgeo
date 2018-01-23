@@ -33,7 +33,7 @@ import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.factory.Hints;
-import org.geotools.filter.FilterCapabilities;
+import org.geotools.filter.Capabilities;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.util.ConverterFactory;
 import org.geotools.util.Converters;
@@ -137,7 +137,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     private static final DateTimeFormatter DEFAULT_DATE_FORMATTER = Joda.forPattern("date_optional_time").printer();
 
     /** The filter types that this class can encode */
-    private FilterCapabilities capabilities = null;
+    private Capabilities capabilities = null;
 
     /** the schmema the encoder will use */
     SimpleFeatureType featureType;
@@ -237,45 +237,10 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     /**
      * Sets the capabilities of this filter.
      *
-     * @return FilterCapabilities for this Filter
+     * @return Capabilities for this Filter
      */
-    protected FilterCapabilities createFilterCapabilities() {
-        FilterCapabilities capabilities = new FilterCapabilities();
-
-        capabilities.addAll(FilterCapabilities.LOGICAL_OPENGIS);
-        capabilities.addAll(FilterCapabilities.SIMPLE_COMPARISONS_OPENGIS);
-        capabilities.addType(PropertyIsNull.class);
-        capabilities.addType(PropertyIsBetween.class);
-        capabilities.addType(Id.class);
-        capabilities.addType(IncludeFilter.class);
-        capabilities.addType(ExcludeFilter.class);
-        capabilities.addType(PropertyIsLike.class);
-
-        // spatial filters
-        capabilities.addType(BBOX.class);
-        capabilities.addType(Contains.class);
-        //capabilities.addType(Crosses.class);
-        capabilities.addType(Disjoint.class);
-        //capabilities.addType(Equals.class);
-        capabilities.addType(Intersects.class);
-        //capabilities.addType(Overlaps.class);
-        //capabilities.addType(Touches.class);
-        capabilities.addType(Within.class);
-        capabilities.addType(DWithin.class);
-        capabilities.addType(Beyond.class);
-
-        //temporal filters
-        capabilities.addType(After.class);
-        capabilities.addType(Before.class);
-        capabilities.addType(Begins.class);
-        capabilities.addType(BegunBy.class);
-        capabilities.addType(During.class);
-        capabilities.addType(Ends.class);
-        capabilities.addType(EndedBy.class);
-        capabilities.addType(TContains.class);
-        capabilities.addType(TEquals.class);
-
-        return capabilities;
+    protected Capabilities createCapabilities() {
+        return new ElasticCapabilities();
     }
 
     /**
@@ -285,15 +250,14 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
      * Performs lazy creation of capabilities.
      * </p>
      * 
-     * If you're subclassing this class, override createFilterCapabilities
-     * to declare which filtercapabilities you support.  Don't use
-     * this method.
+     * If you're extending this class, override {@link #createCapabilities()} to declare which capabilities you 
+     * support.  Don't use this method.
      *
      * @return The capabilities supported by this encoder.
      */
-    public synchronized final FilterCapabilities getCapabilities() {
+    public synchronized final Capabilities getCapabilities() {
         if (capabilities == null) {
-            capabilities = createFilterCapabilities();
+            capabilities = createCapabilities();
         }
 
         return capabilities; //maybe clone?  Make immutable somehow
@@ -336,7 +300,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         Expression lowerbounds = (Expression) filter.getLowerBoundary();
         Expression upperbounds = (Expression) filter.getUpperBoundary();
 
-        Class context;
+        Class<?> context;
         nested = false;
         AttributeDescriptor attType = (AttributeDescriptor)expr.evaluate(featureType);
         if (attType != null) {
@@ -591,7 +555,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         }
 
         AttributeDescriptor attType = null;
-        Class leftContext = null, rightContext = null;
+        Class<?> leftContext = null, rightContext = null;
         if (left instanceof PropertyName) {
             // It's a propertyname, we should get the class and pass it in
             // as context to the tree walker.
@@ -814,7 +778,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
         AttributeDescriptor attType = (AttributeDescriptor)property.evaluate(featureType);
 
-        Class typeContext = null;
+        Class<?> typeContext = null;
         nested = false;
         if (attType != null) {
             typeContext = attType.getType().getBinding();
@@ -983,9 +947,9 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
 
         SimpleFeatureType featureType = this.featureType;
 
-        Class target = null;
+        Class<?> target = null;
         if(extraData instanceof Class) {
-            target = (Class) extraData;
+            target = (Class<?>) extraData;
         }
 
         //first evaluate expression against feature type get the attribute, 
@@ -1025,9 +989,9 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         LOGGER.finest("exporting LiteralExpression");
 
         // type to convert the literal to
-        Class target = null;
+        Class<?> target = null;
         if ( context instanceof Class ) {
-            target = (Class) context;
+            target = (Class<?>) context;
         }
 
         try {
@@ -1050,7 +1014,7 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         return context;
     }
 
-    protected Object evaluateLiteral(Literal expression, Class target ) {
+    protected Object evaluateLiteral(Literal expression, Class<?> target ) {
         Object literal = null;
 
         // HACK: let expression figure out the right value for numbers,
@@ -1225,14 +1189,15 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     /*
      * helper to do a safe convesion of expression to a number
      */
-    Number safeConvertToNumber(Expression expression, Class target) {
+    Number safeConvertToNumber(Expression expression, Class<?> target) {
         return (Number) Converters.convert(expression.evaluate(null), target, 
                 new Hints(ConverterFactory.SAFE_CONVERSION, true));
     }
 
+    @SuppressWarnings("unchecked")
     protected void addViewParams(Query query) {
         if (query.getHints() != null && query.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS) != null) {
-            parameters = (Map) query.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS);
+            parameters = (Map<String, String>) query.getHints().get(Hints.VIRTUAL_TABLE_PARAMETERS);
 
             nativeOnly = false;
             for (final Map.Entry<String, String> entry : parameters.entrySet()) {
