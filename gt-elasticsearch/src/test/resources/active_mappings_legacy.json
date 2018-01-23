@@ -19,6 +19,9 @@
           }
         }
       },
+      "geo5": {
+        "type": "geo_point"
+      },
       "id": {
         "type": "string",
         "index": "not_analyzed"

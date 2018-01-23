@@ -63,10 +63,6 @@ public class ElasticTestSupport {
 
     private static final String ACTIVE_MAPPINGS_FILE = "active_mappings.json";
 
-    private static final Pattern STATUS_PATTERN = Pattern.compile(".*\"status_s\"\\s*:\\s*\"(.*?)\".*");
-
-    private static final Pattern ID_PATTERN = Pattern.compile(".*\"id\"\\s*:\\s*\"(\\d+)\".*");
-
     private static final int numShards = 1;
 
     private static final int numReplicas = 0;
@@ -139,23 +135,21 @@ public class ElasticTestSupport {
 
     private void indexDocuments(String status) throws IOException {
         try (InputStream inputStream = ClassLoader.getSystemResourceAsStream(TEST_FILE); Scanner scanner = new Scanner(inputStream)) {
-            String eol = System.lineSeparator();
-            scanner.useDelimiter(eol);
+            scanner.useDelimiter(System.lineSeparator());
+            final StringBuilder builder = new StringBuilder();
             while (scanner.hasNext()) {
                 final String line = scanner.next();
                 if (!line.startsWith("#")) {
-                    final Matcher idMatcher = ID_PATTERN.matcher(line);
-                    final String id;
-                    if (idMatcher.matches()) {
-                        id = idMatcher.group(1);
-                    } else {
-                        id = null;
-                    }
-                    final Matcher statusMatcher = STATUS_PATTERN.matcher(line);
-                    if (statusMatcher.matches() && statusMatcher.group(1).equals(status)) {
-                        Map<String,Object> source = mapReader.readValue(line);
-                        client.performRequest("POST", "/" + indexName + "/" + TYPE_NAME + "/" + id, source);
-                    }
+                    builder.append(line);
+                }
+            }
+            final Map<String,Object> content = mapReader.readValue(builder.toString());
+            @SuppressWarnings("unchecked")
+            final List<Map<String,Object>> features = (List<Map<String,Object>>) content.get("features");
+            for (final Map<String,Object> featureSource : features) {
+                if (featureSource.containsKey("status_s") && featureSource.get("status_s").equals(status)) {
+                    final String id = featureSource.containsKey("id") ? (String) featureSource.get("id") : null;
+                    client.performRequest("POST", "/" + indexName + "/" + TYPE_NAME + "/" + id, featureSource);
                 }
             }
 

@@ -39,7 +39,12 @@ public class ElasticParserUtil {
 
     private static final Pattern GEO_POINT_PATTERN;
     static {
-        GEO_POINT_PATTERN = Pattern.compile("(-*\\d*\\.*\\d*?),(-*\\d*\\.*\\d*?)");
+        GEO_POINT_PATTERN = Pattern.compile("\\s*([-+]?\\d*\\.?\\d*)[^-+\\d\\.]+([-+]?\\d*\\.?\\d*)\\s*");
+    }
+
+    private static final Pattern GEO_HASH_PATTERN;
+    static {
+        GEO_HASH_PATTERN = Pattern.compile("[0123456789bcdefghjkmnpqrstuvwxyz]+");
     }
 
     private final GeometryFactory geometryFactory;
@@ -64,21 +69,19 @@ public class ElasticParserUtil {
             // geo_point by string
             final Matcher listMatcher = GEO_POINT_PATTERN.matcher((String) obj);
             if (listMatcher.matches()) {
-                // coordinates
+                // coordinate
                 final double y = Double.valueOf(listMatcher.group(1));
                 final double x = Double.valueOf(listMatcher.group(2));
                 geometry = geometryFactory.createPoint(new Coordinate(x,y));
-            } else {
-                // try geohash
+            } else if (GEO_HASH_PATTERN.matcher((String) obj).matches()) {
+                // geohash
                 final LatLong latLon = GeoHash.decodeHash((String) obj);
-                Coordinate geoPoint = new Coordinate(latLon.getLon(), latLon.getLat());
-                if (geoPoint != null) {
-                    final double lat = geoPoint.y;
-                    final double lon = geoPoint.x;
-                    geometry = geometryFactory.createPoint(new Coordinate(lon,lat));
-                } else {
-                    geometry = null;
-                }
+                final Coordinate geoPoint = new Coordinate(latLon.getLon(), latLon.getLat());
+                final double lat = geoPoint.y;
+                final double lon = geoPoint.x;
+                geometry = geometryFactory.createPoint(new Coordinate(lon,lat));
+            } else {
+                geometry = null;
             }
         } else if (obj instanceof List && ((List<?>) obj).size()==2) {
             // geo_point by coordinate array

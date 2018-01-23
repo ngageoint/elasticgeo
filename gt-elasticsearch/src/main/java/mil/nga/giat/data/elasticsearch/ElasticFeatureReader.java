@@ -142,10 +142,10 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             } else if (values == null) {
                 // skip missing attribute
             } else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                if (sourceName.endsWith(".coordinates") && values instanceof List) {
-                    builder.set(name, parserUtil.createGeometry(values));                    
-                } else {
+                if (values.size() == 1) {
                     builder.set(name, parserUtil.createGeometry(values.get(0)));
+                } else {
+                    builder.set(name, parserUtil.createGeometry(values));
                 }
             } else if (Date.class.isAssignableFrom(descriptor.getType().getBinding())) {
                 Object dataVal = values.get(0);
