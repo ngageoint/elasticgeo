@@ -282,6 +282,27 @@ public class ElasticGeometryFilterIT extends ElasticTestSupport {
     }
 
     @Test
+    public void testGeoPointAsArray() throws Exception {
+        init("active","geo5");
+        FilterFactory2 ff = (FilterFactory2) dataStore.getFilterFactory();
+        GeometryFactory gf = new GeometryFactory();
+        PackedCoordinateSequenceFactory sf = new PackedCoordinateSequenceFactory();
+        Point ls = gf.createPoint(sf.create(new double[] { 0, 0 }, 2));
+        DWithin f = ff.dwithin(ff.property("geo5"), ff.literal(ls), 3, SI.METRE.getSymbol());
+        SimpleFeatureCollection features = featureSource.getFeatures(f);
+        assertEquals(2, features.size());
+        SimpleFeatureIterator fsi = features.features();
+        assertTrue(fsi.hasNext());
+        SimpleFeature feature = fsi.next();
+        assertEquals(feature.getID(), "active.01");
+        assertNotNull(feature.getDefaultGeometry());
+        assertTrue(fsi.hasNext());
+        feature = fsi.next();
+        assertEquals(feature.getID(), "active.10");
+        assertNotNull(feature.getDefaultGeometry());
+    }
+
+    @Test
     public void testBBOXCoveringDateline() throws Exception {
         init("not-active","geo");
         FilterFactory ff = dataStore.getFilterFactory();

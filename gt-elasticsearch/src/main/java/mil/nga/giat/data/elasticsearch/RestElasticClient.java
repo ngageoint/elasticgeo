@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +67,8 @@ public class RestElasticClient implements ElasticClient {
             final Response response = performRequest("GET", "/", null);
             try (final InputStream inputStream = response.getEntity().getContent()) {
                 Map<String,Object> info = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
-                Map<String,Object> version = (Map) info.getOrDefault("version", Collections.EMPTY_MAP);
+                @SuppressWarnings("unchecked")
+                Map<String,Object> version = (Map<String,Object>) info.getOrDefault("version", Collections.EMPTY_MAP);
                 final Matcher m = pattern.matcher((String) version.get("number"));
                 if (!m.find()) {
                     majorVersion = DEFAULT_MAJOR_VERSION;
@@ -85,12 +86,32 @@ public class RestElasticClient implements ElasticClient {
 
     @Override
     public List<String> getTypes(String indexName) throws IOException {
+        return getMappings(indexName, null).keySet().stream().map(key -> (String) key).collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, Object> getMapping(String indexName, String type) throws IOException {
+        final Map<String, Mapping> mappings = getMappings(indexName, type);
+        final Map<String,Object> properties;
+        if (mappings.containsKey(type)) {
+            properties = mappings.get(type).getProperties();
+        } else {
+            properties = null;
+        }
+        return properties;
+    }
+
+    private Map<String, Mapping> getMappings(String indexName, String type) throws IOException {
         final Response response;
         try {
-            response = client.performRequest("GET", "/" + indexName + "/_mapping");
+            final StringBuilder path = new StringBuilder("/").append(indexName).append("/_mapping");
+            if (type != null) {
+                path.append("/").append(type);
+            }
+            response = client.performRequest("GET", path.toString());
         } catch (ResponseException e) {
             if (e.getResponse().getStatusLine().getStatusCode() == 404) {
-                return new ArrayList<>();
+                return Collections.emptyMap();
             }
             throw e;
         }
@@ -105,36 +126,15 @@ public class RestElasticClient implements ElasticClient {
                 final String aliasedIndex = getIndices(indexName).stream().findFirst().orElse(null);
                 if (values.containsKey(aliasedIndex)) {
                     mappings = values.get(aliasedIndex).getMappings();
+                } else if (!values.isEmpty()) {
+                    mappings = values.values().iterator().next().getMappings();
                 } else {
                     LOGGER.severe("No types found for index/alias " + indexName);
-                    mappings = Collections.EMPTY_MAP;
+                    mappings = Collections.emptyMap();
                 }
             }
-            return mappings.keySet().stream().map(key -> (String) key).collect(Collectors.toList());
+            return mappings;
         }
-    }
-
-    @Override
-    public Map<String, Object> getMapping(String indexName, String type) throws IOException {
-        final Response response;
-        try {
-            response = client.performRequest("GET", "/" + indexName + "/_mapping/" + type);
-        } catch (ResponseException e) {
-            LOGGER.warning("Requested index/type (" + indexName + "/" + type + ") not found");
-            return null;
-        }
-        try (final InputStream inputStream = response.getEntity().getContent()) {
-            final Map<String,ElasticMappings> values;
-            values = mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {});
-            final Map<String,Object> properties;
-            if (!values.containsKey(indexName) || !values.get(indexName).getMappings().containsKey(type)) {
-                properties = null;
-            } else {
-                properties = values.get(indexName).getMappings().get(type).getProperties();
-            }
-            return properties;
-        }
-
     }
 
     @Override
@@ -234,6 +234,7 @@ public class RestElasticClient implements ElasticClient {
         client.close();
     }
 
+    @SuppressWarnings("unchecked")
     public static void removeMapping(String parent, String key, Map<String,Object> data, String currentParent) {
         Iterator<Entry<String, Object>> it = data.entrySet().iterator();
         while (it.hasNext()) {
@@ -243,9 +244,9 @@ public class RestElasticClient implements ElasticClient {
             } else if (entry.getValue() instanceof Map) {
                 removeMapping(parent, key, (Map<String,Object>) entry.getValue(), entry.getKey());
             } else if (entry.getValue() instanceof List) {
-                ((List) entry.getValue()).stream()
+                ((List<Object>) entry.getValue()).stream()
                 .filter(item -> item instanceof Map)
-                .forEach(item -> removeMapping(parent, key, (Map) item, currentParent));
+                .forEach(item -> removeMapping(parent, key, (Map<String,Object>) item, currentParent));
             }
         }
     }
@@ -259,6 +260,7 @@ public class RestElasticClient implements ElasticClient {
                 indices = result.keySet();
             }
         } catch (IOException e) {
+            indices = new HashSet<>();
         }
         return indices;
     }

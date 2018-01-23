@@ -42,7 +42,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     public static final Param SSL_REJECT_UNAUTHORIZED = new Param("ssl_reject_unauthorized", Boolean.class, "Whether to validate server certificate (ignored if ssl_enabled=false)", false, false);
 
     /** Index name. **/
-    public static final Param INDEX_NAME = new Param("index_name", String.class, "Index defining type", true);
+    public static final Param INDEX_NAME = new Param("index_name", String.class, "Index defining type (supports wildcard)", true);
 
     public static final Param DEFAULT_MAX_FEATURES = new Param("default_max_features", Integer.class, "Default max features", false, 100);
 

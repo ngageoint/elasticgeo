@@ -202,7 +202,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -214,7 +214,7 @@ public class ElasticFilterTest {
                         ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -226,7 +226,7 @@ public class ElasticFilterTest {
                         ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id2"))))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -237,7 +237,7 @@ public class ElasticFilterTest {
                 ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id")))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -248,7 +248,7 @@ public class ElasticFilterTest {
                 ImmutableMap.of("exists", ImmutableMap.of("field", "prop"))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -258,7 +258,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("exists", ImmutableMap.of("field", "prop"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -268,7 +268,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("stringAttr", "value"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -278,7 +278,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", ImmutableMap.of("term", ImmutableMap.of("nested.hej", "value"))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected,builder.getQueryBuilder());
     }
 
@@ -288,7 +288,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", ImmutableMap.of("term", ImmutableMap.of("nested.hej", "value"))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected,builder.getQueryBuilder());
     }
 
@@ -298,7 +298,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",ImmutableMap.of("term", ImmutableMap.of("stringAttr", "value"))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -308,7 +308,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("doubleAttr", 4.5));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -318,7 +318,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("doubleAttr", 4.5));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -328,7 +328,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",ImmutableMap.of("term", ImmutableMap.of("doubleAttr", 4.5))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -338,7 +338,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("floatAttr", 4.5f));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -348,7 +348,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("integerAttr", 4));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -358,7 +358,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("booleanAttr", true));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -368,7 +368,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("gt", 4.5)));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -378,7 +378,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("lt", 4.5)));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -388,7 +388,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("gte", 4.5)));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -398,7 +398,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("lte", 4.5)));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -408,7 +408,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("doubleAttr", ImmutableMap.of("gte", 4.5, "lte", 5.5)));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -418,7 +418,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("unknownStr", ImmutableMap.of("gte", "a", "lte", "c")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -428,7 +428,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = MATCH_ALL;
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -438,7 +438,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",MATCH_ALL));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -471,7 +471,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("query_string", ImmutableMap.of("query", "hello", "default_field", "analyzed"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -481,7 +481,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("query_string", ImmutableMap.of("query", "hello", "default_field", "analyzed"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -492,7 +492,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", expectedFilter));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected,builder.getQueryBuilder());
     }
 
@@ -550,7 +550,7 @@ public class ElasticFilterTest {
                                 "relation", "INTERSECTS")))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
@@ -567,7 +567,7 @@ public class ElasticFilterTest {
                                 "relation", "INTERSECTS")))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         // TODO: Why doesn't equality check on objects work here
         assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
@@ -580,7 +580,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must_not",MATCH_ALL));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -592,7 +592,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = MATCH_ALL;
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -609,7 +609,7 @@ public class ElasticFilterTest {
                                 "relation", "INTERSECTS")))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
@@ -630,7 +630,7 @@ public class ElasticFilterTest {
                                 )))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
@@ -643,7 +643,7 @@ public class ElasticFilterTest {
                                 "bottom_right", ImmutableList.of(1.,0.))))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());       
     }
 
@@ -661,7 +661,7 @@ public class ElasticFilterTest {
                         ImmutableMap.of("geo_point", ImmutableMap.of("points", points)))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -674,7 +674,7 @@ public class ElasticFilterTest {
                                 "geo_point", ImmutableList.of(0.,1.1)))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());       
     }
 
@@ -687,7 +687,7 @@ public class ElasticFilterTest {
                                 "geo_point", ImmutableList.of(0.5,0.5)))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());       
     }
 
@@ -699,7 +699,7 @@ public class ElasticFilterTest {
                         "geo_point", ImmutableList.of(0.,1.1)))))));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());       
     }
 
@@ -718,7 +718,7 @@ public class ElasticFilterTest {
                                                 "relation", "INTERSECTS"))))))));
 
         builder.encode(filter);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected.toString(), builder.getQueryBuilder().toString());
     }
 
@@ -728,7 +728,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("object.field", "value"));
 
         builder.encode(filter);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -785,7 +785,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-01-01 00:00:00")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -796,7 +796,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("nested", ImmutableMap.of("path", "nested", "query", expectedFilter));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -810,7 +810,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T00:00:00.000Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -825,7 +825,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttrWithFormat", ImmutableMap.of("gt", "1970-07-19")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -840,7 +840,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttrWithFormat", ImmutableMap.of("gt", "19700719T020203.456Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -854,7 +854,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T02:02:03.456Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -868,7 +868,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T02:02:03.456Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -883,7 +883,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -898,7 +898,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T01:02:03.456Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -910,7 +910,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T01:02:03.456Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -926,7 +926,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("lt", "1970-07-19T01:02:03.456Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -942,7 +942,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("range", ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -958,7 +958,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T01:02:03.456Z"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -994,7 +994,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T01:02:03.456Z"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -1011,7 +1011,7 @@ public class ElasticFilterTest {
                 ImmutableMap.of("gt", "1970-07-19T01:02:03.456Z", "lt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -1027,7 +1027,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T07:08:09.101Z"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -1043,7 +1043,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T07:08:09.101Z"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -1059,7 +1059,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr","1970-07-19T07:08:09.101Z"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -1076,7 +1076,7 @@ public class ElasticFilterTest {
                 ImmutableMap.of("gt", "1970-07-19T01:02:03.456Z", "lt", "1970-07-19T07:08:09.101Z")));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 
@@ -1088,7 +1088,7 @@ public class ElasticFilterTest {
         Map<String,Object> expected = ImmutableMap.of("term", ImmutableMap.of("dateAttr", "1970-07-19T01:02:03.456Z"));
 
         builder.visit(filter, null);
-        assertTrue(builder.createFilterCapabilities().fullySupports(filter));
+        assertTrue(builder.createCapabilities().fullySupports(filter));
         assertEquals(expected, builder.getQueryBuilder());
     }
 

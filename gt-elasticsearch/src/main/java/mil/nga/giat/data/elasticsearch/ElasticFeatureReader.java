@@ -23,16 +23,12 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * FeatureReader access to the Elasticsearch index.
@@ -142,10 +138,10 @@ public class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, Si
             } else if (values == null) {
                 // skip missing attribute
             } else if (Geometry.class.isAssignableFrom(descriptor.getType().getBinding())) {
-                if (sourceName.endsWith(".coordinates") && values instanceof List) {
-                    builder.set(name, parserUtil.createGeometry(values));                    
-                } else {
+                if (values.size() == 1) {
                     builder.set(name, parserUtil.createGeometry(values.get(0)));
+                } else {
+                    builder.set(name, parserUtil.createGeometry(values));
                 }
             } else if (Date.class.isAssignableFrom(descriptor.getType().getBinding())) {
                 Object dataVal = values.get(0);

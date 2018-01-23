@@ -70,6 +70,9 @@ class FilterToElasticHelper {
      * Conversion factor from common units to meter
      */
     protected static final Map<String, Double> UNITS_MAP = new HashMap<String, Double>() {
+
+        private static final long serialVersionUID = 1L;
+
         {
             put("kilometers", 1000.0);
             put("kilometer", 1000.0);

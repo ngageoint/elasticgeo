@@ -89,7 +89,7 @@ Available data store configuration parameters are summarized in the following ta
    * - elasticsearch_port
      - HTTP port for connecting to Elasticsearch
    * - index_name
-     - Index name or alias
+     - Index name or alias (wildcards supported)
    * - ssl_enabled
      - Whether to enable SSL (HTTPS)
    * - reject_unauthorized

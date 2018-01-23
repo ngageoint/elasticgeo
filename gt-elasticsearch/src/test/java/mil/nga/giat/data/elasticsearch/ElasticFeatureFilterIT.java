@@ -72,6 +72,7 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
         assertTrue(schema.getDescriptor("geo") instanceof GeometryDescriptor);
         assertTrue(schema.getDescriptor("geo2") instanceof GeometryDescriptor);
         assertTrue(schema.getDescriptor("geo3") instanceof GeometryDescriptor);
+        assertTrue(schema.getDescriptor("geo5") instanceof GeometryDescriptor);
     }
 
     @Test

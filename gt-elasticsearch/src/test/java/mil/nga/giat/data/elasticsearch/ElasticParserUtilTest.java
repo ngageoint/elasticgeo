@@ -18,7 +18,6 @@ import java.util.Random;
 import mil.nga.giat.data.elasticsearch.ElasticParserUtil;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonParseException;
@@ -78,6 +77,12 @@ public class ElasticParserUtilTest {
     @Test
     public void testGeoPointPatternForWholeValues() {
         final Geometry geom = parserUtil.createGeometry("45,90");
+        assertTrue(geom.equals(geometryFactory.createPoint(new Coordinate(90,45))));
+    }
+
+    @Test
+    public void testGeoPointPatternWithSpace() {
+        final Geometry geom = parserUtil.createGeometry("45, 90");
         assertTrue(geom.equals(geometryFactory.createPoint(new Coordinate(90,45))));
     }
 
@@ -162,10 +167,13 @@ public class ElasticParserUtilTest {
         assertEquals(0, expected.distance(actual), 1e-5);
     }
 
-    @Ignore @Test
-    public void testUnrecognizedStringGeometry() {
-        final Geometry geom = parserUtil.createGeometry("3.0");
-        assertTrue(geom==null);
+    @Test
+    public void testInvalidStringGeometry() {
+        final double lat = rand.nextDouble()*90-90;
+        final double lon = rand.nextDouble()*180-180;
+        assertTrue(parserUtil.createGeometry(String.valueOf(lat))==null);
+        assertTrue(parserUtil.createGeometry(lat + "," + lon + "," + 0)==null);
+        assertTrue(parserUtil.createGeometry("x:" + lat + "," + lon)==null);
     }
 
     @Test
