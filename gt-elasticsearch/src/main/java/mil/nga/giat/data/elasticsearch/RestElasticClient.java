@@ -67,7 +67,8 @@ public class RestElasticClient implements ElasticClient {
             final Response response = performRequest("GET", "/", null);
             try (final InputStream inputStream = response.getEntity().getContent()) {
                 Map<String,Object> info = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
-                Map<String,Object> version = (Map) info.getOrDefault("version", Collections.EMPTY_MAP);
+                @SuppressWarnings("unchecked")
+                Map<String,Object> version = (Map<String,Object>) info.getOrDefault("version", Collections.EMPTY_MAP);
                 final Matcher m = pattern.matcher((String) version.get("number"));
                 if (!m.find()) {
                     majorVersion = DEFAULT_MAJOR_VERSION;
@@ -233,6 +234,7 @@ public class RestElasticClient implements ElasticClient {
         client.close();
     }
 
+    @SuppressWarnings("unchecked")
     public static void removeMapping(String parent, String key, Map<String,Object> data, String currentParent) {
         Iterator<Entry<String, Object>> it = data.entrySet().iterator();
         while (it.hasNext()) {
@@ -242,9 +244,9 @@ public class RestElasticClient implements ElasticClient {
             } else if (entry.getValue() instanceof Map) {
                 removeMapping(parent, key, (Map<String,Object>) entry.getValue(), entry.getKey());
             } else if (entry.getValue() instanceof List) {
-                ((List) entry.getValue()).stream()
+                ((List<Object>) entry.getValue()).stream()
                 .filter(item -> item instanceof Map)
-                .forEach(item -> removeMapping(parent, key, (Map) item, currentParent));
+                .forEach(item -> removeMapping(parent, key, (Map<String,Object>) item, currentParent));
             }
         }
     }

@@ -6,7 +6,6 @@ package mil.nga.giat.process.elasticsearch;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.processing.Operations;
@@ -21,7 +20,6 @@ import org.geotools.process.factory.DescribeProcess;
 import org.geotools.process.factory.DescribeResult;
 import org.geotools.process.vector.VectorProcess;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
-import org.geotools.util.logging.Logging;
 import org.opengis.coverage.grid.GridGeometry;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory;
@@ -31,8 +29,6 @@ import org.opengis.util.ProgressListener;
 
 @DescribeProcess(title = "geoHashGridAgg", description = "Computes a grid from GeoHash grid aggregation buckets with values corresponding to doc_count values.")
 public class GeoHashGridProcess implements VectorProcess {
-
-    private final static Logger LOGGER = Logging.getLogger(GeoHashGridProcess.class);
 
     private final static FilterFactory FILTER_FACTORY = CommonFactoryFinder.getFilterFactory(null);
 

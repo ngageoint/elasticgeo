@@ -220,6 +220,7 @@ public abstract class GeoHashGrid {
                 LOGGER.warning("Unable to pluck metric, bucket does not contain required key:" + metricKey);
                 throw new IllegalArgumentException();
             }
+            @SuppressWarnings("unchecked")
             Map<String,Object> metric = (Map<String,Object>) bucket.get(metricKey);
             if (!metric.containsKey(valueKey)) {
                 LOGGER.warning("Unable to pluck value, metric does not contain required key:" + valueKey);
@@ -230,6 +231,7 @@ public abstract class GeoHashGrid {
         return value;
     }
 
+    @SuppressWarnings("unchecked")
     protected List<Map<String,Object>> pluckAggBuckets(Map<String,Object> parentBucket, String aggKey) {
         if (!parentBucket.containsKey(aggKey)) {
             LOGGER.warning("Unable to pluck aggregation results, parent bucket does not contain required key:" + aggKey);

@@ -63,6 +63,7 @@ public class ElasticParserUtil {
      * @param obj GeoPoint or GeoShape definition
      * @return Geometry
      */
+    @SuppressWarnings("unchecked")
     public Geometry createGeometry(Object obj) {
         final Geometry geometry;
         if (obj instanceof String) {
@@ -112,6 +113,7 @@ public class ElasticParserUtil {
      * @param properties Properties
      * @return Geometry
      */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Geometry createGeometry(final Map<String, Object> properties) {
         final Geometry geometry;
         switch (String.valueOf(properties.get("type")).toUpperCase()) {
@@ -122,24 +124,24 @@ public class ElasticParserUtil {
             geometry = geometryFactory.createPoint(coordinate);
             break;
         } case "LINESTRING": {
-            final List<List> posList;
+            final List<List<Object>> posList;
             posList = (List) properties.get("coordinates");
             final Coordinate[] coordinates = createCoordinates(posList);
             geometry = geometryFactory.createLineString(coordinates);
             break;
         } case "POLYGON": {
-            final List<List<List>> posList;
+            final List<List<List<Object>>> posList;
             posList = (List) properties.get("coordinates");
             geometry = createPolygon(posList);
             break;
         } case "MULTIPOINT": {
-            final List<List> posList;
+            final List<List<Object>> posList;
             posList = (List) properties.get("coordinates");
             final Coordinate[] coordinates = createCoordinates(posList);
             geometry = geometryFactory.createMultiPoint(coordinates);
             break;
         } case "MULTILINESTRING": {
-            final List<List<List>> posList;
+            final List<List<List<Object>>> posList;
             posList = (List) properties.get("coordinates");
             final LineString[] lineStrings = new LineString[posList.size()];
             for (int i=0; i<posList.size(); i++) {
@@ -149,7 +151,7 @@ public class ElasticParserUtil {
             geometry = geometryFactory.createMultiLineString(lineStrings);
             break;
         } case "MULTIPOLYGON": {
-            final List<List<List<List>>> posList;
+            final List<List<List<List<Object>>>> posList;
             posList = (List) properties.get("coordinates");
             final Polygon[] polygons = new Polygon[posList.size()];
             for (int i=0; i<posList.size(); i++) {
@@ -167,7 +169,7 @@ public class ElasticParserUtil {
             geometry = geometryFactory.createGeometryCollection(geometries);
             break;
         } case "ENVELOPE": {
-            final List<List> posList;
+            final List<List<Object>> posList;
             posList = (List) properties.get("coordinates");
             final Coordinate[] coords = createCoordinates(posList);
             final Envelope envelope = new Envelope(coords[0], coords[1]);
@@ -209,7 +211,7 @@ public class ElasticParserUtil {
         return geometry;
     }
 
-    private Polygon createPolygon(final List<List<List>> posList) {
+    private Polygon createPolygon(final List<List<List<Object>>> posList) {
         final Coordinate[] shellCoordinates = createCoordinates(posList.get(0));
         final LinearRing shell = geometryFactory.createLinearRing(shellCoordinates);
         final LinearRing[] holes = new LinearRing[posList.size()-1];
@@ -220,7 +222,7 @@ public class ElasticParserUtil {
         return geometryFactory.createPolygon(shell, holes);
     }
 
-    private Coordinate[] createCoordinates(final List<List> posList) {
+    private Coordinate[] createCoordinates(final List<List<Object>> posList) {
         final Coordinate[] coordinates = new Coordinate[posList.size()];
         for (int i=0; i<posList.size(); i++) {
             coordinates[i] = createCoordinate(posList.get(i));
@@ -228,7 +230,7 @@ public class ElasticParserUtil {
         return coordinates;
     }
 
-    private Coordinate createCoordinate(final List posList) {
+    private Coordinate createCoordinate(final List<Object> posList) {
         final double x;
         final double y;
         if (Number.class.isAssignableFrom(posList.get(0).getClass())) {
@@ -277,7 +279,8 @@ public class ElasticParserUtil {
         }
     }
 
-    public static boolean isGeoPointFeature(Map map) {
+    @SuppressWarnings("rawtypes")
+    public static boolean isGeoPointFeature(Map<String, Object> map) {
         boolean result = false;
         if (map.size() == 2 && map.containsKey("coordinates")) {
             try {
