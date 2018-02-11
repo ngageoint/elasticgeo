@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -143,11 +144,12 @@ public class ElasticDataStore extends ContentDataStore {
     }
 
     public List<ElasticAttribute> getElasticAttributes(Name layerName) throws IOException {
+        final String localPart = layerName.getLocalPart();
         final String docType;
         if (docTypes.containsKey(layerName)) {
             docType = docTypes.get(layerName);
         } else {
-            docType = layerName.getLocalPart();
+            docType = localPart;
         }
 
         final Map<String,Object> mapping = getClient().getMapping(indexName, docType);
@@ -186,6 +188,21 @@ public class ElasticDataStore extends ContentDataStore {
                     attribute.setShortName(attribute.getName());
                 }
             }
+        }
+
+        final ElasticLayerConfiguration layerConfig = layerConfigurations.get(localPart);
+        if (layerConfig != null && !layerConfig.getAttributes().isEmpty()) {
+            final Map<String, ElasticAttribute> names = layerConfig.getAttributes().stream()
+                    .collect(Collectors.toMap(ElasticAttribute::getName, Function.identity()));
+
+            for (final ElasticAttribute attribute : elasticAttributes) {
+                if (!names.containsKey(attribute.getName())) {
+                    attribute.setUse(false);
+                    layerConfig.getAttributes().add(attribute);
+                }
+            }
+
+            return layerConfig.getAttributes();
         }
 
         return elasticAttributes;
