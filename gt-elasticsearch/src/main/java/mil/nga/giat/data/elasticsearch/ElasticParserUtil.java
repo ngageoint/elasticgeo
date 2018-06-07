@@ -313,8 +313,7 @@ public class ElasticParserUtil {
 
             Object entry = source.get(keys.get(0));
 
-            if (entry == null)
-            {
+            if (entry == null) {
                 entry = source.get(name);
             }
 

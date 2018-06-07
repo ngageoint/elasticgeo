@@ -423,4 +423,12 @@ public class ElasticParserUtilTest {
             
         }
     }
+
+    @Test
+    public void testAttributesContainingDots() {
+        properties.put("coalesceentity.name", "value");
+        List<Object> values = parserUtil.readField(properties, "coalesceentity.name");
+        assertTrue(values.size() == 1);
+        assertTrue(values.get(0).equals("value"));
+    }
 }
