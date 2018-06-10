@@ -55,11 +55,11 @@ public class ElasticParserUtil {
     }
 
     private static final Pattern ELASTIC_DISTANCE_PATTERN;
-    
+
     static {
         ELASTIC_DISTANCE_PATTERN = Pattern.compile("([0-9]+(\\.[0-9]+)?)([a-zA-Z]*)");
     }
-    
+
     private static final double CIRCLE_INTERPOLATION_INTERVAL = 500.0;
     private static final int MAX_CIRCLE_POINTS = 500;
     private static final int MIN_CIRCLE_POINTS = 40;
@@ -82,7 +82,7 @@ public class ElasticParserUtil {
         this.geometryFactory = new GeometryFactory();
         this.unsupportedEncodingMessage = false;
         this.geodeticCalculator = new GeodeticCalculator(DefaultEllipsoid.WGS84);
-        this.wktReader = new WKTReader(); 
+        this.wktReader = new WKTReader();
     }
 
     /**
@@ -310,7 +310,14 @@ public class ElasticParserUtil {
         final List<String> keys = Arrays.asList(name.split("\\."));
         List<Object> values = new ArrayList<>();
         if (!keys.isEmpty()) {
-            readField(source.get(keys.get(0)), keys.subList(1, keys.size()), values);
+
+            Object entry = source.get(keys.get(0));
+
+            if (entry == null) {
+                entry = source.get(name);
+            }
+
+            readField(entry, keys.subList(1, keys.size()), values);
         }
         final List<Object> result;
         if (!values.isEmpty()) {
@@ -378,7 +385,7 @@ public class ElasticParserUtil {
      * @return A polygon that is an interpolated form of a circle
      */
     private Geometry createCircle(Coordinate centreCoord, String radius) {
-        
+
         if (centreCoord == null) {
             return null;
         }
@@ -390,7 +397,7 @@ public class ElasticParserUtil {
         catch(Exception e) {
             return null;
         }
-        
+
         // Reject circles with radii below an arbitrary minimum.
         if (radM < MIN_CIRCLE_RADIUS_M) {
             return null;
@@ -417,7 +424,7 @@ public class ElasticParserUtil {
         final LinearRing linearRing = geometryFactory.createLinearRing(linearRingCoords);
         return geometryFactory.createPolygon(linearRing);
     }
-    
+
     /**
      * Converts an Elasticsearch distance string consisting of value and unit
      * into metres.
@@ -426,7 +433,7 @@ public class ElasticParserUtil {
      * {@link FilterToElasticHelper#UNITS_MAP}. If the unit string is missing
      * then the number is assumed to be metres.
      * @return distance in metres.
-     * @throws IllegalArgumentException 
+     * @throws IllegalArgumentException
      */
     static final double convertToMeters(String distanceWithUnit) throws IllegalArgumentException {
         if (distanceWithUnit == null || distanceWithUnit.isEmpty()) {
