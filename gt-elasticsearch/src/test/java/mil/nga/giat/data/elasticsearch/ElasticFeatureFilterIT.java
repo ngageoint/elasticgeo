@@ -584,7 +584,7 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
             assertTrue(iterator.hasNext());
             SimpleFeature feature = iterator.next();
 
-            Assert.assertEquals(24, feature.getProperties().size());
+            Assert.assertTrue(feature.getProperties().size() > 2);
         }
 
         // Specify Columns
@@ -612,7 +612,7 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
             assertTrue(iterator.hasNext());
             SimpleFeature feature = iterator.next();
 
-            Assert.assertEquals(24, feature.getProperties().size());
+            Assert.assertTrue(feature.getProperties().size() > 2);
         }
     }
 
