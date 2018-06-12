@@ -8,10 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -311,13 +308,14 @@ public class ElasticParserUtil {
         List<Object> values = new ArrayList<>();
         if (!keys.isEmpty()) {
 
-            Object entry = source.get(keys.get(0));
+            final Object entry = source.get(keys.get(0));
 
             if (entry == null) {
-                entry = source.get(name);
+                readField(source.get(name), Collections.EMPTY_LIST, values);;
+            } else {
+                readField(entry, keys.subList(1, keys.size()), values);
             }
 
-            readField(entry, keys.subList(1, keys.size()), values);
         }
         final List<Object> result;
         if (!values.isEmpty()) {
