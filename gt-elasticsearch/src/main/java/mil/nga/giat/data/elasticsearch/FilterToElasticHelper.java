@@ -375,7 +375,7 @@ class FilterToElasticHelper {
 
     protected double clipLon(double lon) {
         double x = Math.signum(lon)*(Math.abs(lon)%360);
-        return x = x>180 ? x-360 : (x<-180 ? x+360 : x);
+        return x>180 ? x-360 : (x<-180 ? x+360 : x);
     }
 
     protected double clipLat(double lat) {
