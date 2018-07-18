@@ -308,7 +308,16 @@ public class ElasticGeometryFilterIT extends ElasticTestSupport {
         FilterFactory ff = dataStore.getFilterFactory();
         BBOX bbox = ff.bbox("geo", 178, -98, 182, 98, "EPSG:" + SOURCE_SRID);
         SimpleFeatureCollection features = featureSource.getFeatures(bbox);
-        assertEquals(2, features.size());
+        assertEquals(1, features.size());
+    }
+    
+    @Test
+    public void testBBOXCoveringDatelineOnWestOfUSA() throws Exception {
+        init("not-active","geo");
+        FilterFactory ff = dataStore.getFilterFactory();
+        BBOX bbox = ff.bbox("geo", -180, 0, -90, 66, "EPSG:" + SOURCE_SRID);
+        SimpleFeatureCollection features = featureSource.getFeatures(bbox);
+        assertEquals(1, features.size());
     }
 
     @Test
@@ -317,7 +326,7 @@ public class ElasticGeometryFilterIT extends ElasticTestSupport {
         FilterFactory ff = dataStore.getFilterFactory();
         BBOX bbox = ff.bbox("geo", 180.5, -98, 182, 98, "EPSG:" + SOURCE_SRID);
         SimpleFeatureCollection features = featureSource.getFeatures(bbox);
-        assertEquals(1, features.size());
+        assertEquals(0, features.size());
     }
 
     @Test
