@@ -312,7 +312,7 @@ public class ElasticGeometryFilterIT extends ElasticTestSupport {
     }
     
     @Test
-    public void testBBOXCoveringDatelineOnWestOfUSA() throws Exception {
+    public void testBBOXCoveringDatelineOnWestCoastOfUSA() throws Exception {
         init("not-active","geo");
         FilterFactory ff = dataStore.getFilterFactory();
         BBOX bbox = ff.bbox("geo", -180, 0, -90, 66, "EPSG:" + SOURCE_SRID);
