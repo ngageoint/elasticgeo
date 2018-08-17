@@ -28,12 +28,12 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <geotools.version>19.0</geotools.version>
-    <geoserver.version>2.13.0</geoserver.version>
+    <geotools.version>19.2</geotools.version>
+    <geoserver.version>2.13.2</geoserver.version>
     <!-- Elasticsearch version for HTTP client and select Joda classes -->
-    <es.version>6.2.4</es.version>
+    <es.version>6.3.2</es.version>
     <!-- Elasticsearch version used for integration testing -->
-    <es.test.version>6.2.4</es.test.version>
+    <es.test.version>6.3.2</es.test.version>
     <jackson.version>2.5.0</jackson.version>
     <joda.version>2.9.5</joda.version>
     <guava.version>17.0</guava.version>
