@@ -48,10 +48,11 @@ import org.opengis.filter.spatial.Within;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.CoordinateFilter;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryComponentFilter;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 
 class FilterToElasticHelper {
@@ -288,31 +289,93 @@ class FilterToElasticHelper {
     }
 
     protected Literal clipToWorld(Literal geometry) {
-        if(geometry != null) {
+        if (geometry != null) {
             Geometry g = geometry.evaluate(null, Geometry.class);
-            if(g != null) {
-                g.apply(new GeometryComponentFilter() {
-                    @Override
-                    public void filter(Geometry geom) {
-                        geom.apply(new CoordinateFilter() {
-                            @Override
-                            public void filter(Coordinate coord) {
-                                coord.setCoordinate(new Coordinate(clipLon(coord.x),clipLat(coord.y)));
-                            }
-                        });
-                    }
-                });
-                geometry = CommonFactoryFinder.getFilterFactory(null).literal(g);
+            if (g != null) {
+                Envelope env = g.getEnvelopeInternal();
+                // first, limit to world
+                if (!WORLD.contains(env)) {
+                    g = sanitizePolygons(g.intersection(JTS.toGeometry(WORLD)));
+                }
 
+                // second, elasticsearch will always use the shortest distance between two
+                // points, if an arc is longer than 180 degrees the opposite will
+                // be used instead, so we have to slice the geometry in parts
+                env = g.getEnvelopeInternal();
+                if (Math.sqrt(env.getWidth() * env.getWidth() + env.getHeight() * env.getHeight())
+                        >= 180) {
+                    // slice in 90x90 degrees quadrants, none of them has a diagonal longer than 180
+                    final List<Polygon> polygons = new ArrayList<Polygon>();
+                    for (double lon = Math.floor(env.getMinX()); lon < env.getMaxX(); lon += 90) {
+                        for (double lat = Math.floor(env.getMinY());
+                                lat < env.getMaxY();
+                                lat += 90) {
+                            Geometry quadrant =
+                                    JTS.toGeometry(new Envelope(lon, lon + 90, lat, lat + 90));
+                            Geometry cut = sanitizePolygons(g.intersection(quadrant));
+                            if (!cut.isEmpty()) {
+                                if (cut instanceof Polygon) {
+                                    polygons.add((Polygon) cut);
+                                } else {
+                                    for (int i = 0; i < cut.getNumGeometries(); i++) {
+                                        polygons.add((Polygon) cut.getGeometryN(i));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    g = toPolygon(g.getFactory(), polygons);
+                }
+
+                geometry = CommonFactoryFinder.getFilterFactory(null).literal(g);
             }
         }
 
         return geometry;
     }
 
+    /**
+     * Given a geometry that might contain heterogeneous components extracts only the polygonal ones
+     *
+     * @param geometry
+     * @return
+     */
+    private Geometry sanitizePolygons(Geometry geometry) {
+        // already sane?
+        if (geometry == null || geometry instanceof Polygon || geometry instanceof MultiPolygon) {
+            return geometry;
+        }
+
+        // filter out only polygonal parts
+        final List<Polygon> polygons = new ArrayList<Polygon>();
+        geometry.apply(
+                new GeometryComponentFilter() {
+
+                    public void filter(Geometry geom) {
+                        if (geom instanceof Polygon) {
+                            polygons.add((Polygon) geom);
+                        }
+                    }
+                });
+
+        // turn filtered selection into a geometry
+        return toPolygon(geometry.getFactory(), polygons);
+    }
+
+    private Geometry toPolygon(GeometryFactory gf, final List<Polygon> polygons) {
+        if (polygons.size() == 0) {
+            return gf.createGeometryCollection(null);
+        } else if (polygons.size() == 1) {
+            return polygons.get(0);
+        } else {
+            return gf.createMultiPolygon(
+                    (Polygon[]) polygons.toArray(new Polygon[polygons.size()]));
+        }
+    }
+
     protected double clipLon(double lon) {
         double x = Math.signum(lon)*(Math.abs(lon)%360);
-        return x = x>180 ? x-360 : (x<-180 ? x+360 : x);
+        return x>180 ? x-360 : (x<-180 ? x+360 : x);
     }
 
     protected double clipLat(double lat) {

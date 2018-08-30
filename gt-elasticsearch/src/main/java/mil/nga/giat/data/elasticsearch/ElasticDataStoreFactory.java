@@ -5,6 +5,7 @@
 package mil.nga.giat.data.elasticsearch;
 
 import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig.Builder;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.elasticsearch.client.RestClient;
@@ -52,6 +53,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
 
     public static final Param SCROLL_SIZE = new Param("scroll_size", Long.class, "Scroll size (ignored if scroll_enabled=false)", false, 20);
 
+    public static final Param CONNECTION_TIMEOUT_MILISECONDS = new Param("connection_timeout", Integer.class, "ElasticSearch connection timeout (default 5000 miliseconds)", false, 5000);
+
     public static final Param SCROLL_TIME_SECONDS = new Param("scroll_time", Integer.class, "Time to keep the scroll open in seconds (ignored if scroll_enabled=false)", false, 120);
 
     public static final Param ARRAY_ENCODING = new Param("array_encoding", String.class, "Array encoding strategy. Allowed values are \"JSON\" (keep arrays) " 
@@ -72,6 +75,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             SOURCE_FILTERING_ENABLED,
             SCROLL_ENABLED,
             SCROLL_SIZE,
+            CONNECTION_TIMEOUT_MILISECONDS,
             SCROLL_TIME_SECONDS,
             ARRAY_ENCODING,
             GRID_SIZE,
@@ -132,10 +136,17 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final String arrayEncoding = (String) getValue(ARRAY_ENCODING, params);
         final Boolean sslEnabled = (Boolean) getValue(SSL_ENABLED, params);
         final Boolean sslRejectUnauthorized = (Boolean) getValue(SSL_REJECT_UNAUTHORIZED, params);
+        final Integer connectionTimeout = (Integer) getValue(CONNECTION_TIMEOUT_MILISECONDS, params);
+
 
         final String scheme = sslEnabled ? "https" : "http";
-        final RestClientBuilder builder = RestClient.builder(new HttpHost(searchHost, hostPort, scheme));
-
+        final RestClientBuilder builder = RestClient.builder(new HttpHost(searchHost, hostPort, scheme)).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
+            @Override
+            public Builder customizeRequestConfig(Builder requestConfigBuilder) {
+                return requestConfigBuilder.setConnectTimeout(connectionTimeout);
+            }
+        });
+        
         if (sslEnabled) {
             builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
                 @Override
