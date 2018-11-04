@@ -85,15 +85,27 @@ Available data store configuration parameters are summarized in the following ta
    * - Parameter
      - Description
    * - elasticsearch_host
-     - Host (IP) for connecting to Elasticsearch
+     - Host (IP) for connecting to Elasticsearch. HTTP scheme and port can optionally be included to override the defaults. Multiple hosts can be provided. Examples::
+
+         localhost
+         localhost:9200
+         http://localhost
+         http://localhost:9200
+         https://localhost:9200
+         https://somehost.somedomain:9200,https://anotherhost.somedomain:9200
    * - elasticsearch_port
-     - HTTP port for connecting to Elasticsearch
+     - Default HTTP port for connecting to Elasticsearch. Ignored if the hostname includes the port.
    * - index_name
      - Index name or alias (wildcards supported)
    * - ssl_enabled
-     - Whether to enable SSL (HTTPS)
+     - Use https instead of http scheme by default. Ignored if the hostname includes the HTTP scheme. Use system properties to configure the SSL connection::
+
+         javax.net.ssl.trustStore
+         javax.net.ssl.trustStorePassword
+         javax.net.ssl.keyStore
+         javax.net.ssl.keyStorePassword
    * - reject_unauthorized
-     - Whether to verify server certificate when SSL is enabled 
+     - Whether to validate the server certificate during the SSL handshake for https connections
    * - default_max_features
      - Default used when maxFeatures is unlimited
    * - source_filtering_enabled
