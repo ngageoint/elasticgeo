@@ -11,7 +11,7 @@ Compatibility
 -------------
 
 * Java: 1.8
-* GeoServer: 2.9.x, 2.10.x, 2.11.x, 2.12.x
+* GeoServer: 2.9.x, 2.10.x, 2.11.x, 2.12.x, 2.13.x
 * Elasticsearch: 2.4.x, 5.x, 6.x
 
 Downloads
