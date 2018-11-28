@@ -157,6 +157,7 @@ class FilterToElastic implements FilterVisitor, ExpressionVisitor {
     Map<String,Map<String,Map<String,Object>>> aggregations;
 
     private final FilterToElasticHelper helper;
+    private Map<String, Object> highlights;
 
     private String key;
 
@@ -1232,6 +1233,20 @@ class FilterToElastic implements FilterVisitor, ExpressionVisitor {
                             throw new FilterToElasticException("Unable to parse aggregation", e);
                         }
                     }
+                } else if (entry.getKey().equalsIgnoreCase("highlight")) {
+                    final ObjectMapper mapper = new ObjectMapper();
+                    final TypeReference<Map<String, Object>> type;
+                    type = new TypeReference<Map<String, Object>>() {};
+                    final String value = entry.getValue();
+                    try {
+                        this.highlights = mapper.readValue(value, type);
+                    } catch (Exception e) {
+                        try {
+                            this.highlights = mapper.readValue(ElasticParserUtil.urlDecode(value), type);
+                        } catch (Exception e2) {
+                            throw new FilterToElasticException("Unable to parse aggregation", e);
+                        }
+                    }
                 }
             }
         }
@@ -1318,4 +1333,7 @@ class FilterToElastic implements FilterVisitor, ExpressionVisitor {
         return aggregations;
     }
 
+    public Map<String, Object> gethighlights() {
+        return highlights;
+    }
 }
