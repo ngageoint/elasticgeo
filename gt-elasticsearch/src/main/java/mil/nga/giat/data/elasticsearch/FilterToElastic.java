@@ -42,6 +42,7 @@ import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LinearRing;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.filter.And;
@@ -1152,8 +1153,9 @@ public class FilterToElastic implements FilterVisitor, ExpressionVisitor {
             coordinates = linearRing.getCoordinateSequence();
             currentGeometry = factory.createLineString(coordinates);
         }
-
-        final String geoJson = new GeometryJSON().toString(currentGeometry);
+        final PrecisionModel precisionModel = new PrecisionModel(PrecisionModel.FLOATING);
+        final int decimalPlaces = precisionModel.getMaximumSignificantDigits();
+        final String geoJson = new GeometryJSON(decimalPlaces).toString(currentGeometry);
         currentShapeBuilder = mapReader.readValue(geoJson);
     }
 
