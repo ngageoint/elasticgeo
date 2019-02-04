@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.StatusLine;
 import org.apache.http.entity.ByteArrayEntity;
@@ -51,7 +50,7 @@ public class RestElasticClientTest {
 
     private RestElasticClient client;
 
-    private RestElasticClient clientWithProxy;
+    private RestElasticClient proxyClient;
 
     private Authentication mockAuth;
 
@@ -77,7 +76,7 @@ public class RestElasticClientTest {
         SecurityContextHolder.setContext(mockStx);
 
         client = new RestElasticClient(mockRestClient);
-        clientWithProxy = new RestElasticClient(mockRestClient, mockProxyRestClient);
+        proxyClient = new RestElasticClient(mockRestClient, mockProxyRestClient, true);
 
         InputStream inputStream = new ByteArrayInputStream("{}".getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
@@ -135,7 +134,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.setSize(10);
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -156,7 +155,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.setFrom(10);
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -177,7 +176,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.setScroll(10);
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -198,7 +197,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.addSourceInclude("obj1");
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -213,7 +212,7 @@ public class RestElasticClientTest {
     }
 
     @Test
-    public void testSearchSourceFiltering2WithProxyClient() throws IOException {
+    public void testSearchSourceFilteringWithProxyClient2() throws IOException {
         ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"_source\":[\"obj1\",\"obj2\"]}".getBytes());
         ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
         when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
@@ -221,7 +220,7 @@ public class RestElasticClientTest {
         ElasticRequest request = new ElasticRequest();
         request.addSourceInclude("obj1");
         request.addSourceInclude("obj2");
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -258,7 +257,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.addField("obj1");
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -272,14 +271,14 @@ public class RestElasticClientTest {
     }
 
     @Test
-    public void testSearchSortWithProxy() throws IOException {
+    public void testSearchSortWithProxyClient() throws IOException {
         ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}}]}".getBytes());
         ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
         when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSort("obj1", "asc");
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -294,7 +293,7 @@ public class RestElasticClientTest {
     }
 
     @Test
-    public void testSearchSort2WithProxyClient() throws IOException {
+    public void testSearchSortWithProxyClient2() throws IOException {
         ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}},{\"obj2\":{\"order\":\"desc\"}}]}".getBytes());
         ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
         when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
@@ -302,7 +301,7 @@ public class RestElasticClientTest {
         ElasticRequest request = new ElasticRequest();
         request.addSort("obj1", "asc");
         request.addSort("obj2", "desc");
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -319,7 +318,7 @@ public class RestElasticClientTest {
         InputStream inputStream = new ByteArrayInputStream("{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{\"_index\": \"index_name\"}, {}]}}".getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
         when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), any(HttpEntity.class), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
-        clientWithProxy.search("status_s", "active", new ElasticRequest());
+        proxyClient.search("status_s", "active", new ElasticRequest());
     }
 
     @Test
@@ -344,7 +343,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.setQuery(query);
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test
@@ -365,7 +364,7 @@ public class RestElasticClientTest {
 
         ElasticRequest request = new ElasticRequest();
         request.setAggregations(ImmutableMap.of("ageohash_grid_agg", ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1))));
-        clientWithProxy.search("status_s", "active", request);
+        proxyClient.search("status_s", "active", request);
     }
 
     @Test(expected=IOException.class)
@@ -390,7 +389,7 @@ public class RestElasticClientTest {
         ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll_id\":\"id1\",\"scroll\":\"10s\"}".getBytes());
         when(mockProxyRestClient.performRequest(eq("POST"), eq("/_search/scroll"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
 
-        clientWithProxy.scroll("id1", 10);
+        proxyClient.scroll("id1", 10);
     }
 
     @Test
@@ -407,18 +406,18 @@ public class RestElasticClientTest {
         ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll_id\":[\"id1\"]}".getBytes());
         when(mockProxyRestClient.performRequest(eq("DELETE"), eq("/_search/scroll"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
 
-        clientWithProxy.clearScroll(ImmutableSet.of("id1"));
+        proxyClient.clearScroll(ImmutableSet.of("id1"));
     }
 
     @Test
     public void testClose() throws IOException {
         client.close();
         verify(mockRestClient).close();
-    }  
+    }
 
     @Test
-    public void testProxyClose() throws IOException {
-        clientWithProxy.close();
+    public void testCloseWithProxyClient() throws IOException {
+        proxyClient.close();
         verify(mockRestClient).close();
         verify(mockProxyRestClient).close();
     }
@@ -461,15 +460,16 @@ public class RestElasticClientTest {
     public class RunAsHeaderMatcher implements ArgumentMatcher<BasicHeader> {
 
         private static final String RUN_AS_HEADER_FIELD = "es-security-runas-user";
+
         private String runAsUser;
-        
+
         public RunAsHeaderMatcher(String runAsUser) {
             this.runAsUser = runAsUser;
         }
 
         @Override
         public boolean matches(BasicHeader header) {
-            return RUN_AS_HEADER_FIELD.equals(header.getName()) 
+            return RUN_AS_HEADER_FIELD.equals(header.getName())
                     && runAsUser.equals(header.getValue());
         }
 

@@ -85,20 +85,20 @@ public class ElasticDataStore extends ContentDataStore {
     }
 
     public ElasticDataStore(RestClient restClient, String indexName) throws IOException {
-        this(restClient, null, indexName);
+        this(restClient, null, indexName, false);
     }
-   
-    public ElasticDataStore(RestClient adminRestClient, RestClient proxyRestClient, String indexName) throws IOException {
+
+    public ElasticDataStore(RestClient restClient, RestClient proxyRestClient, String indexName, boolean enableRunAs) throws IOException {
         LOGGER.fine("Initializing data store for " + indexName);
 
         this.indexName = indexName;
 
         try {
-            final Response response = adminRestClient.performRequest("GET", "/", Collections.<String, String>emptyMap());
+            final Response response = restClient.performRequest("GET", "/", Collections.<String, String>emptyMap());
             if (response.getStatusLine().getStatusCode() >= 400) {
                 throw new IOException();
             }
-            client = new RestElasticClient(adminRestClient, proxyRestClient);           
+            client = new RestElasticClient(restClient, proxyRestClient, enableRunAs);
         } catch (Exception e) {
             throw new IOException("Unable to create REST client", e);
         }

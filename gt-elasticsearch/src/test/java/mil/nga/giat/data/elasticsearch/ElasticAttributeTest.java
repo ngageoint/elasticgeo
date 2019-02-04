@@ -17,8 +17,6 @@ public class ElasticAttributeTest {
 
     private ElasticAttribute attr;
 
-    private ElasticAttribute other;
-    
     private String name;
 
     private String shortName;
@@ -127,8 +125,8 @@ public class ElasticAttributeTest {
     }
 
     @Test
-    public void testCompare() {     
-      other = new ElasticAttribute("other");     
+    public void testCompare() {
+      ElasticAttribute other = new ElasticAttribute("other");
       attr.setOrder(1);
       other.setOrder(2);
       assertEquals(-1, attr.compareTo(other));
@@ -148,6 +146,6 @@ public class ElasticAttributeTest {
       other = new ElasticAttribute("before");
       attr.setOrder(1);
       other.setOrder(1);
-      assertTrue(attr.compareTo(other) > 0); 
+      assertTrue(attr.compareTo(other) > 0);
     }
 }

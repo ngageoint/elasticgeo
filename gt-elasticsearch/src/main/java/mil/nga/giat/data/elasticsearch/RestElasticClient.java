@@ -50,27 +50,28 @@ public class RestElasticClient implements ElasticClient {
 
     private final static double DEFAULT_VERSION = 6.0;
 
-    private RestClient adminClient;
+    private RestClient client;
 
     private RestClient proxyClient;
-    
+
+    private boolean enableRunAs;
+
     private ObjectMapper mapper;
 
     private Double version;
 
     public RestElasticClient(RestClient client) {
-        this.adminClient = client;
-        this.mapper = new ObjectMapper();
-        this.mapper.setDateFormat(DATE_FORMAT);
+        this(client, null, false);
     }
 
-    public RestElasticClient(RestClient client, RestClient proxyClient) {
-        this.adminClient = client;
+    public RestElasticClient(RestClient client, RestClient proxyClient, boolean enableRunAs) {
+        this.client = client;
         this.proxyClient = proxyClient;
         this.mapper = new ObjectMapper();
         this.mapper.setDateFormat(DATE_FORMAT);
+        this.enableRunAs = enableRunAs;
     }
-    
+
     @Override
     public double getVersion() {
         if (version != null) {
@@ -79,7 +80,7 @@ public class RestElasticClient implements ElasticClient {
 
         final Pattern pattern = Pattern.compile("(\\d+\\.\\d+)\\.\\d+");
         try {
-            final Response response = performRequest("GET", "/", null, this.adminClient);
+            final Response response = performRequest("GET", "/", null, true);
             try (final InputStream inputStream = response.getEntity().getContent()) {
                 Map<String,Object> info = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
                 @SuppressWarnings("unchecked")
@@ -123,7 +124,7 @@ public class RestElasticClient implements ElasticClient {
             if (type != null) {
                 path.append("/").append(type);
             }
-            response = this.adminClient.performRequest("GET", path.toString());
+            response = this.client.performRequest("GET", path.toString());
         } catch (ResponseException e) {
             if (e.getResponse().getStatusLine().getStatusCode() == 404) {
                 return Collections.emptyMap();
@@ -201,7 +202,7 @@ public class RestElasticClient implements ElasticClient {
         return parseResponse(performRequest("POST", pathBuilder.toString(), requestBody));
     }
 
-    Response performRequest(String method, String path, Map<String,Object> requestBody, RestClient rc) throws IOException {
+    Response performRequest(String method, String path, Map<String,Object> requestBody, boolean isAdmin) throws IOException {
         final byte[] data = this.mapper.writeValueAsBytes(requestBody);
         final HttpEntity entity = new ByteArrayEntity(data, ContentType.APPLICATION_JSON);
         if (LOGGER.isLoggable(Level.FINE)) {
@@ -210,8 +211,10 @@ public class RestElasticClient implements ElasticClient {
             LOGGER.fine("RequestBody: " + requestBody);
         }
 
+        final RestClient client = isAdmin || this.proxyClient == null ? this.client : this.proxyClient;
+
         Response response = null;
-        if (rc == this.proxyClient) {
+        if (!isAdmin && enableRunAs) {
             final SecurityContext ctx = SecurityContextHolder.getContext();
             final Authentication auth = ctx.getAuthentication();
             if (auth == null) {
@@ -220,12 +223,12 @@ public class RestElasticClient implements ElasticClient {
             if (!auth.isAuthenticated()) {
                 throw new IllegalStateException(String.format("User is not authenticated: %s", auth.getName()));
             }
-            final Header proxy = new BasicHeader(RUN_AS, auth.getName());
-            LOGGER.fine("Performing proxy request for: " + auth.getName());
-            response = rc.performRequest(method, path, Collections.<String, String> emptyMap(), entity, proxy);
+            final Header userHeader = new BasicHeader(RUN_AS, auth.getName());
+            LOGGER.fine("Performing request for: " + auth.getName());
+            response = client.performRequest(method, path, Collections.<String, String> emptyMap(), entity, userHeader);
         } else {
-            LOGGER.fine("Performing admin request.");
-            response = rc.performRequest(method, path, Collections.<String, String> emptyMap(), entity);
+            LOGGER.fine(String.format("Performing request with %s credentials.", isAdmin ? "admin" : "proxy"));
+            response = client.performRequest(method, path, Collections.<String, String> emptyMap(), entity);
         }
         if (response.getStatusLine().getStatusCode() >= 400) {
             throw new IOException("Error executing request: " + response.getStatusLine().getReasonPhrase());
@@ -234,9 +237,9 @@ public class RestElasticClient implements ElasticClient {
     }
 
     Response performRequest(String method, String path, Map<String,Object> requestBody) throws IOException {
-        return performRequest(method, path, requestBody, this.proxyClient != null ? this.proxyClient : this.adminClient);
+        return performRequest(method, path, requestBody, false);
     }
-    
+
     private ElasticResponse parseResponse(final Response response) throws IOException {
         try (final InputStream inputStream = response.getEntity().getContent()) {
             return this.mapper.readValue(inputStream, ElasticResponse.class);
@@ -265,11 +268,14 @@ public class RestElasticClient implements ElasticClient {
 
     @Override
     public void close() throws IOException {
-        LOGGER.fine("Closing client: " + this.adminClient);
-        this.adminClient.close();
-        if (this.proxyClient != null) {
-            LOGGER.fine("Closing proxyClient: " + this.proxyClient);
-            this.proxyClient.close();
+        LOGGER.fine("Closing proxyClient: " + this.client);
+        try {
+            this.client.close();
+        } finally {
+            if (this.proxyClient != null) {
+                LOGGER.fine("Closing proxyClient: " + this.proxyClient);
+                this.proxyClient.close();
+            }
         }
     }
 
@@ -293,7 +299,7 @@ public class RestElasticClient implements ElasticClient {
     private Set<String> getIndices(String alias) {
         Set<String> indices = null;
         try {
-            final Response response = performRequest("GET", "/_alias/" + alias, null, this.adminClient);
+            final Response response = performRequest("GET", "/_alias/" + alias, null, true);
             try (final InputStream inputStream = response.getEntity().getContent()) {
                 final Map<String,Object> result = this.mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
                 indices = result.keySet();

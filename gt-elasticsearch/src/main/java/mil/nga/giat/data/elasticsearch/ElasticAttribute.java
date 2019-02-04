@@ -23,7 +23,7 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
     }
 
     private static Pattern beginLetters = Pattern.compile("^[A-Za-z_].*");
-    
+
     private static final long serialVersionUID = 8839579461838862328L;
 
     private final String name;
@@ -78,7 +78,7 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
         this.stored = other.stored;
         this.nested = other.nested;
         this.order = other.order;
-        this.customName = other.customName;        
+        this.customName = other.customName;
     }
 
     public String getName() {
@@ -172,23 +172,23 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
     public void setNested(boolean nested) {
         this.nested = nested;
     }
-    
+
     public void setOrder(Integer order) {
         this.order = order;
     }
-    
+
     public Integer getOrder() {
         return this.order;
     }
- 
+
     public void setCustomName(String name) {
         this.customName = normalizeName(name);
     }
-    
+
     public String getCustomName() {
         return this.customName;
     }
-    
+
     public String getDisplayName() {
         final String displayName;
         if (useShortName) {
@@ -228,11 +228,11 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
         }
         return equal;
     }
-    
+
     /**
      * Implement comparison logic
      * @param o is a non-null ElasticAttribute
-     * @return negative for before, zero for same, positive after 
+     * @return negative for before, zero for same, positive after
      */
     @Override
     public int compareTo(ElasticAttribute o) {
@@ -244,19 +244,19 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
         }
         int i = this.order.compareTo(o.order);
         return i == 0 ? this.name.compareTo(o.name) : i;
-    }  
+    }
 
     /**
      * Perform basic update to the given name to make it XML namespace
      * compliant.
-     * 
+     *
      * @param name
      * @return Name that is XML safe
      */
     private static String normalizeName (String name) {
-        
+
         String normalName = name;
-        
+
         /* XML element naming rules:
          * 1. Element names must start with a letter or underscore
          * 2. Element names cannot start with the letters xml
@@ -266,7 +266,7 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
             normalName = "_".concat(normalName);
         } else if (! beginLetters.matcher(normalName).matches()) {
             normalName = "_".concat(normalName);
-        }         
+        }
         /* Simply replace all spaces in the name with "_". */
         return normalName.replaceAll(" ", "_");
     }

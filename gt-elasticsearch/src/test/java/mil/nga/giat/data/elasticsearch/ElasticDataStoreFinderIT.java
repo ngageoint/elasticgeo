@@ -29,6 +29,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.http.HttpHost;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
@@ -94,15 +95,16 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
 
-        Map<String,Serializable> map = new HashMap<>();
-        map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
-        map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
-
         Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
         ElasticDataStoreFactory fac;
         while (ps.hasNext()) {
             fac = (ElasticDataStoreFactory) ps.next();
-            assertTrue(!fac.canProcess(map));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost", ElasticDataStoreFactory.HOSTPORT.key, PORT)));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost", ElasticDataStoreFactory.INDEX_NAME.key, "test")));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost")));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT, ElasticDataStoreFactory.INDEX_NAME.key, "test")));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT)));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.INDEX_NAME.key, "test")));
         }
 
         assertNull(source);

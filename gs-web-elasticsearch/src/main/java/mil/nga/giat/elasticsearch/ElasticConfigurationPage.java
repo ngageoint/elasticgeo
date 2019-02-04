@@ -254,7 +254,7 @@ public abstract class ElasticConfigurationPage extends Panel {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, e.getMessage(), e);
         }
-        Collections.sort(layerConfig.getAttributes());        
+        Collections.sort(layerConfig.getAttributes());
         return layerConfig;
     }
 

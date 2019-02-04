@@ -166,6 +166,7 @@ public class ElasticTestSupport {
 
     protected Map<String,Serializable> createConnectionParams() {
         Map<String,Serializable> params = new HashMap<>();
+        params.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
         params.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
         params.put(ElasticDataStoreFactory.INDEX_NAME.key, indexName);
         params.put(ElasticDataStoreFactory.SCROLL_ENABLED.key, SCROLL_ENABLED);
