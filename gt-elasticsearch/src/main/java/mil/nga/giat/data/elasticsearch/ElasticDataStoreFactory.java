@@ -1,4 +1,4 @@
-/**
+/*
  * This file is hereby placed into the Public Domain. This means anyone is
  * free to do whatever they wish with this file.
  */
@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
  * Data store factory that creates {@linkplain ElasticDataStore} instances.
  *
  */
+@SuppressWarnings("WeakerAccess")
 public class ElasticDataStoreFactory implements DataStoreFactorySpi {
 
     /** The logger for this class */
@@ -47,12 +48,12 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
      */
     private final static String FORCE_RUNAS_PROPERTY = "org.geoserver.elasticsearch.xpack.force-runas";
 
-    static final String DISPLAY_NAME = "Elasticsearch";
-
-    static final String DESCRIPTION = "Elasticsearch Index";
-
     /** Counter of HTTP threads we generate */
     static final AtomicInteger httpThreads = new AtomicInteger(1);
+
+    public static final String DISPLAY_NAME = "Elasticsearch";
+
+    public static final String DESCRIPTION = "Elasticsearch Index";
 
     /** Cluster hostnames. **/
     public static final Param HOSTNAME = new Param("elasticsearch_host", String.class,
@@ -110,7 +111,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             + " and \"CSV\" (URL encode and join array elements).", false, "JSON");
 
     public static final Param GRID_SIZE = new Param("grid_size", Long.class,
-            "Hint for Geohash grid size (nrow*ncol)", false, 10000l);
+            "Hint for Geohash grid size (nrow*ncol)", false, 10000L);
 
     public static final Param GRID_THRESHOLD = new Param("grid_threshold",  Double.class, 
             "Geohash grid aggregation precision will be the minimum necessary to satisfy actual_grid_size/grid_size>grid_threshold", false, 0.05);
@@ -189,7 +190,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         return createDataStore(client, proxyClient, params);
     }
 
-    DataStore createDataStore(RestClient client, RestClient proxyClient, Map<String, Serializable> params) throws IOException {
+    public DataStore createDataStore(RestClient client, RestClient proxyClient, Map<String, Serializable> params) throws IOException {
         final String indexName = (String) INDEX_NAME.lookUp(params);
         final String arrayEncoding = getValue(ARRAY_ENCODING, params);
         final boolean runAsGeoServerUser = getValue(RUNAS_GEOSERVER_USER, params);
@@ -210,7 +211,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         return dataStore;
     }
 
-    RestClient createRestClient(Map<String, Serializable> params) throws IOException {
+    public RestClient createRestClient(Map<String, Serializable> params) throws IOException {
         return createRestClient(params, null, null);
     }
 
@@ -262,7 +263,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             if (!sslRejectUnauthorized) {
                 httpClientBuilder.setSSLHostnameVerifier((host,session) -> true);
                 try {
-                    httpClientBuilder.setSSLContext(SSLContextBuilder.create().loadTrustMaterial((chain,authType) -> true).build());
+                    httpClientBuilder.setSSLContext(SSLContextBuilder.create().loadTrustMaterial((chain,authType) ->true).build());
                 } catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
                     throw new UncheckedIOException(new IOException("Unable to create SSLContext", e));
                 }
@@ -286,11 +287,11 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
     }
 
     @Override
-    public DataStore createNewDataStore(Map<String, Serializable> params) throws IOException {
+    public DataStore createNewDataStore(Map<String, Serializable> params) {
         return null;
     }
 
-    RestClientBuilder createClientBuilder(HttpHost[] hosts) {
+    public RestClientBuilder createClientBuilder(HttpHost[] hosts) {
         return RestClient.builder(hosts);
     }
 
@@ -298,8 +299,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         return System.getProperty(FORCE_RUNAS_PROPERTY) != null;
     }
 
-    @SuppressWarnings({ "javadoc", "unchecked" })
-    private static <T> T getValue(Param param, Map<String, Serializable> params) throws IOException {
+    @SuppressWarnings({"unchecked" })
+    static <T> T getValue(Param param, Map<String, Serializable> params) throws IOException {
         final Object value;
         if (param.lookUp(params) != null) {
             value = param.lookUp(params);

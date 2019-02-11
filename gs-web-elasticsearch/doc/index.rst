@@ -85,8 +85,7 @@ Available data store configuration parameters are summarized in the following ta
    * - Parameter
      - Description
    * - elasticsearch_host
-     - Host (IP) for connecting to Elasticsearch. HTTP scheme and port can optionally be included to override the defaults. Multiple hosts can be provided.
-     Examples::
+     - Host (IP) for connecting to Elasticsearch. HTTP scheme and port can optionally be included to override the defaults. Multiple hosts can be provided. Examples::
 
          localhost
          localhost:9200

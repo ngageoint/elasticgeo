@@ -28,9 +28,11 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.http.HttpHost;
+import org.elasticsearch.client.Node;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFactorySpi;
 import org.geotools.factory.FactoryCreator;
@@ -43,7 +45,7 @@ import static org.junit.Assert.*;
 
 public class ElasticDataStoreFinderIT extends ElasticTestSupport {
 
-    protected static final Logger LOGGER = org.geotools.util.logging.Logging
+    private static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticDataStoreFinderIT.class);
 
     private DataStore source;
@@ -55,15 +57,15 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
         dataStore = (ElasticDataStore) factory.createDataStore(params);
 
         ElasticDataStoreFactory fac = new ElasticDataStoreFactory();
-        assertTrue(fac.getDisplayName().equals(ElasticDataStoreFactory.DISPLAY_NAME));
-        assertTrue(fac.getDescription().equals(ElasticDataStoreFactory.DESCRIPTION));
-        assertTrue(fac.getParametersInfo().equals(ElasticDataStoreFactory.PARAMS));
-        assertTrue(fac.getImplementationHints()==null);
-        assertTrue(fac.createNewDataStore(null)==null);
+        assertEquals(fac.getDisplayName(), ElasticDataStoreFactory.DISPLAY_NAME);
+        assertEquals(fac.getDescription(), ElasticDataStoreFactory.DESCRIPTION);
+        assertArrayEquals(fac.getParametersInfo(), ElasticDataStoreFactory.PARAMS);
+        assertNull(fac.getImplementationHints());
+        assertNull(fac.createNewDataStore(null));
     }
 
     @Test
-    public void testFactory() throws IOException {
+    public void testFactory() {
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
 
@@ -91,7 +93,7 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
     }
 
     @Test
-    public void testFactoryWithMissingRequired() throws IOException {
+    public void testFactoryWithMissingRequired() {
         assertTrue(new ElasticDataStoreFactory().isAvailable());
         scanForPlugins();
 
@@ -99,10 +101,13 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
         ElasticDataStoreFactory fac;
         while (ps.hasNext()) {
             fac = (ElasticDataStoreFactory) ps.next();
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost", ElasticDataStoreFactory.HOSTPORT.key, PORT)));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost", ElasticDataStoreFactory.INDEX_NAME.key, "test")));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost",
+                    ElasticDataStoreFactory.HOSTPORT.key, PORT)));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost",
+                    ElasticDataStoreFactory.INDEX_NAME.key, "test")));
             assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost")));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT, ElasticDataStoreFactory.INDEX_NAME.key, "test")));
+            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT,
+                    ElasticDataStoreFactory.INDEX_NAME.key, "test")));
             assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT)));
             assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.INDEX_NAME.key, "test")));
         }
@@ -113,18 +118,27 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
     @Test
     public void testCreateRestClient() throws IOException {
         assertEquals(ImmutableList.of(new HttpHost("localhost", PORT, "http")), getHosts("localhost"));
-        assertEquals(ImmutableList.of(new HttpHost("localhost.localdomain", PORT, "http")), getHosts("localhost.localdomain"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost.localdomain", PORT, "http")),
+                getHosts("localhost.localdomain"));
 
-        assertEquals(ImmutableList.of(new HttpHost("localhost", 9201, "http")), getHosts("localhost:9201"));
-        assertEquals(ImmutableList.of(new HttpHost("localhost.localdomain", 9201, "http")), getHosts("localhost.localdomain:9201"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", 9201, "http")),
+                getHosts("localhost:9201"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost.localdomain", 9201, "http")),
+                getHosts("localhost.localdomain:9201"));
 
-        assertEquals(ImmutableList.of(new HttpHost("localhost", PORT, "http")), getHosts("http://localhost"));
-        assertEquals(ImmutableList.of(new HttpHost("localhost", 9200, "http")), getHosts("http://localhost:9200"));
-        assertEquals(ImmutableList.of(new HttpHost("localhost", 9201, "http")), getHosts("http://localhost:9201"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", PORT, "http")),
+                getHosts("http://localhost"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", 9200, "http")),
+                getHosts("http://localhost:9200"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", 9201, "http")),
+                getHosts("http://localhost:9201"));
 
-        assertEquals(ImmutableList.of(new HttpHost("localhost", PORT, "https")), getHosts("https://localhost"));
-        assertEquals(ImmutableList.of(new HttpHost("localhost", 9200, "https")), getHosts("https://localhost:9200"));
-        assertEquals(ImmutableList.of(new HttpHost("localhost", 9201, "https")), getHosts("https://localhost:9201"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", PORT, "https")),
+                getHosts("https://localhost"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", 9200, "https")),
+                getHosts("https://localhost:9200"));
+        assertEquals(ImmutableList.of(new HttpHost("localhost", 9201, "https")),
+                getHosts("https://localhost:9201"));
 
         assertEquals(ImmutableList.of(
                 new HttpHost("somehost.somedomain", PORT, "http"),
@@ -148,33 +162,29 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
         Map<String,Serializable> params = createConnectionParams();
         params.put(ElasticDataStoreFactory.HOSTNAME.key, hosts);
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
-        return factory.createRestClient(params).getNodes().stream().map(node -> node.getHost()).collect(Collectors.toList());
+        return factory.createRestClient(params).getNodes().stream().map(Node::getHost).collect(Collectors.toList());
     }
 
     private FactoryRegistry getServiceRegistry() {
-        FactoryRegistry registry = new FactoryCreator(
+        return new FactoryCreator(
                 Arrays.asList(new Class<?>[] { DataStoreFactorySpi.class }));
-        return registry;
     }
 
     private void scanForPlugins() {
         getServiceRegistry().scanForPlugins();
     }
 
-    public Iterator<DataStoreFactorySpi> getAvailableDataSources() {
+    private Iterator<DataStoreFactorySpi> getAvailableDataSources() {
         Set<DataStoreFactorySpi> availableDS = new HashSet<>();
-        Iterator<DataStoreFactorySpi> it = getServiceRegistry().getServiceProviders(DataStoreFactorySpi.class, null,
-                null);
-        ElasticDataStoreFactory dsFactory;
-        while (it.hasNext()) {
-            Object ds = it.next();
+        Stream<DataStoreFactorySpi> it = getServiceRegistry().getFactories(DataStoreFactorySpi.class, null, null);
+        it.forEach(ds -> {
             if (ds instanceof ElasticDataStoreFactory) {
-                dsFactory = (ElasticDataStoreFactory) ds;
+                final ElasticDataStoreFactory dsFactory = (ElasticDataStoreFactory) ds;
                 if (dsFactory.isAvailable()) {
                     availableDS.add(dsFactory);
                 }
             }
-        }
+        });
         return availableDS.iterator();
     }
 

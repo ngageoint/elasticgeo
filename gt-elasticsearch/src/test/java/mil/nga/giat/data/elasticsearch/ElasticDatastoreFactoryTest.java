@@ -1,4 +1,4 @@
-/**
+/*
  * This file is hereby placed into the Public Domain. This means anyone is
  * free to do whatever they wish with this file.
  */
@@ -199,12 +199,27 @@ public class ElasticDatastoreFactoryTest {
         assertNotNull(factory.createClientBuilder(hosts));
     }
 
+    @Test
+    public void testBuildClientWithSslRejectUnauthorizedDisabled() throws IOException {
+        params.put(ElasticDataStoreFactory.SSL_REJECT_UNAUTHORIZED.key, false);
+        assertNotNull(dataStoreFactory.createDataStore(params));
+        assertTrue(configCallbackCaptor.getAllValues().size() > 0);
+        configCallbackCaptor.getAllValues().get(0).customizeHttpClient(httpClientBuilder);
+        verify(httpClientBuilder, times(1)).setSSLContext(any());
+    }
+
     @Test(expected=UncheckedIOException.class)
-    public void testBuildClientWithInvalidSSLContext() throws IOException {
+    public void testBuildClientWithSslRejectUnauthorizedDisabledAndInvalidSSLContext() throws IOException {
         params.put(ElasticDataStoreFactory.SSL_REJECT_UNAUTHORIZED.key, false);
         assertNotNull(dataStoreFactory.createDataStore(params));
         assertTrue(configCallbackCaptor.getAllValues().size() > 0);
         when(httpClientBuilder.setSSLContext(any())).thenThrow(KeyStoreException.class);
         configCallbackCaptor.getAllValues().get(0).customizeHttpClient(httpClientBuilder);
+    }
+
+    @Test(expected=IOException.class)
+    public void testBuildClientWithInvalidHost() throws IOException {
+        params = getParams(":", 9200, null, null);
+        dataStoreFactory.createDataStore(params);
     }
 }

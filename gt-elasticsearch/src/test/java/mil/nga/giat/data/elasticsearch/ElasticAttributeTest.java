@@ -1,4 +1,4 @@
-/**
+/*
  * This file is hereby placed into the Public Domain. This means anyone is
  * free to do whatever they wish with this file.
  */
@@ -100,22 +100,21 @@ public class ElasticAttributeTest {
 
     @Test
     public void testDisplayName() {
-        assertTrue(attr.getDisplayName().equals(name));
+        assertEquals(attr.getDisplayName(), name);
         attr.setShortName("name");
         attr.setUseShortName(true);
-        assertTrue(attr.getDisplayName().equals("name"));        
+        assertEquals("name", attr.getDisplayName());
     }
 
     @Test
     public void testHashCode() {
-        assertTrue(attr.hashCode()==(new ElasticAttribute("theName")).hashCode());
+        assertEquals(attr.hashCode(), (new ElasticAttribute("theName")).hashCode());
         assertTrue(attr.hashCode()!=(new ElasticAttribute("name")).hashCode());
     }
 
     @Test
     public void testEquals() {
-        assertTrue(!attr.equals("name"));
-        assertTrue(attr.equals(new ElasticAttribute("theName")));
+        assertEquals(attr, new ElasticAttribute("theName"));
         assertTrue(!attr.equals(new ElasticAttribute("name")));
     }
 

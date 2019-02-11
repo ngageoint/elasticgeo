@@ -1,4 +1,4 @@
-/**
+/*
  * This file is hereby placed into the Public Domain. This means anyone is
  * free to do whatever they wish with this file.
  */
@@ -6,6 +6,9 @@ package mil.nga.giat.data.elasticsearch;
 
 import static org.junit.Assert.*;
 
+import org.apache.http.Header;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.ResponseException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -83,11 +86,48 @@ public class RestElasticClientTest {
     }
 
     @Test
-    public void testGetTypes() throws IOException {
-        byte[] data = "{\"status_s\": {\"mappings\": {\"active\": {\"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}".getBytes();
-        InputStream inputStream = new ByteArrayInputStream(data);
+    public void testVersion() throws IOException {
+        String content = "{\"version\":{\"number\":\"6.7.8\"}}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
-        when(mockRestClient.performRequest("GET", "/status_s/_mapping")).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("GET", "/", null, null);
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
+
+        final double version = client.getVersion();
+        assertEquals(6.7, version, 1e-9);
+    }
+
+    @Test
+    public void testVersionWithInvalidFormat() throws IOException {
+        String content = "{\"version\":{\"number\":\"6\"}}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
+        when(mockEntity.getContent()).thenReturn(inputStream);
+        final RequestMatcher matcher = new RequestMatcher("GET", "/", null, null);
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
+
+        final double version = client.getVersion();
+        assertEquals(RestElasticClient.DEFAULT_VERSION, version, 1e-9);
+    }
+
+    @Test
+    public void testVersionWithError() throws IOException {
+        String content = "{}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
+        when(mockEntity.getContent()).thenReturn(inputStream);
+        final RequestMatcher matcher = new RequestMatcher("GET", "/", null, null);
+        when(mockRestClient.performRequest(argThat(matcher))).thenThrow(IOException.class);
+
+        final double version = client.getVersion();
+        assertEquals(RestElasticClient.DEFAULT_VERSION, version, 1e-9);
+    }
+
+    @Test
+    public void testGetTypes() throws IOException {
+        String content = "{\"status_s\": {\"mappings\": " +
+                "{\"active\": {\"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
+        when(mockEntity.getContent()).thenReturn(inputStream);
+        when(mockRestClient.performRequest(new Request("GET", "/status_s/_mapping"))).thenReturn(mockResponse);
 
         List<String> names = client.getTypes("status_s");
         assertEquals(1, names.size());
@@ -96,30 +136,76 @@ public class RestElasticClientTest {
 
     @Test
     public void testGetMapping() throws IOException {
-        byte[] data = "{\"status_s\": {\"mappings\": {\"active\": {\"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}".getBytes();
-        InputStream inputStream = new ByteArrayInputStream(data);
+        String content = "{\"status_s\": {\"mappings\": {\"active\": " +
+                "{\"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
-        when(mockRestClient.performRequest("GET", "/status_s/_mapping/active")).thenReturn(mockResponse);
+        when(mockRestClient.performRequest(new Request("GET", "/status_s/_mapping/active"))).thenReturn(mockResponse);
 
         Map<String, Map<String, String>> expected = ImmutableMap.of("status_s", ImmutableMap.of("type","keyword"));
         assertEquals(expected, client.getMapping("status_s", "active"));
+    }
+
+    @Test
+    public void testGetMappingWithMissingIndexAndNoAlias() throws IOException {
+        String content = "{\"status_s3\": {\"mappings\": {\"active\": " +
+                "{\"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
+        when(mockEntity.getContent()).thenReturn(inputStream);
+        when(mockRestClient.performRequest(new Request("GET", "/status_s/_mapping/active"))).thenReturn(mockResponse);
+        when(mockRestClient.performRequest(new Request("GET", "/_alias/status_s"))).thenThrow(IOException.class);
+
+        Map<String, Map<String, String>> expected = ImmutableMap.of("status_s", ImmutableMap.of("type","keyword"));
+        assertEquals(expected, client.getMapping("status_s", "active"));
+    }
+
+    @Test
+    public void testGetMappingMissing() throws IOException {
+        String content = "{}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
+        when(mockEntity.getContent()).thenReturn(inputStream);
+        when(mockRestClient.performRequest(new Request("GET", "/status_s/_mapping/active"))).thenReturn(mockResponse);
+        when(mockRestClient.performRequest(new Request("GET", "/_alias/status_s"))).thenThrow(IOException.class);
+
+        assertNull(client.getMapping("status_s", "active"));
     }
 
     @Test
     public void testGetMappingWithExtra() throws IOException {
-        byte[] data = "{\"status_s\": {\"mappings\": {\"active\": {\"extra\":\"value\", \"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}".getBytes();
-        InputStream inputStream = new ByteArrayInputStream(data);
+        String content = "{\"status_s\": {\"mappings\": {\"active\": " +
+                "{\"properties\": {\"status_s\": {\"type\": \"keyword\"}}}}}}";
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
-        when(mockRestClient.performRequest("GET", "/status_s/_mapping/active")).thenReturn(mockResponse);
+        when(mockRestClient.performRequest(new Request("GET", "/status_s/_mapping/active"))).thenReturn(mockResponse);
 
         Map<String, Map<String, String>> expected = ImmutableMap.of("status_s", ImmutableMap.of("type","keyword"));
         assertEquals(expected, client.getMapping("status_s", "active"));
     }
 
     @Test
+    public void testGetMappingNotFound() throws IOException {
+        ResponseException mockException = mock(ResponseException.class);
+        when(mockException.getResponse()).thenReturn(mockResponse);
+        when(mockStatusLine.getStatusCode()).thenReturn(404);
+
+        when(mockRestClient.performRequest(any(Request.class))).thenThrow(mockException);
+        assertNull(client.getMapping("status_s", "active"));
+    }
+
+    @Test(expected=ResponseException.class)
+    public void testGetMappingWithError() throws IOException {
+        ResponseException mockException = mock(ResponseException.class);
+        when(mockException.getResponse()).thenReturn(mockResponse);
+        when(mockStatusLine.getStatusCode()).thenReturn(400);
+
+        when(mockRestClient.performRequest(any(Request.class))).thenThrow(mockException);
+        client.getMapping("status_s", "active");
+    }
+
+    @Test
     public void testSearchSize() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"size\":10}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search", "{\"size\":10}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setSize(10);
@@ -128,9 +214,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSizeWithProxyClient() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"size\":10}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"size\":10}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setSize(10);
@@ -139,8 +225,8 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchFrom() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"from\":10}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search", "{\"from\":10}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setFrom(10);
@@ -149,9 +235,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchFromWithProxyClient() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"from\":10}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"from\":10}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setFrom(10);
@@ -160,8 +246,8 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchScroll() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search?scroll=10s"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search?scroll=10s", "{}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setScroll(10);
@@ -170,9 +256,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchScrollWithProxyClient() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search?scroll=10s"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search?scroll=10s",
+                "{}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setScroll(10);
@@ -181,8 +267,8 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSourceFiltering() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"_source\":\"obj1\"}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search", "{\"_source\":\"obj1\"}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSourceInclude("obj1");
@@ -191,9 +277,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSourceFilteringWithProxyClient() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"_source\":\"obj1\"}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"_source\":\"obj1\"}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSourceInclude("obj1");
@@ -202,8 +288,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSourceFiltering2() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"_source\":[\"obj1\",\"obj2\"]}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search",
+                "{\"_source\":[\"obj1\",\"obj2\"]}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSourceInclude("obj1");
@@ -213,9 +300,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSourceFilteringWithProxyClient2() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"_source\":[\"obj1\",\"obj2\"]}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"_source\":[\"obj1\",\"obj2\"]}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSourceInclude("obj1");
@@ -229,12 +316,12 @@ public class RestElasticClientTest {
         final HttpEntity mockEntity2 = mock(HttpEntity.class);
         when(mockResponse2.getEntity()).thenReturn(mockEntity2);
         when(mockResponse2.getStatusLine()).thenReturn(mockStatusLine);
-        byte[] data = "{\"version\": {\"number\": \"2.4.4\"}}".getBytes();
-        final InputStream inputStream = new ByteArrayInputStream(data);
-        when(mockEntity2.getContent()).thenReturn(inputStream);
-        when(mockRestClient.performRequest(eq("GET"), eq("/"), anyMap(), any(HttpEntity.class))).thenReturn(mockResponse2);
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"fields\":[\"obj1\"]}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+
+        final RequestMatcher matcher = new RequestMatcher("GET", "/", null, null);
+        final RequestMatcher matcher2 = new RequestMatcher("/status_s/active/_search", "{\"fields\":[\"obj1\"]}");
+        when(mockEntity2.getContent()).thenReturn(new ByteArrayInputStream("{\"version\": {\"number\": \"2.4.4\"}}".getBytes()));
+        doReturn(mockResponse2).when(mockRestClient).performRequest(argThat(matcher));
+        doReturn(mockResponse).when(mockRestClient).performRequest(argThat(matcher2));
 
         ElasticRequest request = new ElasticRequest();
         request.addField("obj1");
@@ -243,17 +330,17 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchStoredFieldsWithProxyClient() throws IOException {
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
         final Response mockResponse2 = mock(Response.class);
         final HttpEntity mockEntity2 = mock(HttpEntity.class);
         when(mockResponse2.getEntity()).thenReturn(mockEntity2);
         when(mockResponse2.getStatusLine()).thenReturn(mockStatusLine);
-        byte[] data = "{\"version\": {\"number\": \"2.4.4\"}}".getBytes();
-        final InputStream inputStream = new ByteArrayInputStream(data);
-        when(mockEntity2.getContent()).thenReturn(inputStream);
-        when(mockRestClient.performRequest(eq("GET"), eq("/"), anyMap(), any(HttpEntity.class))).thenReturn(mockResponse2);
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"fields\":[\"obj1\"]}".getBytes());
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+
+        final RequestMatcher matcher = new RequestMatcher("GET", "/", null, null);
+        final RequestMatcher matcher2 = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"fields\":[\"obj1\"]}", "runAsTest");
+        when(mockEntity2.getContent()).thenReturn(new ByteArrayInputStream("{\"version\": {\"number\": \"2.4.4\"}}".getBytes()));
+        doReturn(mockResponse2).when(mockRestClient).performRequest(argThat(matcher));
+        doReturn(mockResponse).when(mockProxyRestClient).performRequest(argThat(matcher2));
 
         ElasticRequest request = new ElasticRequest();
         request.addField("obj1");
@@ -262,8 +349,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSort() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}}]}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search",
+                "{\"sort\":[{\"obj1\":{\"order\":\"asc\"}}]}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSort("obj1", "asc");
@@ -272,9 +360,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSortWithProxyClient() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}}]}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"sort\":[{\"obj1\":{\"order\":\"asc\"}}]}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSort("obj1", "asc");
@@ -283,8 +371,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSort2() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}},{\"obj2\":{\"order\":\"desc\"}}]}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search",
+                "{\"sort\":[{\"obj1\":{\"order\":\"asc\"}},{\"obj2\":{\"order\":\"desc\"}}]}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSort("obj1", "asc");
@@ -294,9 +383,9 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchSortWithProxyClient2() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"sort\":[{\"obj1\":{\"order\":\"asc\"}},{\"obj2\":{\"order\":\"desc\"}}]}".getBytes());
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"sort\":[{\"obj1\":{\"order\":\"asc\"}},{\"obj2\":{\"order\":\"desc\"}}]}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.addSort("obj1", "asc");
@@ -306,27 +395,39 @@ public class RestElasticClientTest {
 
     @Test
     public void testSearchResponse() throws IOException {
-        InputStream inputStream = new ByteArrayInputStream("{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{\"_index\": \"index_name\"}, {}]}}".getBytes());
+        String content = "{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{\"_index\": \"index_name\"}, {}]}}";
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search", "{}");
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), any(HttpEntity.class))).thenReturn(mockResponse);
-        client.search("status_s", "active", new ElasticRequest());
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
+
+        final ElasticResponse response = client.search("status_s", "active", new ElasticRequest());
+        assertEquals(10, response.getResults().getTotal().intValue());
+        assertEquals("index_name", response.getHits().get(0).getIndex());
+        assertEquals(0.8f, response.getResults().getMaxScore(), 1e-9);
     }
 
     @Test
     public void testSearchResponseWithProxyClient() throws IOException {
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        InputStream inputStream = new ByteArrayInputStream("{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{\"_index\": \"index_name\"}, {}]}}".getBytes());
+        String content = "{\"hits\": {\"total\": 10, \"max_score\": 0.8, \"hits\": [{\"_index\": \"index_name\"}, {}]}}";
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{}", "runAsTest");
+        InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         when(mockEntity.getContent()).thenReturn(inputStream);
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), any(HttpEntity.class), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
-        proxyClient.search("status_s", "active", new ElasticRequest());
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
+
+        final ElasticResponse response = proxyClient.search("status_s", "active", new ElasticRequest());
+        assertEquals(10, response.getResults().getTotal().intValue());
+        assertEquals("index_name", response.getHits().get(0).getIndex());
+        assertEquals(0.8f, response.getResults().getMaxScore(), 1e-9);
     }
 
     @Test
     public void testQuery() throws IOException {
         final Map<String,Object> query = ImmutableMap.of("term", ImmutableMap.of("obj1", "value1"));
-        final byte[] data = new ObjectMapper().writeValueAsBytes(ImmutableMap.of("query", query));
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher(data);
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final String data = new ObjectMapper().writeValueAsString(ImmutableMap.of("query", query));
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search", data);
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setQuery(query);
@@ -335,11 +436,10 @@ public class RestElasticClientTest {
 
     @Test
     public void testQueryWithProxyClient() throws IOException {
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
         final Map<String,Object> query = ImmutableMap.of("term", ImmutableMap.of("obj1", "value1"));
-        final byte[] data = new ObjectMapper().writeValueAsBytes(ImmutableMap.of("query", query));
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher(data);
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final String data = new ObjectMapper().writeValueAsString(ImmutableMap.of("query", query));
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search", data, "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
         request.setQuery(query);
@@ -348,63 +448,69 @@ public class RestElasticClientTest {
 
     @Test
     public void testAggregation() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"aggregations\":{\"ageohash_grid_agg\":{\"geohash_grid\": {\"field\":\"a_field\",\"precision\":1}}}}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/status_s/active/_search",
+                "{\"aggregations\":{\"ageohash_grid_agg\":{\"geohash_grid\": {\"field\":\"a_field\",\"precision\":1}}}}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
-        request.setAggregations(ImmutableMap.of("ageohash_grid_agg", ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1))));
+        request.setAggregations(ImmutableMap.of("ageohash_grid_agg",
+                ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1))));
         client.search("status_s", "active", request);
     }
 
     @Test
     public void testAggregationWithProxyClient() throws IOException {
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"aggregations\":{\"ageohash_grid_agg\":{\"geohash_grid\": {\"field\":\"a_field\",\"precision\":1}}}}".getBytes());
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/status_s/active/_search",
+                "{\"aggregations\":{\"ageohash_grid_agg\":{\"geohash_grid\": {\"field\":\"a_field\",\"precision\":1}}}}",
+                "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         ElasticRequest request = new ElasticRequest();
-        request.setAggregations(ImmutableMap.of("ageohash_grid_agg", ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1))));
+        request.setAggregations(ImmutableMap.of("ageohash_grid_agg",
+                ImmutableMap.of("geohash_grid", ImmutableMap.of("field","a_field","precision",1))));
         proxyClient.search("status_s", "active", request);
     }
 
     @Test(expected=IOException.class)
     public void testBadStatus() throws IOException {
         when(mockStatusLine.getStatusCode()).thenReturn(404);
-        when(mockRestClient.performRequest(eq("POST"), eq("/status_s/active/_search"), anyMap(), any(HttpEntity.class))).thenReturn(mockResponse);
+        when(mockRestClient.performRequest(any(Request.class))).thenReturn(mockResponse);
 
         client.search("status_s", "active", new ElasticRequest());
     }
 
     @Test
     public void testNextScroll() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll_id\":\"id1\",\"scroll\":\"10s\"}".getBytes());
-        when(mockRestClient.performRequest(eq("POST"), eq("/_search/scroll"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("/_search/scroll",
+                "{\"scroll_id\":\"id1\",\"scroll\":\"10s\"}");
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         client.scroll("id1", 10);
     }
 
     @Test
     public void testNextScrollWithProxyClient() throws IOException {
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll_id\":\"id1\",\"scroll\":\"10s\"}".getBytes());
-        when(mockProxyRestClient.performRequest(eq("POST"), eq("/_search/scroll"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("POST", "/_search/scroll",
+                "{\"scroll_id\":\"id1\",\"scroll\":\"10s\"}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         proxyClient.scroll("id1", 10);
     }
 
     @Test
     public void testClearScroll() throws IOException {
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll_id\":[\"id1\"]}".getBytes());
-        when(mockRestClient.performRequest(eq("DELETE"), eq("/_search/scroll"), anyMap(), argThat(matcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("DELETE", "/_search/scroll",
+                "{\"scroll_id\":[\"id1\"]}", null);
+        when(mockRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         client.clearScroll(ImmutableSet.of("id1"));
     }
 
     @Test
     public void testClearScrollWithProxyClient() throws IOException {
-        ArgumentMatcher<BasicHeader> runAsHeaderMatcher = new RunAsHeaderMatcher("runAsTest");
-        ArgumentMatcher<ByteArrayEntity> matcher = new JsonByteArrayEntityMatcher("{\"scroll_id\":[\"id1\"]}".getBytes());
-        when(mockProxyRestClient.performRequest(eq("DELETE"), eq("/_search/scroll"), anyMap(), argThat(matcher), argThat(runAsHeaderMatcher))).thenReturn(mockResponse);
+        final RequestMatcher matcher = new RequestMatcher("DELETE", "/_search/scroll",
+                "{\"scroll_id\":[\"id1\"]}", "runAsTest");
+        when(mockProxyRestClient.performRequest(argThat(matcher))).thenReturn(mockResponse);
 
         proxyClient.clearScroll(ImmutableSet.of("id1"));
     }
@@ -444,9 +550,23 @@ public class RestElasticClientTest {
         RestElasticClient.removeMapping("parent", "key", data, null);
         assertEquals(data, ImmutableMap.of("parent", new HashMap<>()));
 
-        data = createMap("key", ImmutableList.of(ImmutableMap.of("key", "value"), ImmutableMap.of("key","value","parent", createMap("key","value","key2","value2"))));
+        data = createMap("key", ImmutableList.of(ImmutableMap.of("key", "value"),
+                ImmutableMap.of("key","value","parent", createMap("key","value","key2","value2"))));
         RestElasticClient.removeMapping("parent", "key", data, null);
-        assertEquals(data, createMap("key", ImmutableList.of(ImmutableMap.of("key", "value"), ImmutableMap.of("key","value","parent", createMap("key2","value2")))));
+        assertEquals(data, createMap("key", ImmutableList.of(ImmutableMap.of("key", "value"),
+                ImmutableMap.of("key","value","parent", createMap("key2","value2")))));
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testMissingAuth() throws IOException {
+        when(mockStx.getAuthentication()).thenReturn(null);
+        proxyClient.search("status_s", "active", new ElasticRequest());
+    }
+
+    @Test(expected=IllegalStateException.class)
+    public void testUnauthenticated() throws IOException {
+        when(mockAuth.isAuthenticated()).thenReturn(false);
+        proxyClient.search("status_s", "active", new ElasticRequest());
     }
 
     private Map<String,Object> createMap(Object... params) {
@@ -457,13 +577,13 @@ public class RestElasticClientTest {
         return data;
     }
 
-    public class RunAsHeaderMatcher implements ArgumentMatcher<BasicHeader> {
+    class RunAsHeaderMatcher implements ArgumentMatcher<BasicHeader> {
 
         private static final String RUN_AS_HEADER_FIELD = "es-security-runas-user";
 
-        private String runAsUser;
+        private final String runAsUser;
 
-        public RunAsHeaderMatcher(String runAsUser) {
+        RunAsHeaderMatcher(String runAsUser) {
             this.runAsUser = runAsUser;
         }
 
@@ -472,21 +592,20 @@ public class RestElasticClientTest {
             return RUN_AS_HEADER_FIELD.equals(header.getName())
                     && runAsUser.equals(header.getValue());
         }
-
     }
 
-    public class JsonByteArrayEntityMatcher implements ArgumentMatcher<ByteArrayEntity> {
+    class JsonByteArrayEntityMatcher implements ArgumentMatcher<ByteArrayEntity> {
 
         private Map<String,Object> data;
 
-        public JsonByteArrayEntityMatcher(byte[] data) throws IOException {
+        JsonByteArrayEntityMatcher(byte[] data) throws IOException {
             ObjectMapper mapper = new ObjectMapper();
             this.data = mapper.readValue(data, new TypeReference<Map<String, Object>>() {});
         }
 
         @Override
         public boolean matches(ByteArrayEntity argument) {
-            ByteArrayInputStream inputStream = (ByteArrayInputStream) ((ByteArrayEntity) argument).getContent();
+            ByteArrayInputStream inputStream = (ByteArrayInputStream) argument.getContent();
             ObjectMapper mapper = new ObjectMapper();
             try {
                 Map<String,Object> data = mapper.readValue(inputStream, new TypeReference<Map<String, Object>>() {});
@@ -495,7 +614,55 @@ public class RestElasticClientTest {
                 return false;
             }
         }
+    }
 
+    class RequestMatcher implements ArgumentMatcher<Request> {
+
+        private final String method;
+
+        private final String endpoint;
+
+        private JsonByteArrayEntityMatcher entityMatcher;
+
+        private RunAsHeaderMatcher headerMatcher;
+
+        RequestMatcher(String endpoint, String data) throws IOException {
+            this("POST", endpoint, data, null);
+        }
+
+        RequestMatcher(String method, String endpoint, String data, String user) throws IOException {
+            this.method = method;
+            this.endpoint = endpoint;
+            this.entityMatcher = data != null ? new JsonByteArrayEntityMatcher(data.getBytes()) : null;
+            this.headerMatcher = user != null ? new RunAsHeaderMatcher(user) : null;
+        }
+
+        @Override
+        public boolean matches(Request argument) {
+            if (argument == null) {
+                return false;
+            }
+            final List<Header> headers = argument.getOptions().getHeaders();
+            if (!this.method.equals(argument.getMethod())) {
+                return false;
+            }
+            if (!this.endpoint.equals(argument.getEndpoint())) {
+                return false;
+            }
+            if (this.entityMatcher == null && argument.getEntity() != null) {
+                return false;
+            }
+            if (this.entityMatcher != null && !this.entityMatcher.matches((ByteArrayEntity) argument.getEntity())) {
+                return false;
+            }
+            if (this.headerMatcher != null && headers.isEmpty()) {
+                return false;
+            }
+            if (this.headerMatcher == null && !headers.isEmpty()) {
+                return false;
+            }
+            return this.headerMatcher == null || headerMatcher.matches((BasicHeader) headers.get(0));
+        }
     }
 
 }

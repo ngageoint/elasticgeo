@@ -1,4 +1,4 @@
-/**
+/*
  * This file is hereby placed into the Public Domain. This means anyone is
  * free to do whatever they wish with this file.
  */
@@ -22,7 +22,7 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
         GEO_SHAPE
     }
 
-    private static Pattern beginLetters = Pattern.compile("^[A-Za-z_].*");
+    private static final Pattern beginLetters = Pattern.compile("^[A-Za-z_].*");
 
     private static final long serialVersionUID = 8839579461838862328L;
 
@@ -207,12 +207,12 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
 
     @Override
     public boolean equals(Object obj) {
-        boolean equal = true;
+        boolean equal;
         if (obj == null || getClass() != obj.getClass()) {
             equal = false;
         } else {
             ElasticAttribute other = (ElasticAttribute) obj;
-            equal &= Objects.equals(name, other.name);
+            equal = Objects.equals(name, other.name);
             equal &= Objects.equals(type, other.type);
             equal &= Objects.equals(use, other.use);
             equal &= Objects.equals(defaultGeometry, other.defaultGeometry);
@@ -235,7 +235,7 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
      * @return negative for before, zero for same, positive after
      */
     @Override
-    public int compareTo(ElasticAttribute o) {
+    public int compareTo(@SuppressWarnings("NullableProblems") ElasticAttribute o) {
         if (this.order == null) {
             return o.order == null ? this.name.compareTo(o.name) : 1;
         }
@@ -250,7 +250,7 @@ public class ElasticAttribute implements Serializable, Comparable<ElasticAttribu
      * Perform basic update to the given name to make it XML namespace
      * compliant.
      *
-     * @param name
+     * @param name Raw name
      * @return Name that is XML safe
      */
     private static String normalizeName (String name) {

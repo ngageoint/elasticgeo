@@ -70,7 +70,7 @@
             <systemProperties>
               <property>
                 <name>java.util.logging.config.file</name>
-                <value>file:${project.build.directory}/test-classes/logging.properties</value>
+                <value>${project.build.directory}/test-classes/logging.properties</value>
               </property>
             </systemProperties>
             <argLine>${surefireArgLine}</argLine>
@@ -95,7 +95,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <versionRange>[${2.10},)</versionRange>
+                    <versionRange>[2.10,)</versionRange>
                     <goals>
                       <goal>unpack</goal>
                     </goals>
