@@ -36,7 +36,9 @@
                 <artifactItem>
                   <groupId>org.elasticsearch</groupId>
                   <artifactId>elasticsearch</artifactId>
-                  <version>${es.version}</version>
+                  <!-- Use Elasticsearch Joda time parser and formatter to enable support for time formats found in mappings.
+                  Use v6.4.3 to avoid extra dependencies added in later versions to keep ElasticGeo jar small. -->
+                  <version>6.4.3</version>
                   <includes>**/Joda.java,**/FormatDateTimeFormatter.java,**/StrictISODateTimeFormat.java</includes>
                   <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                   <classifier>sources</classifier>
