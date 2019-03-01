@@ -612,5 +612,5 @@ FAQ
   - When referencing fields with path elements using ``cql_filter``, it may be necessary to quote the name (e.g. ``cql_filter="parent.child.field_name"='value'``)
 
 - Filtering on Elasticsearch ``nested`` types is supported only for non-geospatial fields.
-- Circle geometries are not currently supported
+- Circle geometries are approximate and may not be fully consistent with the implementation in Elasticsearch, especially at extreme latitudes (see `#86 <https://github.com/ngageoint/elasticgeo/issues/86>`_).
 - The ``joda-shaded`` module may need to be excluded when importing the project into Eclipse. Otherwise modules may have build errors of the form ``DateTimeFormatter cannot be resolved to a type``.
