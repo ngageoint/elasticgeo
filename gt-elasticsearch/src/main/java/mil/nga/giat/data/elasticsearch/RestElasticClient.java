@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletRequest;
 import mil.nga.giat.data.elasticsearch.ElasticMappings.Mapping;
 
 import org.apache.http.HttpEntity;
@@ -40,6 +41,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 public class RestElasticClient implements ElasticClient {
 
@@ -244,6 +248,8 @@ public class RestElasticClient implements ElasticClient {
         final Request request = new Request(method, path);
         request.setEntity(entity);
 
+        final Map<String, String> headers = new HashMap<>();
+
         if (!isAdmin && enableRunAs) {
             final SecurityContext ctx = SecurityContextHolder.getContext();
             final Authentication auth = ctx.getAuthentication();
@@ -253,13 +259,27 @@ public class RestElasticClient implements ElasticClient {
             if (!auth.isAuthenticated()) {
                 throw new IllegalStateException(String.format("User is not authenticated: %s", auth.getName()));
             }
-            final RequestOptions.Builder optionsBuilder = RequestOptions.DEFAULT.toBuilder();
-            optionsBuilder.addHeader(RUN_AS, auth.getName());
-            request.setOptions(optionsBuilder);
+            headers.put(RUN_AS, auth.getName());
             LOGGER.fine(String.format("Performing request on behalf of user %s", auth.getName()));
         } else {
             LOGGER.fine(String.format("Performing request with %s credentials", isAdmin ? "user" : "proxy"));
         }
+
+        final HttpServletRequest httpServletRequest = getCurrentHttpRequest();
+        if (httpServletRequest != null) {
+            final String authorization = httpServletRequest.getHeader("Authorization");
+            if (authorization != null) {
+                LOGGER.fine("Performing request with Authorization header");
+                headers.put("Authorization", authorization);
+            }
+        }
+
+        if (!headers.isEmpty()) {
+            final RequestOptions.Builder optionsBuilder = RequestOptions.DEFAULT.toBuilder();
+            headers.forEach(optionsBuilder::addHeader);
+            request.setOptions(optionsBuilder);
+        }
+
         final Response response = client.performRequest(request);
         if (response.getStatusLine().getStatusCode() >= 400) {
             throw new IOException("Error executing request: " + response.getStatusLine().getReasonPhrase());
@@ -340,5 +360,13 @@ public class RestElasticClient implements ElasticClient {
             indices = new HashSet<>();
         }
         return indices;
+    }
+
+    public static HttpServletRequest getCurrentHttpRequest(){
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        if (requestAttributes instanceof ServletRequestAttributes) {
+            return ((ServletRequestAttributes)requestAttributes).getRequest();
+        }
+        return null;
     }
 }
