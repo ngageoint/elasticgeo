@@ -4,6 +4,7 @@
  */
 package mil.nga.giat.data.elasticsearch;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class ElasticResults {
 
+    @JsonDeserialize(using = TotalDeserializer.class)
     private Long total;
 
     @JsonProperty("max_score")

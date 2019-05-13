@@ -168,6 +168,7 @@
                     <env>
                         <ES_JAVA_OPTS>-Xmx512m -Xms512m</ES_JAVA_OPTS>
                         <discovery.type>single-node</discovery.type>
+                        <xpack.security.enabled>false</xpack.security.enabled>
                     </env>
                     <ports>
                       <port>9200:9200</port>

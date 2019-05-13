@@ -110,8 +110,6 @@ class ElasticTestSupport {
         // create index and add mappings
         Map<String,Object> settings = new HashMap<>();
         settings.put("settings", ImmutableMap.of("number_of_shards", numShards, "number_of_replicas", numReplicas));
-        Map<String,Object> mappings = new HashMap<>();
-        settings.put("mappings", mappings);
         final String filename;
         if (client.getVersion() < 5) {
             filename = LEGACY_ACTIVE_MAPPINGS_FILE;
@@ -125,7 +123,13 @@ class ElasticTestSupport {
             try (Scanner s = new Scanner(resource)) {
                 s.useDelimiter("\\A");
                 Map<String, Object> source = mapReader.readValue(s.next());
-                mappings.put(TYPE_NAME, source);
+                if (client.getVersion() < 7) {
+                    Map<String,Object> mappings = new HashMap<>();
+                    mappings.put(TYPE_NAME, source);
+                    settings.put("mappings", mappings);
+                } else {
+                    settings.put("mappings", source);
+                }
             }
         }
         performRequest("PUT", "/" + indexName, settings);
@@ -154,7 +158,8 @@ class ElasticTestSupport {
                 for (final Map<String, Object> featureSource : features) {
                     if (featureSource.containsKey("status_s") && featureSource.get("status_s").equals(status)) {
                         final String id = featureSource.containsKey("id") ? (String) featureSource.get("id") : null;
-                        performRequest("POST", "/" + indexName + "/" + TYPE_NAME + "/" + id, featureSource);
+                        final String typeName = client.getVersion() < 7 ? TYPE_NAME : "_doc";
+                        performRequest("POST", "/" + indexName + "/" + typeName + "/" + id, featureSource);
                     }
                 }
 

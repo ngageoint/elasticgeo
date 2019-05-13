@@ -192,7 +192,8 @@ class ElasticFeatureSource extends ContentFeatureSource {
         searchRequest.setQuery(queryBuilder);
 
         if (isSort(query) && nativeQueryBuilder.equals(ElasticConstants.MATCH_ALL)) {
-            searchRequest.addSort("_uid", naturalSortOrder);
+            final String sortKey = dataStore.getClient().getVersion() < 7 ? "_uid" : "_id";
+            searchRequest.addSort(sortKey, naturalSortOrder);
         }
 
         if (filterToElastic.getAggregations() != null) {

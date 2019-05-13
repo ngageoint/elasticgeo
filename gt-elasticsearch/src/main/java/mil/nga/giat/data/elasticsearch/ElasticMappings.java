@@ -17,6 +17,10 @@ class ElasticMappings {
         return mappings;
     }
 
+    public void setMappings(Map<String, Mapping> mappings) {
+        this.mappings = mappings;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown=true)
     public static class Mapping {
 
@@ -24,6 +28,15 @@ class ElasticMappings {
 
         public Map<String, Object> getProperties() {
             return properties;
+        }
+    }
+
+    public static class Untyped {
+
+        private Mapping mappings;
+
+        public Mapping getMappings() {
+            return mappings;
         }
     }
 
