@@ -43,7 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class RestElasticClient implements ElasticClient {
 
-    final static double DEFAULT_VERSION = 6.0;
+    final static double DEFAULT_VERSION = 7.0;
 
     private final static Logger LOGGER = Logging.getLogger(RestElasticClient.class);
 
@@ -108,8 +108,11 @@ public class RestElasticClient implements ElasticClient {
     public Map<String, Object> getMapping(String indexName, String type) throws IOException {
         final Map<String, Mapping> mappings = getMappings(indexName, type);
         final Map<String,Object> properties;
-        if (mappings.containsKey(type)) {
+        if (getVersion() < 7 && mappings.containsKey(type)) {
             properties = mappings.get(type).getProperties();
+        } else if (getVersion() >= 7) {
+            final Mapping mapping = mappings.values().stream().findFirst().orElse(null);
+            properties = mapping != null ? mapping.getProperties() : null;
         } else {
             properties = null;
         }
@@ -120,7 +123,7 @@ public class RestElasticClient implements ElasticClient {
         final Response response;
         try {
             final StringBuilder path = new StringBuilder("/").append(indexName).append("/_mapping");
-            if (type != null) {
+            if (type != null && getVersion() < 7) {
                 path.append("/").append(type);
             }
             response = performRequest("GET", path.toString(), null, true);
@@ -131,14 +134,34 @@ public class RestElasticClient implements ElasticClient {
             throw e;
         }
 
+        final String aliasedIndex = getIndices(indexName).stream().findFirst().orElse(null);
+
         try (final InputStream inputStream = response.getEntity().getContent()) {
             final Map<String,ElasticMappings> values;
-            values = this.mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {});
+            if (getVersion() < 7) {
+                values = this.mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings>>() {
+                });
+            } else {
+                final Map<String, ElasticMappings.Untyped> res;
+                res = this.mapper.readValue(inputStream, new TypeReference<Map<String, ElasticMappings.Untyped>>() {
+                });
+                values = new HashMap<>();
+                for (final Entry<String, ElasticMappings.Untyped> entry : res.entrySet()) {
+                    final ElasticMappings mappings = new ElasticMappings();
+                    mappings.setMappings(new HashMap<>());
+                    if (aliasedIndex != null && aliasedIndex.equals(entry.getKey())) {
+                        mappings.getMappings().put(aliasedIndex, entry.getValue().getMappings());
+                        values.put(aliasedIndex, mappings);
+                    } else {
+                        mappings.getMappings().put(indexName, entry.getValue().getMappings());
+                        values.put(entry.getKey(), mappings);
+                    }
+                }
+            }
             final Map<String, Mapping> mappings;
             if (values.containsKey(indexName)) {
                 mappings = values.get(indexName).getMappings();
             } else {
-                final String aliasedIndex = getIndices(indexName).stream().findFirst().orElse(null);
                 if (values.containsKey(aliasedIndex)) {
                     mappings = values.get(aliasedIndex).getMappings();
                 } else if (!values.isEmpty()) {
@@ -154,7 +177,11 @@ public class RestElasticClient implements ElasticClient {
 
     @Override
     public ElasticResponse search(String searchIndices, String type, ElasticRequest request) throws IOException {
-        final StringBuilder pathBuilder = new StringBuilder("/" + searchIndices + "/" + type + "/_search");
+        final StringBuilder pathBuilder = new StringBuilder("/" + searchIndices);
+        if (getVersion() < 7) {
+            pathBuilder.append("/" + type);
+        }
+        pathBuilder.append("/_search");
 
         final Map<String,Object> requestBody = new HashMap<>();
 
