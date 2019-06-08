@@ -32,11 +32,11 @@ import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.Hints;
 import org.geotools.filter.Capabilities;
 import org.geotools.geojson.geom.GeometryJSON;
 import org.geotools.util.ConverterFactory;
 import org.geotools.util.Converters;
+import org.geotools.util.factory.Hints;
 import org.geotools.util.logging.Logging;
 import org.locationtech.jts.geom.CoordinateSequence;
 import org.locationtech.jts.geom.Geometry;

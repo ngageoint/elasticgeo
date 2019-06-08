@@ -12,8 +12,8 @@ import org.geotools.coverage.CoverageFactoryFinder;
 import org.geotools.coverage.grid.GridCoordinates2D;
 import org.geotools.coverage.grid.GridCoverage2D;
 import org.geotools.coverage.grid.GridCoverageFactory;
-import org.geotools.factory.GeoTools;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.util.factory.GeoTools;
 import org.junit.Test;
 import org.opengis.geometry.MismatchedDimensionException;
 

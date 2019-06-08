@@ -20,7 +20,6 @@ import static mil.nga.giat.data.elasticsearch.ElasticConstants.NESTED;
 
 import org.geotools.data.Query;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.factory.Hints;
 import org.geotools.feature.AttributeTypeBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.filter.text.cql2.CQLException;
@@ -28,6 +27,7 @@ import org.geotools.filter.text.ecql.ECQL;
 import org.geotools.temporal.object.DefaultInstant;
 import org.geotools.temporal.object.DefaultPeriod;
 import org.geotools.temporal.object.DefaultPosition;
+import org.geotools.util.factory.Hints;
 import org.junit.Before;
 import org.junit.Test;
 import org.locationtech.jts.geom.Coordinate;
@@ -825,9 +825,9 @@ public class ElasticFilterTest {
 
     @Test
     public void testTemporalStringLiteral() {
-        After filter = ff.after(ff.property("dateAttr"), ff.literal("1970-01-01 00:00:00"));
+        After filter = ff.after(ff.property("dateAttr"), ff.literal("1970-01-01T00:00:00.000Z"));
         Map<String,Object> expected = ImmutableMap.of("range",
-                ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-01-01 00:00:00")));
+                ImmutableMap.of("dateAttr", ImmutableMap.of("gt", "1970-01-01T00:00:00.000Z")));
 
         builder.visit(filter, null);
         assertTrue(builder.createCapabilities().fullySupports(filter));
@@ -836,9 +836,9 @@ public class ElasticFilterTest {
 
     @Test
     public void testNestedTemporalStringLiteral() {
-        After filter = ff.after(ff.property("nested.datehej"), ff.literal("1970-01-01 00:00:00"));
+        After filter = ff.after(ff.property("nested.datehej"), ff.literal("1970-01-01T00:00:00.000Z"));
         Map<String,Object> expectedFilter = ImmutableMap.of("range",
-                ImmutableMap.of("nested.datehej", ImmutableMap.of("gt", "1970-01-01 00:00:00")));
+                ImmutableMap.of("nested.datehej", ImmutableMap.of("gt", "1970-01-01T00:00:00.000Z")));
         Map<String,Object> expected = ImmutableMap.of("nested",
                 ImmutableMap.of("path", "nested", "query", expectedFilter));
 

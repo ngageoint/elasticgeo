@@ -18,25 +18,16 @@ package mil.nga.giat.data.elasticsearch;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.Node;
 import org.geotools.data.DataStore;
-import org.geotools.data.DataStoreFactorySpi;
-import org.geotools.factory.FactoryCreator;
-import org.geotools.factory.FactoryRegistry;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -47,8 +38,6 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
 
     private static final Logger LOGGER = org.geotools.util.logging.Logging
             .getLogger(ElasticDataStoreFinderIT.class);
-
-    private DataStore source;
 
     @Test
     public void testFactoryDefaults() throws IOException {
@@ -65,54 +54,35 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
     }
 
     @Test
-    public void testFactory() {
-        assertTrue(new ElasticDataStoreFactory().isAvailable());
-        scanForPlugins();
+    public void testFactory() throws IOException {
+        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+        assertTrue(factory.isAvailable());
 
         Map<String,Serializable> map = new HashMap<>();
         map.put(ElasticDataStoreFactory.HOSTNAME.key, "localhost");
         map.put(ElasticDataStoreFactory.HOSTPORT.key, PORT);
         map.put(ElasticDataStoreFactory.INDEX_NAME.key, "sample");
 
-        Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
-        ElasticDataStoreFactory fac;
-        while (ps.hasNext()) {
-            fac = (ElasticDataStoreFactory) ps.next();
+        DataStore store = factory.createDataStore(map);
 
-            try {
-                if (fac.canProcess(map)) {
-                    source = fac.createDataStore(map);
-                }
-            } catch (Throwable t) {
-                LOGGER.log(Level.WARNING, "Could not acquire " + fac.getDescription() + ":" + t, t);
-            }
-        }
-
-        assertNotNull(source);
-        assertTrue(source instanceof ElasticDataStore);
+        assertNotNull(store);
+        assertTrue(store instanceof ElasticDataStore);
     }
 
     @Test
-    public void testFactoryWithMissingRequired() {
-        assertTrue(new ElasticDataStoreFactory().isAvailable());
-        scanForPlugins();
+    public void testFactoryWithMissingRequired() throws IOException {
+        ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
+        assertTrue(factory.isAvailable());
 
-        Iterator<DataStoreFactorySpi> ps = getAvailableDataSources();
-        ElasticDataStoreFactory fac;
-        while (ps.hasNext()) {
-            fac = (ElasticDataStoreFactory) ps.next();
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost",
-                    ElasticDataStoreFactory.HOSTPORT.key, PORT)));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost",
-                    ElasticDataStoreFactory.INDEX_NAME.key, "test")));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost")));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT,
-                    ElasticDataStoreFactory.INDEX_NAME.key, "test")));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT)));
-            assertTrue(!fac.canProcess(ImmutableMap.of(ElasticDataStoreFactory.INDEX_NAME.key, "test")));
-        }
-
-        assertNull(source);
+        assertTrue(!factory.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost",
+                ElasticDataStoreFactory.HOSTPORT.key, PORT)));
+        assertTrue(!factory.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost",
+                ElasticDataStoreFactory.INDEX_NAME.key, "test")));
+        assertTrue(!factory.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTNAME.key, "localhost")));
+        assertTrue(!factory.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT,
+                ElasticDataStoreFactory.INDEX_NAME.key, "test")));
+        assertTrue(!factory.canProcess(ImmutableMap.of(ElasticDataStoreFactory.HOSTPORT.key, PORT)));
+        assertTrue(!factory.canProcess(ImmutableMap.of(ElasticDataStoreFactory.INDEX_NAME.key, "test")));
     }
 
     @Test
@@ -163,29 +133,6 @@ public class ElasticDataStoreFinderIT extends ElasticTestSupport {
         params.put(ElasticDataStoreFactory.HOSTNAME.key, hosts);
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         return factory.createRestClient(params).getNodes().stream().map(Node::getHost).collect(Collectors.toList());
-    }
-
-    private FactoryRegistry getServiceRegistry() {
-        return new FactoryCreator(
-                Arrays.asList(new Class<?>[] { DataStoreFactorySpi.class }));
-    }
-
-    private void scanForPlugins() {
-        getServiceRegistry().scanForPlugins();
-    }
-
-    private Iterator<DataStoreFactorySpi> getAvailableDataSources() {
-        Set<DataStoreFactorySpi> availableDS = new HashSet<>();
-        Stream<DataStoreFactorySpi> it = getServiceRegistry().getFactories(DataStoreFactorySpi.class, null, null);
-        it.forEach(ds -> {
-            if (ds instanceof ElasticDataStoreFactory) {
-                final ElasticDataStoreFactory dsFactory = (ElasticDataStoreFactory) ds;
-                if (dsFactory.isAvailable()) {
-                    availableDS.add(dsFactory);
-                }
-            }
-        });
-        return availableDS.iterator();
     }
 
 }
