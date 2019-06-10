@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>mil.nga.giat</groupId>
   <artifactId>elasticgeo</artifactId>
-  <version>2.15-SNAPSHOT</version>
+  <version>2.15.1</version>
   <packaging>pom</packaging>
   <name>ElasticGeo</name>
   <description>ElasticGeo provides a GeoTools data store that allows geospatial features from an Elasticsearch index to be published via OGC services using GeoServer.</description>
@@ -22,7 +22,7 @@
   </modules>
   <scm>
     <connection>scm:git:https://github.com/ngageoint/elasticgeo.git</connection>
-    <tag>HEAD</tag>
+    <tag>2.15.1-RC1</tag>
     <url>https://github.com/ngageoint/elasticgeo.git</url>
   </scm>
   <properties>
