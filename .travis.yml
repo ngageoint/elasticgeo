@@ -3,22 +3,23 @@ services:
 - docker
 language: java
 jdk:
-- oraclejdk8
+- openjdk8
 env:
   matrix:
-  - GEOTOOLS_VERSION='21.1' GEOSERVER_VERSION='2.15.1' ES_VERSION='7.0.1'
-  - GEOTOOLS_VERSION='21.1' GEOSERVER_VERSION='2.15.1' ES_VERSION='6.7.2'
-  - GEOTOOLS_VERSION='21.1' GEOSERVER_VERSION='2.15.1' ES_VERSION='5.6.15'
-  - GEOTOOLS_VERSION='21.1' GEOSERVER_VERSION='2.15.1' ES_VERSION='2.4.4' ARGS='-Ddocker.image=elasticsearch'
-  - GEOTOOLS_VERSION='21.0' GEOSERVER_VERSION='2.15.0' ES_VERSION='7.0.1'
-  - GEOTOOLS_VERSION='21.0' GEOSERVER_VERSION='2.15.0' ES_VERSION='6.7.2'
-  - GEOTOOLS_VERSION='21.0' GEOSERVER_VERSION='2.15.0' ES_VERSION='5.6.15'
-  - GEOTOOLS_VERSION='21.0' GEOSERVER_VERSION='2.15.0' ES_VERSION='2.4.4' ARGS='-Ddocker.image=elasticsearch'
+  - GEOTOOLS_VERSION='22.0' GEOSERVER_VERSION='2.16.0' ES_VERSION='7.4.0'
+  - GEOTOOLS_VERSION='22.0' GEOSERVER_VERSION='2.16.0' ES_VERSION='6.8.3'
+  - GEOTOOLS_VERSION='22.0' GEOSERVER_VERSION='2.16.0' ES_VERSION='5.6.16'
+  - GEOTOOLS_VERSION='22.0' GEOSERVER_VERSION='2.16.0' ES_VERSION='2.4.5' ARGS='-Ddocker.image=elasticsearch'
+  - GEOTOOLS_VERSION='21.3' GEOSERVER_VERSION='2.15.3' ES_VERSION='7.4.0'
+  - GEOTOOLS_VERSION='21.3' GEOSERVER_VERSION='2.15.3' ES_VERSION='6.8.3'
+  - GEOTOOLS_VERSION='21.3' GEOSERVER_VERSION='2.15.3' ES_VERSION='5.6.16'
+  - GEOTOOLS_VERSION='21.3' GEOSERVER_VERSION='2.15.3' ES_VERSION='2.4.5' ARGS='-Ddocker.image=elasticsearch'
 cache:
   directories:
   - "$HOME/.m2"
 install:
-- travis_retry mvn install -DskipTests=true -Dskip.integration.tests=true -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION} ${ARGS}
+- mvn --version
+- travis_retry mvn install -DskipTests=true -Dskip.integration.tests=true -B -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION} ${ARGS}
 script:
 - sudo sysctl -w vm.max_map_count=262144
 - travis_retry mvn verify -Dgeotools.version=${GEOTOOLS_VERSION} -Dgeoserver.version=${GEOSERVER_VERSION} -Des.test.version=${ES_VERSION} ${ARGS}

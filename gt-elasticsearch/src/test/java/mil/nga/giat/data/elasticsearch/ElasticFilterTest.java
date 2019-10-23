@@ -5,6 +5,7 @@
 package mil.nga.giat.data.elasticsearch;
 
 import static org.junit.Assert.*;
+import static org.hamcrest.collection.IsIn.isOneOf;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -550,6 +551,10 @@ public class ElasticFilterTest {
         coords.add(ImmutableList.of(1.1,1.1));
         coords.add(ImmutableList.of(1.1,0.));
         coords.add(ImmutableList.of(0.,0.));
+        // vertices in reverse order
+        final List<List<Double>> reverseCoords = ImmutableList.of(
+                coords.get(0), coords.get(3), coords.get(2), coords.get(1), coords.get(4)
+        );
         Map<String,Object> expected = ImmutableMap.of("bool", 
                 ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", 
                         ImmutableMap.of("geom", ImmutableMap.of("shape", 
@@ -558,7 +563,8 @@ public class ElasticFilterTest {
 
         builder.visit(filter, null);
         assertTrue(builder.createCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
+        assertThat(builder.getQueryBuilder().toString(), isOneOf(expected.toString(),
+                expected.toString().replace(coords.toString(), reverseCoords.toString())));
     }
 
     @Test
@@ -627,6 +633,10 @@ public class ElasticFilterTest {
         coords.add(ImmutableList.of(1.1,1.1));
         coords.add(ImmutableList.of(1.1,0.));
         coords.add(ImmutableList.of(0.,0.));
+        // vertices in reverse order
+        List<List<Double>> reverseCoords = ImmutableList.of(
+                coords.get(0), coords.get(3), coords.get(2), coords.get(1), coords.get(4)
+        );
         Map<String,Object> expected = ImmutableMap.of("bool", ImmutableMap.of("must", ImmutableList.of(
                 ImmutableMap.of("ids", ImmutableMap.of("values", ImmutableList.of("id1"))), ImmutableMap.of("bool", 
                         ImmutableMap.of("must", MATCH_ALL, "filter", ImmutableMap.of("geo_shape", ImmutableMap.of("geom", ImmutableMap.of("shape", 
@@ -636,7 +646,8 @@ public class ElasticFilterTest {
 
         builder.visit(filter, null);
         assertTrue(builder.createCapabilities().fullySupports(filter));
-        assertEquals(expected.toString(), builder.getQueryBuilder().toString());
+        assertThat(builder.getQueryBuilder().toString(), isOneOf(expected.toString(),
+                expected.toString().replace(coords.toString(), reverseCoords.toString())));
     }
 
     @Test

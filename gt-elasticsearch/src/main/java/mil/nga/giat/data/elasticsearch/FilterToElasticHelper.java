@@ -51,6 +51,7 @@ import org.opengis.filter.spatial.Within;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.opengis.geometry.BoundingBox;
 
 class FilterToElasticHelper {
 
@@ -247,7 +248,7 @@ class FilterToElasticHelper {
                     "filter", ImmutableMap.of("geo_polygon", 
                             ImmutableMap.of(key, ImmutableMap.of("points", points)))));
         } else if (filter instanceof BBOX) {
-            final Envelope envelope = geometry.getEnvelopeInternal();
+            final BoundingBox envelope = ((BBOX) filter).getBounds();
             final double minY = clipLat(envelope.getMinY());
             final double maxY = clipLat(envelope.getMaxY());
             final double minX, maxX;
