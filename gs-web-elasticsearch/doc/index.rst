@@ -295,7 +295,7 @@ Aggregation WFS features will include a single attribute, ``_aggregation``, cont
 Geohash grid aggregations
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Geohash grid aggregation support includes dynamic precision updating and a custom rendering transformation for visualization. Geohash grid aggregation precision is updated dynamically to approximate the specified ``grid_size`` based on current bbox extent and the additional ``grid_threshold`` parameter as described above.
+Geohash grid aggregation support includes dynamic precision updating and a custom rendering transformation for visualization. Geohash grid aggregation precision is updated dynamically to approximate the specified ``grid_size`` based on current bbox extent and the additional ``grid_threshold`` parameter as described above. If a ``precision`` value is present in the aggregation defined in ``viewparams``, however, that value will be used instead of the dynamic value.
 
 Geohash grid aggregation visualization is supported in WMS requests through a custom rendering transformation, ``vec:GeoHashGrid``, which translates aggregation response data into a raster for display. By default raster values correspond to the aggregation bucket ``doc_count``. The following shows an example GeoServer style that uses the GeoHashGrid rendering transformation::
 
