@@ -6,6 +6,7 @@ package mil.nga.giat.data.elasticsearch;
 
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -216,6 +217,18 @@ class ElasticFeatureSource extends ContentFeatureSource {
             GeohashUtil.updateGridAggregationPrecision(aggregations, precision);
             searchRequest.setAggregations(aggregations);
             searchRequest.setSize(0);
+        }
+
+        if (filterToElastic.gethighlights() != null) {
+            searchRequest.setHighlights(filterToElastic.gethighlights());
+
+            List<String> source = searchRequest.getSourceIncludes();
+            for (String key : filterToElastic.gethighlights().keySet()) {
+                if (source.contains(key))
+                {
+                    source.remove(key);
+                }
+            }
         }
 
         return searchRequest;

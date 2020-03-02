@@ -15,6 +15,8 @@ class ElasticRequest {
 
     private Map<String,Map<String,Map<String,Object>>> aggregations;
 
+    private Map<String, Object> highlights;
+
     private Integer size;
 
     private Integer from;
@@ -47,6 +49,14 @@ class ElasticRequest {
 
     public void setAggregations(Map<String,Map<String,Map<String,Object>>> aggregations) {
         this.aggregations = aggregations;
+    }
+
+    public Map<String, Object> getHighlights() {
+        return highlights;
+    }
+
+    public void setHighlights(Map<String, Object> highlights) {
+        this.highlights = highlights;
     }
 
     public Integer getSize() {

@@ -221,6 +221,10 @@ public class RestElasticClient implements ElasticClient {
             requestBody.put("aggregations", request.getAggregations());
         }
 
+        if (request.getHighlights() != null) {
+            requestBody.put("highlight", request.getHighlights());
+        }
+
         return parseResponse(performRequest("POST", pathBuilder.toString(), requestBody));
     }
 

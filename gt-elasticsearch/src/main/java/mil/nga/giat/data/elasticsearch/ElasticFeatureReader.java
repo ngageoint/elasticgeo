@@ -110,6 +110,7 @@ class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, SimpleFea
         final ElasticHit hit = searchHitIterator.next();
         final SimpleFeatureType type = getFeatureType();
         final Map<String, Object> source = hit.getSource();
+        final Map<String, List<String>> highlights = hit.getHighlight();
 
         final Float score;
         final Float relativeScore;
@@ -126,6 +127,12 @@ class ElasticFeatureReader implements FeatureReader<SimpleFeatureType, SimpleFea
             final String sourceName = (String) descriptor.getUserData().get(FULL_NAME);
 
             List<Object> values = hit.field(sourceName);
+
+            if (values == null && highlights != null && highlights.containsKey(sourceName)) {
+                // read field from source
+                values = Collections.unmodifiableList(highlights.get(sourceName));
+            }
+
             if (values == null && source != null) {
                 // read field from source
                 values = parserUtil.readField(source, sourceName);
