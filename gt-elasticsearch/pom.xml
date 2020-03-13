@@ -14,6 +14,12 @@
     <docker.image>docker.elastic.co/elasticsearch/elasticsearch</docker.image>
   </properties>
   <dependencies>
+	<dependency>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-web</artifactId>
+		<version>5.1.5.RELEASE</version>
+		<scope>provided</scope>
+	</dependency>
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-core</artifactId>

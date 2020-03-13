@@ -28,6 +28,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -136,6 +137,15 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             GRID_THRESHOLD
     };
 
+	/**
+	 * The ES RestClient instances created by this factory. We don't want to create
+	 * more than necessary, a single client can work for all stores at the same
+	 * user:host:port.
+	 * 
+	 * TODO: Close the clients when GeoServer is shutting down
+	 */
+    private Map<String, RestClient> clients = new ConcurrentHashMap<>();
+    
     @Override
     public String getDisplayName() {
         return DISPLAY_NAME;
@@ -185,8 +195,8 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         final String proxyUser = getValue(PROXY_USER, params);
         final String proxyPasswd = getValue(PROXY_PASSWD, params);
 
-        final RestClient client = createRestClient(params, user, passwd);
-        final RestClient proxyClient = proxyUser != null ? createRestClient(params, proxyUser, proxyPasswd) : null;
+        final RestClient client = getRestClient(params, user, passwd);
+        final RestClient proxyClient = proxyUser != null ? getRestClient(params, proxyUser, proxyPasswd) : null;
         return createDataStore(client, proxyClient, params);
     }
 
@@ -211,17 +221,43 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         return dataStore;
     }
 
-    public RestClient createRestClient(Map<String, Serializable> params) throws IOException {
-        return createRestClient(params, null, null);
+    RestClient getRestClient(Map<String, Serializable> params) throws IOException {
+        return getRestClient(params, null, null);
     }
 
-    private RestClient createRestClient(Map<String, Serializable> params, String user, String password) throws IOException {
+    private RestClient getRestClient(Map<String, Serializable> params, String user, String password) throws IOException {
         final String hostName = getValue(HOSTNAME, params);
-        final String[] hosts = hostName.split(",");
-        final Integer defaultPort = getValue(HOSTPORT, params);
-        final Boolean sslRejectUnauthorized = getValue(SSL_REJECT_UNAUTHORIZED, params);
+        final int defaultPort = getValue(HOSTPORT, params);
         final String adminUser = getValue(USER, params);
+        final boolean sslRejectUnauthorized = getValue(SSL_REJECT_UNAUTHORIZED, params);
+        
         final String type = user == null || adminUser == null || user.equals(adminUser) ? "ADMIN" : "PROXY_USER";
+        final String clientKey = String.format("%s @ %s:%d", user, hostName, defaultPort);
+        return this.clients.computeIfAbsent(clientKey, (key) -> {
+            LOGGER.info(String.format("Building a %s RestClient for", type, key));
+            try {
+            	return createRestClientBuilder(adminUser, password, type, hostName.split(","), defaultPort, sslRejectUnauthorized).build();
+            }
+            catch(IOException e) {
+            	throw new IllegalStateException(String.format("Failed to build a %s RestClient for: %s", type, key), e);
+            }
+        });
+    }
+    
+    /**
+     * Create a {@link RestClientBuilder}.
+     * 
+     * @param user String
+     * @param password String
+     * @param type String
+     * @param hosts String[]
+     * @param defaultPort int
+     * @param sslRejectUnauthorized boolean
+     * @return RestClientBuilder
+     * @throws IOException when the hosts can not be parsed.
+     */
+	private RestClientBuilder createRestClientBuilder(String user, String password, String type, String[] hosts,
+			int defaultPort, boolean sslRejectUnauthorized) throws IOException {
 
         final Pattern pattern = Pattern.compile("(?<scheme>https?)?(://)?(?<host>[^:]+):?(?<port>\\d+)?");
         final HttpHost[] httpHosts = new HttpHost[hosts.length];
@@ -282,8 +318,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
             return httpClientBuilder;
         });
 
-        LOGGER.fine(String.format("Building a %s RestClient for %s @ %s:%d", type, user, hostName, defaultPort));
-        return builder.build();
+        return builder;
     }
 
     @Override
