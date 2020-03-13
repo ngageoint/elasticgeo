@@ -233,15 +233,19 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
         
         final String type = user == null || adminUser == null || user.equals(adminUser) ? "ADMIN" : "PROXY_USER";
         final String clientKey = String.format("%s @ %s:%d", user, hostName, defaultPort);
-        return this.clients.computeIfAbsent(clientKey, (key) -> {
-            LOGGER.info(String.format("Building a %s RestClient for", type, key));
-            try {
-            	return createRestClientBuilder(adminUser, password, type, hostName.split(","), defaultPort, sslRejectUnauthorized).build();
-            }
-            catch(IOException e) {
-            	throw new IllegalStateException(String.format("Failed to build a %s RestClient for: %s", type, key), e);
-            }
-        });
+
+        /* if we already have the client ... just return it so we don't needlessly create the builder */
+        if(clients.containsKey(clientKey))
+            return clients.get(clientKey);
+        	
+        /* creating the builder can throw IOException so we can't do it in the following functional call */
+		RestClientBuilder rcb = createClientBuilder(user, password, type, hostName.split(","), defaultPort, sslRejectUnauthorized);
+		
+		/* note: ConcurrentHashMap performs this atomically ... only once per key */
+		return this.clients.computeIfAbsent(clientKey, (key) -> {
+			LOGGER.info(String.format("Building a %s RestClient for", type, key));
+			return rcb.build();
+		});
     }
     
     /**
@@ -256,7 +260,7 @@ public class ElasticDataStoreFactory implements DataStoreFactorySpi {
      * @return RestClientBuilder
      * @throws IOException when the hosts can not be parsed.
      */
-	private RestClientBuilder createRestClientBuilder(String user, String password, String type, String[] hosts,
+	private RestClientBuilder createClientBuilder(String user, String password, String type, String[] hosts,
 			int defaultPort, boolean sslRejectUnauthorized) throws IOException {
 
         final Pattern pattern = Pattern.compile("(?<scheme>https?)?(://)?(?<host>[^:]+):?(?<port>\\d+)?");
