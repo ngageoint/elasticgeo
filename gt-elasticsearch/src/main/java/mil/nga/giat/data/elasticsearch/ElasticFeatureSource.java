@@ -105,6 +105,7 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	/**
 	 * Access parent datastore
 	 */
+	@Override
 	public ElasticDataStore getDataStore() {
 		return (ElasticDataStore) super.getDataStore();
 	}
@@ -152,9 +153,11 @@ class ElasticFeatureSource extends ContentFeatureSource {
 			}
 
 			int hits = getHitCount(query);
-			if (isPaging(query))
+			if (isPaging(query)) {
+				cachePager(query, dataStore, reader);
 				LOGGER.info(String.format("Read from %s/%s: %d@%d/%d", dataStore.getIndexName(), docType, hits,
 						query.getStartIndex(), this.totalHits));
+			}
 			else
 				LOGGER.info(String.format("Read from %s/%s: %d", dataStore.getIndexName(), docType, hits));
 
@@ -195,6 +198,8 @@ class ElasticFeatureSource extends ContentFeatureSource {
 				}
 			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, e.getMessage(), e);
+				if (e instanceof IOException)
+					throw (IOException) e;
 				throw new IOException("Error executing count search", e);
 			}
 		}
@@ -432,9 +437,6 @@ class ElasticFeatureSource extends ContentFeatureSource {
 				reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>(reader, query.getFilter());
 		}
 
-		if (paging)
-			cachePager(query, eds, reader);
-
 		return reader;
 	}
 
@@ -442,8 +444,8 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	 * Get the paging reader cached in the users session for the STARTINDEX and
 	 * COUNT.
 	 * 
-	 * @param start Integer
-	 * @param count Integer
+	 * @param index int
+	 * @param count int
 	 * @return FeatureReader of SimpleFeatureType, SimpleFeature
 	 * @throws IOException
 	 */
