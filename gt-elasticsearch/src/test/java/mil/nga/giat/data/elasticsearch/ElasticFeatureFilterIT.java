@@ -154,6 +154,28 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
     }
 
     @Test
+    public void testCountByPage() throws Exception {
+        init();
+        
+        /* 5 results per page */
+        Query query = new Query();
+        query.setStartIndex(0);
+        query.setMaxFeatures(5);
+        assertEquals(5, featureSource.getCount(query));
+
+        query = new Query();
+        query.setStartIndex(5);
+        query.setMaxFeatures(5);
+        assertEquals(5, featureSource.getCount(query));
+        
+        /* only 1 result left */
+        query = new Query();
+        query.setStartIndex(10);
+        query.setMaxFeatures(5);
+        assertEquals(1, featureSource.getCount(query));
+    }
+
+    @Test
     public void testGetFeaturesWithAndLogicFilter() throws Exception {
         init();
         FilterFactory ff = dataStore.getFilterFactory();
@@ -712,6 +734,18 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
         Query q = new Query();
         List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
         assertEquals(2, features.size());
+    }
+
+    @Test
+    public void testDefaultMaxWithRequestMaxFeatures() throws Exception {
+        init();
+        dataStore.setDefaultMaxFeatures(2);
+        Query q = new Query();
+        
+        /* default max should not override explicit query max */
+        q.setMaxFeatures(5);
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
+        assertEquals(5, features.size());
     }
 
     private void assertCovered(SimpleFeatureCollection features, Integer... ids) {

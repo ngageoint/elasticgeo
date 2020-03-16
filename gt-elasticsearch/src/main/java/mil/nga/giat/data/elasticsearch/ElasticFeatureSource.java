@@ -60,11 +60,11 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * results from a layer than the per-request max features limit (in COUNT size
  * chunks). The COUNT provided by the client overrides the scroll size, so it is
  * the client's responsibility to use a size below 10k (or the ES limit). Also,
- * paged results must begin with STARTINDEX=0 and must advance through
- * STARTINDEXs in constant COUNT intervals. That is, the pages can not be
- * reversed, skipped or randomly accessed, and page size can not be changed.
+ * while pages can be reversed, skipped or randomly accessed, and page size can
+ * be changed, it is much more efficient to read data from beginning to end
+ * in constant page size chunks.
  * 
- * NOTE: To support paged results, the {@link ElasticFeatureReaderScroll} is
+ * NOTE: To support efficient paged results, the {@link ElasticFeatureReaderScroll} is
  * cached in the users {@link HttpSession}. A {@link CompletableFuture} is also
  * created and asynchronously run to close that scroll if the client does not
  * read subsequent pages. This means the client must support session tracking 
@@ -137,7 +137,7 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	@Override
 	protected FeatureReader<SimpleFeatureType, SimpleFeature> getReaderInternal(Query query) throws IOException {
 		LOGGER.fine("getReaderInternal");
-		FeatureReader<SimpleFeatureType, SimpleFeature> reader;
+		FeatureReader<SimpleFeatureType, SimpleFeature> reader = null;
 		try {
 			final ElasticDataStore dataStore = getDataStore();
 			final String docType = dataStore.getDocType(entry.getName());
@@ -145,7 +145,8 @@ class ElasticFeatureSource extends ContentFeatureSource {
 			final ElasticRequest searchRequest = prepareSearchRequest(query, scroll);
 			if (scroll)
 				reader = getScroll(query, dataStore, docType, searchRequest);
-			else {
+			
+			if(reader == null) {
 				ElasticResponse sr = dataStore.getClient().search(dataStore.getIndexName(), docType, searchRequest);
 				reader = new ElasticFeatureReader(getState(), sr);
 				if (!filterFullySupported)
@@ -208,12 +209,9 @@ class ElasticFeatureSource extends ContentFeatureSource {
 		if (query.isMaxFeaturesUnlimited())
 			return this.totalHits;
 
-		/* when paging ... return the current page size */
-		if (isPaging(query) && !isPageOne(query))
-			return unwrapPager(getPager(query.getStartIndex(), query.getMaxFeatures())).getHitsSize();
-
-		/* otherwise ... return smaller of total or max */
-		return Math.min(this.totalHits, getMaxSize(query));
+		/* otherwise ... return the smaller of total(minus offset)or max */
+		int offset = isPaging(query) ? query.getStartIndex() : 0;
+		return Math.min(this.totalHits - offset, getMaxSize(query, getDataStore()));
 	}
 
 	private ElasticRequest prepareSearchRequest(Query query, boolean scroll) throws IOException {
@@ -239,7 +237,7 @@ class ElasticFeatureSource extends ContentFeatureSource {
 			}
 		}
 
-		searchRequest.setSize(getScrollSize(query, dataStore));
+		searchRequest.setSize(Math.min(getScrollSize(query, dataStore), getMaxSize(query, dataStore)));
 
 		if (dataStore.isSourceFilteringEnabled()) {
 			if (query.getProperties() != Query.ALL_PROPERTIES) {
@@ -331,16 +329,6 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	}
 
 	/**
-	 * Is this the first page of a paging Query
-	 * 
-	 * @param query Query
-	 * @return boolean
-	 */
-	private static boolean isPageOne(Query query) {
-		return isPaging(query) && query.getStartIndex() == 0;
-	}
-
-	/**
 	 * Does this query need to be scrolled.
 	 * 
 	 * @param query Query
@@ -357,8 +345,8 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	 * @param query Query
 	 * @return int
 	 */
-	private static int getMaxSize(Query query) {
-		return query.getMaxFeatures() < 0 ? Integer.MAX_VALUE : query.getMaxFeatures();
+	private static int getMaxSize(Query query, ElasticDataStore eds) {
+		return query.isMaxFeaturesUnlimited() ? eds.getDefaultMaxFeatures() : query.getMaxFeatures();
 	}
 
 	/**
@@ -370,7 +358,7 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	 * @return int
 	 */
 	private static int getScrollSize(Query query, ElasticDataStore eds) {
-		return isPaging(query) ? getMaxSize(query) : eds.getScrollSize().intValue();
+		return isPaging(query) ? getMaxSize(query, eds) : eds.getScrollSize().intValue();
 	}
 
 	@Override
@@ -426,44 +414,66 @@ class ElasticFeatureSource extends ContentFeatureSource {
 
 		FeatureReader<SimpleFeatureType, SimpleFeature> reader = null;
 		boolean paging = isPaging(query);
-		if (paging && !isPageOne(query))
-			reader = getPager(query.getStartIndex(), query.getMaxFeatures());
-		else {
+ 		if (paging) 
+ 			reader = getPager(query.getStartIndex(), query.getMaxFeatures());
+		
+		if(reader == null){
 			int limit = paging ? this.totalHits : getHitCount(query);
 			ElasticResponse sr = eds.getClient().search(eds.getIndexName(), docType, searchRequest);
 			reader = new ElasticFeatureReaderScroll(getState(), sr, getScrollSize(query, eds), limit, paging);
-
+			
 			if (!this.filterFullySupported)
-				reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>(reader, query.getFilter());
+				reader = new FilteringFeatureReader<>(reader, query.getFilter());
+
+			/* skip any initial offset */
+			if (paging) {
+				for (int i = 0; i < query.getStartIndex() && reader.hasNext(); i++) {
+					reader.next();
+					
+					/* mimic the GeoServer behavior of closing the reader after every page */
+					if(!reader.hasNext())
+						reader.close();
+				}
+			}
 		}
 
 		return reader;
 	}
 
 	/**
-	 * Get the paging reader cached in the users session for the STARTINDEX and
-	 * COUNT.
+	 * Get the paging reader cached in the users session for the STARTINDEX and COUNT.
 	 * 
 	 * @param index int
 	 * @param count int
 	 * @return FeatureReader of SimpleFeatureType, SimpleFeature
-	 * @throws IOException
 	 */
-	private static FeatureReader<SimpleFeatureType, SimpleFeature> getPager(int index, int count)
-			throws IOException {
+	private static FeatureReader<SimpleFeatureType, SimpleFeature> getPager(int index, int count) {
 		Entry<Integer, FeatureReader<SimpleFeatureType, SimpleFeature>> e = getPagerEntry(getSession());
 		
+		if(e == null) {
+			LOGGER.finer("No pager is cached");
+			return null;
+		}
+		
 		int position = e.getKey();
-		if (index != position)
-			throw new IOException(String.format("Reader is at %d not %d!", position, index));
+		if (index != position) {
+			LOGGER.warning(String.format("Reader is at %d not %d!", position, index));
+			return null;
+		}
 
-		FeatureReader<SimpleFeatureType, SimpleFeature> fr = e.getValue();
-
-		int size = unwrapPager(fr).getScrollSize();
-		if (size != count)
-			throw new IOException(String.format("Page size is %d not %d!", size, count));
-
-		return fr;
+		FeatureReader<SimpleFeatureType, SimpleFeature> reader = e.getValue();
+		try {
+			int size = unwrapPager(reader).getScrollSize();
+			if (size != count) {
+				reader = null;
+				LOGGER.warning(String.format("Page size is %d not %d!", size, count));
+			}
+		} catch (IOException ioe) {
+			reader = null;
+			LOGGER.warning(String.format("Unexpected cached pager type: %s", e.getValue()));
+		}
+		
+		return reader;
 	}
 
 	/**
@@ -472,18 +482,16 @@ class ElasticFeatureSource extends ContentFeatureSource {
 	 * @param ses HttpSession
 	 * @return Entry of Integer and FeatureReader of SimpleFeatureType,
 	 *         SimpleFeature
-	 * @throws IOException
 	 */
 	@SuppressWarnings("unchecked")
-	private static Entry<Integer, FeatureReader<SimpleFeatureType, SimpleFeature>> getPagerEntry(HttpSession ses)
-			throws IOException {
+	private static Entry<Integer, FeatureReader<SimpleFeatureType, SimpleFeature>> getPagerEntry(HttpSession ses) {
 		Object o = ses.getAttribute(SESSION_KEY_READER);
 		if (o instanceof Map) {
 			Map<?, ?> m = (Map<Integer, ?>) o;
 			return (Entry<Integer, FeatureReader<SimpleFeatureType, SimpleFeature>>) m.entrySet().iterator().next();
 		}
 
-		throw new IOException("Cached scroll not found!");
+		return null;
 	}
 
 	/**
@@ -524,7 +532,7 @@ class ElasticFeatureSource extends ContentFeatureSource {
 		clearSession(ses, fr);
 
 		/* cache this pager at the next STARTINDEX */
-		Integer nextIndex = query.getStartIndex() + unwrapPager(fr).getScrollSize();
+		Integer nextIndex = query.getStartIndex() + getScrollSize(query, eds);
 		ses.setAttribute(SESSION_KEY_READER, Collections.singletonMap(nextIndex, fr));
 
 		/* schedule a timeout on this pager */
@@ -576,9 +584,11 @@ class ElasticFeatureSource extends ContentFeatureSource {
 		/* shutdown any cached pager other than the skip one */
 		try {
 			Entry<Integer, FeatureReader<SimpleFeatureType, SimpleFeature>> e = getPagerEntry(ses);
-			FeatureReader<SimpleFeatureType, SimpleFeature> fr = e.getValue();
-			if (fr != skip)
-				unwrapPager(fr).shutdown();
+			if(e != null) {
+				FeatureReader<SimpleFeatureType, SimpleFeature> fr = e.getValue();
+				if (fr != skip)
+					unwrapPager(fr).shutdown();
+			}
 		} catch (IOException e) {
 			if (ses.getAttribute(SESSION_KEY_READER) != null)
 				LOGGER.log(Level.WARNING, "Failed to close a scroll reader!", e);
