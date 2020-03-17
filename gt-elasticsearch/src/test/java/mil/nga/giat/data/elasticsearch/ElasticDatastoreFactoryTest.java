@@ -193,6 +193,47 @@ public class ElasticDatastoreFactoryTest {
     }
 
     @Test
+    public void testGetRestClientSameClientKey() throws IOException {
+    	/* multiple calls with same host:port:user should call builder once */
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "admin", null)));
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "admin", null)));
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "admin", null)));
+        verify(clientBuilder, times(1)).build();
+        
+    }
+
+    @Test
+    public void testGetRestClientWithProxy() throws IOException {
+    	/* single call with proxy user should call builder twice */
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "admin", "proxy")));
+        verify(clientBuilder, times(2)).build();
+    }
+    
+    @Test
+    public void testGetRestClientDifferentHost() throws IOException {
+    	/* multiple calls with different host should call builder once per host */
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost1", 9200, "admin", null)));
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost2", 9200, "admin", null)));
+        verify(clientBuilder, times(2)).build();
+    }
+
+    @Test
+    public void testGetRestClientDifferentPort() throws IOException {
+    	/* multiple calls with different port should call builder once per port */
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "admin", null)));
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9201, "admin", null)));
+        verify(clientBuilder, times(2)).build();
+    }
+
+    @Test
+    public void testGetRestClientDifferentUser() throws IOException {
+    	/* multiple calls with different user should call builder once per user */
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "admin", null)));
+        assertNotNull(dataStoreFactory.createDataStore(getParams("localhost", 9200, "proxy", null)));
+        verify(clientBuilder, times(2)).build();
+    }
+
+    @Test
     public void testCreateClientbuilder() {
         ElasticDataStoreFactory factory = new ElasticDataStoreFactory();
         HttpHost[] hosts = new HttpHost[] { new HttpHost("localhost", 9200)};
