@@ -714,6 +714,18 @@ public class ElasticFeatureFilterIT extends ElasticTestSupport {
         assertEquals(2, features.size());
     }
 
+    @Test
+    public void testDefaultMaxWithRequestMaxFeatures() throws Exception {
+        init();
+        dataStore.setDefaultMaxFeatures(2);
+        Query q = new Query();
+        
+        /* default max should not override explicit query max */
+        q.setMaxFeatures(5);
+        List<SimpleFeature> features = readFeatures(featureSource.getFeatures(q).features());
+        assertEquals(5, features.size());
+    }
+
     private void assertCovered(SimpleFeatureCollection features, Integer... ids) {
         assertEquals(ids.length, features.size());
 
