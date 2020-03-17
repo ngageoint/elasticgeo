@@ -100,7 +100,7 @@ class ElasticFeatureReaderScroll implements FeatureReader<SimpleFeatureType, Sim
     
     @Override
     public SimpleFeatureType getFeatureType() {
-        return delegate.getFeatureType();
+        return this.contentState.getFeatureType();
     }
 
     @Override
